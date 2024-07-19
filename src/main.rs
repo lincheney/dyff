@@ -33,6 +33,8 @@ struct Cli {
     file1: Option<String>,
     file2: Option<String>,
 
+    #[arg(allow_hyphen_values = true)]
+    extras: Vec<String>,
 }
 
 fn main() {
