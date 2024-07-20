@@ -168,7 +168,7 @@ impl<'a> WordDiffer<'a> {
         let left_line = self.parent.get_lineno(0, besti);
         let right_line = self.parent.get_lineno(1, bestj);
         self.matched_lines.entry((0, left_line)).or_insert(right_line);
-        self.matched_lines.entry((0, right_line)).or_insert(left_line);
+        self.matched_lines.entry((1, right_line)).or_insert(left_line);
         (besti, bestj, bestsize)
     }
 
