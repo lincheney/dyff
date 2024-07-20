@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::cmp::{min, max};
 use super::block_maker::BlockMaker;
 use super::part::Part;
 
@@ -32,7 +33,14 @@ impl<'a> WordDiffer<'a> {
         }
     }
 
-    fn find_longest_match(&mut self, alo: usize, ahi: usize, blo: usize, bhi: usize) -> (usize, usize, usize) {
+    fn find_longest_match(
+        &mut self,
+        alo: usize,
+        ahi: usize,
+        blo: usize,
+        bhi: usize,
+    ) -> Option<(usize, usize, usize)> {
+
         let isjunk = |b: &[u8]| b != b"\n" && b.iter().all(|c| c.is_ascii_whitespace());
 
         let left = &self.parent.words[0];
@@ -43,6 +51,12 @@ impl<'a> WordDiffer<'a> {
         let mut bestsize = 0;
         let mut bestlen = 0;
         let mut bestline = usize::MAX;
+
+        let mut mini = ahi;
+        let mut minj = bhi;
+        let mut maxi = 0;
+        let mut maxj = 0;
+        let mut bestcount = 0;
 
         let first_line_a = self.parent.get_lineno(0, alo);
         let first_line_b = self.parent.get_lineno(1, blo);
@@ -86,13 +100,30 @@ impl<'a> WordDiffer<'a> {
                         continue
                     }
 
+
                     // prioritise more words, then longer words, then words on the expected line
                     let mut cmp = k.cmp(&bestsize);
                     if cmp.is_lt() {
                         continue
                     }
 
-                    let l: usize = left[i+1-k .. i+1].iter().map(|w| w.len()).sum();
+                    if cmp.is_gt() {
+                        mini = ahi;
+                        minj = bhi;
+                        maxi = 0;
+                        maxj = 0;
+                        bestcount = 0;
+                    }
+
+                    let i = i + 1 - k;
+                    let j = j + 1 - k;
+                    mini = min(mini, i);
+                    minj = min(minj, j);
+                    maxi = max(maxi, i);
+                    maxj = max(maxj, j);
+                    bestcount += 1;
+
+                    let l: usize = left[i .. i+k].iter().map(|w| w.len()).sum();
                     cmp = cmp.then(l.cmp(&bestlen));
                     if cmp.is_lt() {
                         continue
@@ -104,12 +135,6 @@ impl<'a> WordDiffer<'a> {
                         expected_lineno_b.abs_diff(lineno_b)
                     } else if let Some(expected_lineno_a) = self.matched_lines.get(&(1, lineno_b)) {
                         expected_lineno_a.abs_diff(lineno_a)
-                    // elif single_line_a:
-                        // // single line so prefer things at the edges
-                        // lineno_dist = min(abs(lineno_b - first_line_b), abs(lineno_b - last_line_b))
-                    // elif single_line_b:
-                        // // single line so prefer things at the edges
-                        // lineno_dist = min(abs(lineno_a - first_line_a), abs(lineno_a - last_line_a))
                     } else {
                         lineno_a.abs_diff(lineno_b + first_line_a - first_line_b)
                     };
@@ -119,8 +144,8 @@ impl<'a> WordDiffer<'a> {
                         continue
                     }
 
-                    besti = i + 1 - k;
-                    bestj = j + 1 - k;
+                    besti = i;
+                    bestj = j;
                     bestsize = k;
                     bestlen = l;
                     bestline = lineno_dist;
@@ -130,46 +155,64 @@ impl<'a> WordDiffer<'a> {
             std::mem::swap(&mut j2len, &mut newj2len);
         }
 
-        if bestsize > 0 {
-            // match leading whitespace, up to start of line
-            while
-                   besti > alo
-                && bestj > blo
-                && left[besti-1].as_bytes() == right[bestj-1].as_bytes()
-                && (isjunk(left[besti-1].as_bytes()) || (
-                       left[besti-1].as_bytes() == b"\n"
-                    && besti >= 2
-                    && left[besti-2].as_bytes() == b"\n"
-                    && bestj >= 2
-                    && right[bestj-2].as_bytes() == b"\n"
-                ))
-            {
-                besti -= 1;
-                bestj -= 1;
-                bestsize += 1;
-            }
+        if bestsize == 0 {
+            return None
+        }
 
-            // match trailing whitespace, up to end of line
-            while
-                   besti+bestsize < ahi
-                && bestj+bestsize < bhi
-                && left[besti+bestsize].as_bytes() == right[bestj+bestsize].as_bytes()
-                && (
-                    (
-                           left[besti+bestsize-1].as_bytes() != b"\n"
-                        && isjunk(left[besti+bestsize].as_bytes())
-                    ) || left[besti+bestsize].as_bytes() == b"\n"
-                )
-            {
-                bestsize += 1;
+        if bestcount > 1 {
+            // this means there's multiple solutions
+            if alo < mini && blo < minj {
+                let m = self.find_longest_match(alo, mini, blo, minj);
+                if m.is_some() {
+                    return m
+                }
             }
+            if maxi < ahi && maxj < bhi {
+                let m =self.find_longest_match(maxi, ahi, maxj, bhi);
+                if m.is_some() {
+                    return m
+                }
+            }
+        }
+
+        // match leading whitespace, up to start of line
+        while
+               besti > alo
+            && bestj > blo
+            && left[besti-1].as_bytes() == right[bestj-1].as_bytes()
+            && (isjunk(left[besti-1].as_bytes()) || (
+                   left[besti-1].as_bytes() == b"\n"
+                && besti >= 2
+                && left[besti-2].as_bytes() == b"\n"
+                && bestj >= 2
+                && right[bestj-2].as_bytes() == b"\n"
+            ))
+        {
+            besti -= 1;
+            bestj -= 1;
+            bestsize += 1;
+        }
+
+        // match trailing whitespace, up to end of line
+        while
+               besti+bestsize < ahi
+            && bestj+bestsize < bhi
+            && left[besti+bestsize].as_bytes() == right[bestj+bestsize].as_bytes()
+            && (
+                (
+                       left[besti+bestsize-1].as_bytes() != b"\n"
+                    && isjunk(left[besti+bestsize].as_bytes())
+                ) || left[besti+bestsize].as_bytes() == b"\n"
+            )
+        {
+            bestsize += 1;
         }
 
         let left_line = self.parent.get_lineno(0, besti);
         let right_line = self.parent.get_lineno(1, bestj);
         self.matched_lines.entry((0, left_line)).or_insert(right_line);
         self.matched_lines.entry((1, right_line)).or_insert(left_line);
-        (besti, bestj, bestsize)
+        Some((besti, bestj, bestsize))
     }
 
     pub fn get_matching_blocks(&mut self) -> Vec<Part<'a>> {
@@ -178,12 +221,11 @@ impl<'a> WordDiffer<'a> {
 
         let mut matching_blocks = vec![];
         while let Some((alo, ahi, blo, bhi)) = queue.pop() {
-            let (i, j, k) = self.find_longest_match(alo, ahi, blo, bhi);
+            if let Some((i, j, k)) = self.find_longest_match(alo, ahi, blo, bhi) {
+                // a[alo:i] vs b[blo:j] unknown
+                // a[i:i+k] same as b[j:j+k]
+                // a[i+k:ahi] vs b[j+k:bhi] unknown
 
-            // a[alo:i] vs b[blo:j] unknown
-            // a[i:i+k] same as b[j:j+k]
-            // a[i+k:ahi] vs b[j+k:bhi] unknown
-            if k != 0 {   // if k is 0, there was no matching block
                 matching_blocks.push(Part{
                     parent: self.parent,
                     matches: true,
@@ -197,7 +239,7 @@ impl<'a> WordDiffer<'a> {
                 }
             }
         }
-        matching_blocks.sort_by(|a, b| a.slices[0].start.cmp(&b.slices[0].start));
+        matching_blocks.sort_by_key(|a| a.slices[0].start);
         matching_blocks
     }
 }
