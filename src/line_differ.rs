@@ -25,10 +25,9 @@ impl<'a> LineDiffer<'a> {
 
                 let words = &parent.words[i][start..end];
                 let line = words.iter()
-                    .map(|m| m.as_bytes())
-                    // .skip_while(|w| w.iter().all(|c| c.is_ascii_whitespace()))
-                    .flatten()
-                    .map(|c| *c)
+                    .flat_map(|m| m.as_bytes())
+                    // .skip_while(|c| c.is_ascii_whitespace())
+                    .copied()
                     .collect::<Vec<u8>>();
 
                 let key = *line_index.entry(line).or_insert(key);
