@@ -8,6 +8,7 @@ mod style;
 mod block_maker;
 mod part;
 mod word_differ;
+mod line_differ;
 mod block;
 mod types;
 #[macro_use]

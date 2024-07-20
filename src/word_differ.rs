@@ -215,9 +215,10 @@ impl<'a> WordDiffer<'a> {
         Some((besti, bestj, bestsize))
     }
 
-    pub fn get_matching_blocks(&mut self) -> Vec<Part<'a>> {
+    pub fn get_matching_blocks(&mut self, alo: usize, ahi: usize, blo: usize, bhi: usize) -> Vec<Part<'a>> {
         // self.matched_lines.clear();
-        let mut queue = vec![(0, self.parent.words[0].len(), 0, self.parent.words[1].len())];
+        // let mut queue = vec![(0, self.parent.words[0].len(), 0, self.parent.words[1].len())];
+        let mut queue = vec![(alo, ahi, blo, bhi)];
 
         let mut matching_blocks = vec![];
         while let Some((alo, ahi, blo, bhi)) = queue.pop() {

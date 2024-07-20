@@ -39,7 +39,8 @@ impl<'a> Part<'a> {
     }
 
     pub fn ends_line(&self, i: usize) -> bool {
-        self.slices[i].end == self.parent.get_wordno(i, self.last_lineno(i) + 1)
+        self.slices[i].end == self.parent.words[i].len()
+        || self.slices[i].end == self.parent.get_wordno(i, self.last_lineno(i) + 1)
     }
 
     pub fn whole_line(&self) -> bool {

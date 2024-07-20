@@ -1,6 +1,7 @@
 use regex::bytes::Match;
 use super::hunk::{Hunk};
 use super::word_differ::WordDiffer;
+use super::line_differ::LineDiffer;
 use super::part::Part;
 use super::block::Block;
 
@@ -11,7 +12,7 @@ pub struct BlockMaker<'a> {
     pub words: [Vec<Match<'a>>; 2],
 
     word_to_line: [Vec<usize>; 2],
-    line_to_word: [Vec<usize>; 2],
+    pub line_to_word: [Vec<usize>; 2],
 }
 
 impl<'a> BlockMaker<'a> {
@@ -22,10 +23,10 @@ impl<'a> BlockMaker<'a> {
         let mut line_to_word = [vec![], vec![]];
 
         for i in 0..=1 {
-            line_to_word[i].push(0);
             let w = &mut words[i];
             for (lineno, line) in hunk.get(i).iter().enumerate() {
                 let oldlen = w.len();
+                line_to_word[i].push(oldlen);
                 super::regexes::regex!(
                     r"[A-Z]{2,}\d*"
                     "|[A-Z][a-z0-9]*[a-z]"
@@ -42,13 +43,12 @@ impl<'a> BlockMaker<'a> {
                     "|\n",
                     |r| { w.extend(r.find_iter(line)) }
                 );
-                line_to_word[i].push(w.len());
                 for _ in oldlen..w.len() {
                     word_to_line[i].push(lineno);
                 }
             }
             word_to_line[i].push(*word_to_line[i].last().unwrap() + 1);
-            line_to_word[i].push(w.len() + 1);
+            line_to_word[i].push(w.len());
         }
 
         Self{
@@ -68,29 +68,49 @@ impl<'a> BlockMaker<'a> {
     }
 
     pub fn make_block(&self) -> Block {
-        let mut parts = vec![];
+        // diff by line first
+        let mut ranges = vec![];
         let mut previ = 0;
         let mut prevj = 0;
+        let maxi = self.words[0].len();
+        let maxj = self.words[1].len();
 
-        for part in WordDiffer::new(self).get_matching_blocks() {
-            let i = part.slices[0].start;
-            let j = part.slices[1].start;
+        for (left, right) in LineDiffer::new(self).get_matching_blocks() {
+            if previ < left.start || prevj < right.start {
+                ranges.push((previ .. left.start, prevj .. right.start));
+            }
+            previ = left.end;
+            prevj = right.end;
+            ranges.push((left, right));
+        }
+        if previ < maxi || prevj < maxj {
+            ranges.push((previ .. maxi, prevj .. maxj));
+        }
 
-            if previ < i || prevj < j {
-                let part = Part{parent: self, matches: false, slices: [previ..i, prevj..j]};
+        let mut parts = vec![];
+        let mut differ = WordDiffer::new(self);
+
+        for (left, right) in ranges {
+            let mut previ = left.start;
+            let mut prevj = right.start;
+            for part in differ.get_matching_blocks(left.start, left.end, right.start, right.end) {
+                let i = part.slices[0].start;
+                let j = part.slices[1].start;
+
+                if previ < i || prevj < j {
+                    let part = Part{parent: self, matches: false, slices: [previ..i, prevj..j]};
+                    parts.extend(part.split().into_iter().flatten());
+                }
+
+                previ = part.slices[0].end;
+                prevj = part.slices[1].end;
                 parts.extend(part.split().into_iter().flatten());
             }
 
-            previ = part.slices[0].end;
-            prevj = part.slices[1].end;
-            parts.extend(part.split().into_iter().flatten());
-        }
-
-        let maxi = self.words[0].len();
-        let maxj = self.words[1].len();
-        if previ < maxi || prevj < maxj {
-            let part = Part{parent: self, matches: false, slices: [previ..maxi, prevj..maxj]};
-            parts.extend(part.split().into_iter().flatten());
+            if previ < left.end || prevj < right.end {
+                let part = Part{parent: self, matches: false, slices: [previ..left.end, prevj..right.end]};
+                parts.extend(part.split().into_iter().flatten());
+            }
         }
 
         // parts = [p for p in parts if not (p.is_empty(0) and p.is_empty(1))]:
