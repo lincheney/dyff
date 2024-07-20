@@ -29,7 +29,7 @@ enum ColorChoices {
 #[command(name = "diff")]
 struct Cli {
 
-    #[arg(long, value_enum, default_value_t = ColorChoices::Always)]
+    #[arg(long, value_enum, default_value_t = ColorChoices::Auto)]
     color: ColorChoices,
 
     #[arg(short = 'N', long = "no-line-numbers", action = clap::ArgAction::SetFalse)]
