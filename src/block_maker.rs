@@ -24,15 +24,16 @@ impl<'a> BlockMaker<'a> {
         let mut words = [vec![], vec![]];
         let mut word_to_line = [vec![], vec![]];
         let mut line_to_word = [vec![], vec![]];
-        for side in 0..=1 {
-            line_to_word[side].push(0);
-            let w = &mut words[side];
-            for (lineno, line) in hunk.get(side).iter().enumerate() {
+
+        for i in 0..=1 {
+            line_to_word[i].push(0);
+            let w = &mut words[i];
+            for (lineno, line) in hunk.get(i).iter().enumerate() {
                 let oldlen = w.len();
                 w.extend(regex.find_iter(line));
-                line_to_word[side].push(oldlen);
+                line_to_word[i].push(w.len());
                 for _ in oldlen..w.len() {
-                    word_to_line[side].push(lineno);
+                    word_to_line[i].push(lineno);
                 }
             }
         }
@@ -45,12 +46,12 @@ impl<'a> BlockMaker<'a> {
         }
     }
 
-    pub fn get_lineno(&self, side: usize, wordno: usize) -> usize {
-        self.word_to_line[side][wordno] + self.line_numbers[side]
+    pub fn get_lineno(&self, i: usize, wordno: usize) -> usize {
+        self.word_to_line[i][wordno] + self.line_numbers[i]
     }
 
-    pub fn get_wordno(&self, side: usize, lineno: usize) -> usize {
-        self.line_to_word[side][lineno - self.line_numbers[side]]
+    pub fn get_wordno(&self, i: usize, lineno: usize) -> usize {
+        self.line_to_word[i][lineno - self.line_numbers[i]]
     }
 
     pub fn make_block(&self) -> Block {

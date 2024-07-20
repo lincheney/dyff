@@ -149,7 +149,7 @@ impl<'a> Block<'a> {
             };
 
             // do not merge blocks where one side is single line and the other is multiline
-            if (prev.splits_to_multiline() && prev.score() > 0.) || (block.splits_to_multiline() && block.score() > 0.) {
+            if merge && (prev.splits_to_multiline() && prev.score() > 0.) || (block.splits_to_multiline() && block.score() > 0.) {
                 merge = false;
             }
 
