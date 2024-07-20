@@ -213,12 +213,16 @@ impl<'a> WordDiffer<'a> {
             if alo < mini && blo < minj {
                 if let Some(m) = self.find_longest_match(alo, mini, blo, minj) {
                     // we didn't just match a newline
-                    return Some(m)
+                    if !(m.2 == 1 && left[m.0].as_bytes() == b"\n") {
+                        return Some(m)
+                    }
                 }
             }
             if maxi < ahi && maxj < bhi {
                 if let Some(m) = self.find_longest_match(maxi, ahi, maxj, bhi) {
-                    return Some(m)
+                    if !(m.2 == 1 && left[m.0].as_bytes() == b"\n") {
+                        return Some(m)
+                    }
                 }
             }
         }
