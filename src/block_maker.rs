@@ -1,4 +1,4 @@
-use regex::bytes::{Regex, Match};
+use regex::bytes::Match;
 use super::hunk::{Hunk};
 use super::word_differ::WordDiffer;
 use super::part::Part;
@@ -16,10 +16,6 @@ pub struct BlockMaker<'a> {
 
 impl<'a> BlockMaker<'a> {
     pub fn new(hunk: &'a Hunk, line_numbers: [usize; 2]) -> Self {
-        let utf8_regex = "(?:[\\xc0-\\xdf][\\x80-\\xbf])|(?:[\\xe0-\\xef][\\x80-\\xbf][\\x80-\\xbf])|(?:[\\xf0-\\xf7][\\x80-\\xbf][\\x80-\\xbf][\\x80-\\xbf])";
-        let regex = format!("{}{}{}", r"[A-Z]{2,}\d*|[A-Z][a-z0-9]*[a-z]|[a-z0-9]+[a-z]|\d+|\s|[-!=~+]=|(?:", utf8_regex, r")+|.|\n");
-        let regex = Regex::new(&regex).unwrap();
-
         // make a mapping from word number to line number
         let mut words = [vec![], vec![]];
         let mut word_to_line = [vec![], vec![]];
@@ -30,7 +26,22 @@ impl<'a> BlockMaker<'a> {
             let w = &mut words[i];
             for (lineno, line) in hunk.get(i).iter().enumerate() {
                 let oldlen = w.len();
-                w.extend(regex.find_iter(line));
+                super::regexes::regex!(
+                    r"[A-Z]{2,}\d*"
+                    "|[A-Z][a-z0-9]*[a-z]"
+                    "|[a-z0-9]+[a-z]"
+                    r"|\d+"
+                    r"|\s"
+                    r"|[-!=~+]="
+                    r"|(?:"
+                        r"(?:[\xc0-\xdf][\x80-\xbf])"
+                        r"|(?:[\xe0-\xef][\x80-\xbf][\x80-\xbf])"
+                        r"|(?:[\xf0-\xf7][\x80-\xbf][\x80-\xbf][\x80-\xbf])"
+                    r")+"
+                    "|."
+                    "|\n",
+                    |r| { w.extend(r.find_iter(line)) }
+                );
                 line_to_word[i].push(w.len());
                 for _ in oldlen..w.len() {
                     word_to_line[i].push(lineno);
