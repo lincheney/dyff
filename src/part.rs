@@ -68,6 +68,10 @@ impl<'a> Part<'a> {
         )
     }
 
+    pub fn partition_relative(&self, a: isize, b: isize) -> (Self, Self) {
+        self.partition((self.slices[0].start as isize + a) as usize, (self.slices[1].start as isize + b) as usize)
+    }
+
     pub fn is_empty(&self, i: usize) -> bool {
         self.slices[i].is_empty()
     }

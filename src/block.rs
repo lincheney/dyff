@@ -90,7 +90,7 @@ impl<'a> Block<'a> {
                     parts.push(part.clone());
                 } else if parts.is_empty() {
                     // insert a placeholder
-                    let mut part = part.partition(part.slices[0].start, part.slices[1].start).0;
+                    let mut part = part.partition_relative(0, 0).0;
                     part.matches = false;
                     parts.push(part);
                 }
@@ -284,7 +284,7 @@ impl<'a> Block<'a> {
             let part = &mut mid[0];
 
             let prev = left.last_mut().unwrap_or_else(|| {
-                let mut prev = part.partition(part.slices[0].start, part.slices[1].start).0;
+                let mut prev = part.partition_relative(0, 0).0;
                 prev.matches = true;
                 insert_start = Some(prev);
                 insert_start.as_mut().unwrap()
@@ -337,7 +337,7 @@ impl<'a> Block<'a> {
                 // find common prefix
                 let prefix = find_common_prefix_length(first.get(0), first.get(1));
                 if prefix != 0 {
-                    let (mut first, second) = first.partition(first.slices[0].start + prefix, first.slices[1].start + prefix);
+                    let (mut first, second) = first.partition_relative(prefix as _, prefix as _);
                     first.matches = true;
                     block.parts[0] = first;
                     block.parts.insert(1, second);
@@ -367,7 +367,7 @@ impl<'a> Block<'a> {
 
                 // find common prefix
                 let prefix = find_common_prefix_length(part.get(0), part.get(1));
-                let (mut first, second) = part.partition(part.slices[0].start + prefix, part.slices[1].start + prefix);
+                let (mut first, second) = part.partition_relative(prefix as _, prefix as _);
                 first.matches = true;
 
                 // find common suffix
