@@ -168,8 +168,8 @@ impl<'a> WordDiffer<'a> {
                     let j = j + 1 - k;
                     mini = min(mini, i);
                     minj = min(minj, j);
-                    maxi = max(maxi, i);
-                    maxj = max(maxj, j);
+                    maxi = max(maxi, i+k);
+                    maxj = max(maxj, j+k);
                     bestcount += 1;
 
                     let l: usize = left[i .. i+k].iter().map(|w| w.len()).sum();
@@ -213,16 +213,12 @@ impl<'a> WordDiffer<'a> {
             if alo < mini && blo < minj {
                 if let Some(m) = self.find_longest_match(alo, mini, blo, minj) {
                     // we didn't just match a newline
-                    if !(m.2 == 1 && left[m.0].as_bytes() == b"\n") {
-                        return Some(m)
-                    }
+                    return Some(m)
                 }
             }
             if maxi < ahi && maxj < bhi {
                 if let Some(m) = self.find_longest_match(maxi, ahi, maxj, bhi) {
-                    if !(m.2 == 1 && left[m.0].as_bytes() == b"\n") {
-                        return Some(m)
-                    }
+                    return Some(m)
                 }
             }
         }
