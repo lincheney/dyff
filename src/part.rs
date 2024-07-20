@@ -162,8 +162,8 @@ impl<'a> std::fmt::Display for Part<'a> {
         write!(
             f,
             "({:?}, {:?})",
-            std::str::from_utf8(&self.get(0).collect::<Vec<_>>().concat()),
-            std::str::from_utf8(&self.get(1).collect::<Vec<_>>().concat()),
+            std::str::from_utf8(&self.get(0).collect::<Vec<_>>().concat().iter().map(|c| std::ascii::escape_default(*c)).flatten().collect::<Vec<_>>()).unwrap(),
+            std::str::from_utf8(&self.get(1).collect::<Vec<_>>().concat().iter().map(|c| std::ascii::escape_default(*c)).flatten().collect::<Vec<_>>()).unwrap(),
         )
     }
 }

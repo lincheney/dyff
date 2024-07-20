@@ -17,7 +17,7 @@ impl<'a> Block<'a> {
         stdout: &mut BufWriter<T>,
         merge_markers: Option<&super::hunk::MergeMarkers>,
         // format_lineno=format_lineno,
-        // style=STYLE,
+        signs: bool,
     ) -> Result<()> {
 
         if self.parts.iter().all(|p| p.matches || (p.is_empty(0) && p.is_empty(1))) {
@@ -25,15 +25,19 @@ impl<'a> Block<'a> {
 
             let mut lineno = 0;
             let mut newline = false;
-            let lineno_args = [0, 0];
             for part in self.parts.iter() {
                 if !part.matches {
                     continue
                 }
 
                 if newline {
-                    let lineno = [part.first_lineno(0) + lineno, part.first_lineno(1) + lineno];
-                    // stdout.write_all(format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]);
+                    stdout.write_all(style::format_lineno(
+                        Some(part.first_lineno(0) + lineno),
+                        Some(part.first_lineno(1) + lineno),
+                    ).as_bytes())?;
+                    if signs {
+                        stdout.write_all(style::SIGN[2])?;
+                    }
                     stdout.write_all(style::DIFF_CONTEXT)?;
                     newline = false;
                 }
@@ -55,6 +59,7 @@ impl<'a> Block<'a> {
             let mut lineno = 0;
             let mut newline = false;
             let mut insert = false;
+            let mut lineno_args = [None, None];
 
             for part in self.parts.iter() {
                 if part.is_empty(i) {
@@ -63,10 +68,16 @@ impl<'a> Block<'a> {
                 }
 
                 if newline {
-                    let lineno = lineno + part.first_lineno(i);
                     // let lineno = [part.first_lineno(0) + lineno, part.first_lineno(1) + lineno];
                     // stdout.write_all(format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]);
-                    // lineno_args[i] = lineno;
+                    lineno_args[i] = Some(part.first_lineno(i) + lineno);
+                    stdout.write_all(style::format_lineno(
+                        lineno_args[0],
+                        lineno_args[1],
+                    ).as_bytes())?;
+                    if signs {
+                        stdout.write_all(style::SIGN[i])?;
+                    }
                     let bar_style = style::LINENO_BAR;
                     let bar_style = merge_markers.and_then(|m| m.get(&(i, lineno)).map(|x| x.as_ref())).unwrap_or(style::LINENO_BAR);
                     newline = false;

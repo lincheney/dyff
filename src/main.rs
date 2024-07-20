@@ -65,15 +65,15 @@ fn main() -> Result<()> {
         args.color = ColorChoices::Never;
     }
 
-    let lineno_format = if args.line_numbers {
-        style::LINENO_FORMAT
-    } else {
-        b""
-    };
+    // let lineno_format = if args.line_numbers {
+        // style::LINENO_FORMAT
+    // } else {
+        // b""
+    // };
     let sign_format = if args.signs {
         style::SIGN
     } else {
-        (b"" as _, b"" as _, b"" as _)
+        [b"" as _; 3]
     };
 
     if let Some((file1, file2)) = args.file1.zip(args.file2) {
@@ -129,7 +129,7 @@ fn main() -> Result<()> {
             unified = true;
             merge_markers = None;
             if let Some(mut hunk) = hunk {
-                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref())?;
+                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
             }
             stdout.write_all(style::HEADER)?;
             stdout.write_all(&captures["header"])?;
@@ -273,7 +273,7 @@ fn main() -> Result<()> {
         }
 
         if *stripped == *b"\\ No newline at end of file\n" {
-            h.print(&mut stdout, line_numbers, merge_markers.as_ref())?;
+            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
             if !h.left.is_empty() {
                 stdout.write_all(style::DIFF.0)?;
             }
@@ -314,12 +314,12 @@ fn main() -> Result<()> {
         }
 
         if &buf == b"\n" {
-            h.print(&mut stdout, line_numbers, merge_markers.as_ref())?;
+            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
             hunk = None;
             continue
         }
 
-        h.print(&mut stdout, line_numbers, merge_markers.as_ref())?;
+        h.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
         let regex = Regex::new("^index ").unwrap();
         if regex.is_match(&stripped) {
             stdout.write_all(&strip_style(&buf, format!("$0{}", style::DIFF_HEADER).as_bytes()))?;
@@ -332,7 +332,7 @@ fn main() -> Result<()> {
     }
 
     if let Some(mut hunk) = hunk {
-        hunk.print(&mut stdout, line_numbers, merge_markers.as_ref())?;
+        hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
     }
 
     // if hasattr(proc, 'returncode'):
