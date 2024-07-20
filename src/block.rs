@@ -495,8 +495,7 @@ impl<'a> Block<'a> {
                         newline = false;
                     }
 
-                    // line = re.sub(rb'(\s+\n)', style['diff_trailing_ws'].replace(b'\\', b'\\\\') + rb'\1', line)
-                    stdout.write_all(word)?;
+                    stdout.write_all(&regex!(r"\s+\n".replace_all(word, style::DIFF_TRAILING_WS)))?;
                     if word == b"\n" {
                         lineno += 1;
                         newline = true;
