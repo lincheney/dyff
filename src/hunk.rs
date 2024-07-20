@@ -60,6 +60,7 @@ impl Hunk {
         left: Option<Bytes>,
         right: Option<Bytes>,
         prefix: (&'a str, &'a str),
+        // suffix: (&'a str, &'a str),
         style: Style,
     ) -> Result<()> {
 
@@ -74,19 +75,19 @@ impl Hunk {
         }
 
         // add bold to it
-        const BOLD: &[u8] = b"\x1b[1m";
+        const EXTRA: &[u8] = b"\x1b[1;7m";
         let mut diff_non_matching = [
-            [0u8; DIFF_NON_MATCHING[0].len() + BOLD.len()],
-            [0u8; DIFF_NON_MATCHING[1].len() + BOLD.len()],
+            [0u8; DIFF_NON_MATCHING[0].len() + EXTRA.len()],
+            [0u8; DIFF_NON_MATCHING[1].len() + EXTRA.len()],
         ];
         diff_non_matching[0][..DIFF_NON_MATCHING[0].len()].copy_from_slice(DIFF_NON_MATCHING[0]);
         diff_non_matching[1][..DIFF_NON_MATCHING[1].len()].copy_from_slice(DIFF_NON_MATCHING[1]);
-        diff_non_matching[0][DIFF_NON_MATCHING[0].len()..].copy_from_slice(BOLD);
-        diff_non_matching[1][DIFF_NON_MATCHING[1].len()..].copy_from_slice(BOLD);
+        diff_non_matching[0][DIFF_NON_MATCHING[0].len()..].copy_from_slice(EXTRA);
+        diff_non_matching[1][DIFF_NON_MATCHING[1].len()..].copy_from_slice(EXTRA);
 
         let style = Style{
             signs: false,
-            line_numbers: false,
+            line_numbers: true,
             show_both: true,
             diff_matching: [FILENAME_HEADER.0, FILENAME_HEADER.1],
             diff_non_matching: [&diff_non_matching[0], &diff_non_matching[1]],
