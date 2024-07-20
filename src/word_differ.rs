@@ -3,6 +3,10 @@ use std::cmp::{min, max};
 use super::block_maker::BlockMaker;
 use super::part::Part;
 
+fn isjunk(b: &[u8]) -> bool {
+    b != b"\n" && b.iter().all(|c| c.is_ascii_whitespace())
+}
+
 pub struct WordDiffer<'a> {
     parent: &'a BlockMaker<'a>,
 
@@ -33,6 +37,54 @@ impl<'a> WordDiffer<'a> {
         }
     }
 
+    fn extend_match(
+        &self,
+        (mut i, mut j, mut k): (usize, usize, usize),
+        alo: usize,
+        ahi: usize,
+        blo: usize,
+        bhi: usize,
+    ) -> (usize, usize, usize) {
+        let left = &self.parent.words[0];
+        let right = &self.parent.words[1];
+
+        // match leading whitespace, up to start of line
+        while
+               i > alo
+            && j > blo
+            && left[i-1].as_bytes() == right[j-1].as_bytes()
+            && (isjunk(left[i-1].as_bytes()) || (
+                   left[i-1].as_bytes() == b"\n"
+                && i >= 2
+                && left[i-2].as_bytes() == b"\n"
+                && j >= 2
+                && right[j-2].as_bytes() == b"\n"
+            ))
+        {
+            i -= 1;
+            j -= 1;
+            k += 1;
+        }
+
+        // match trailing whitespace, up to end of line
+        while
+               i+k < ahi
+            && j+k < bhi
+            && left[i+k].as_bytes() == right[j+k].as_bytes()
+            && (
+                left[i+k].as_bytes() == b"\n"
+                || (
+                       left[i+k-1].as_bytes() != b"\n"
+                    && isjunk(left[i+k].as_bytes())
+                )
+            )
+        {
+            k += 1;
+        }
+
+        (i, j, k)
+    }
+
     fn find_longest_match(
         &mut self,
         alo: usize,
@@ -41,10 +93,8 @@ impl<'a> WordDiffer<'a> {
         bhi: usize,
     ) -> Option<(usize, usize, usize)> {
 
-        let isjunk = |b: &[u8]| b != b"\n" && b.iter().all(|c| c.is_ascii_whitespace());
-
         let left = &self.parent.words[0];
-        let right = &self.parent.words[1];
+        // let right = &self.parent.words[1];
 
         let mut besti = alo;
         let mut bestj = blo;
@@ -99,7 +149,6 @@ impl<'a> WordDiffer<'a> {
                     if isjunk(word) {
                         continue
                     }
-
 
                     // prioritise more words, then longer words, then words on the expected line
                     let mut cmp = k.cmp(&bestsize);
@@ -162,51 +211,23 @@ impl<'a> WordDiffer<'a> {
         if bestcount > 1 {
             // this means there's multiple solutions
             if alo < mini && blo < minj {
-                let m = self.find_longest_match(alo, mini, blo, minj);
-                if m.is_some() {
-                    return m
+                if let Some(m) = self.find_longest_match(alo, mini, blo, minj) {
+                    // we didn't just match a newline
+                    if !(m.2 == 1 && left[m.0].as_bytes() == b"\n") {
+                        return Some(m)
+                    }
                 }
             }
             if maxi < ahi && maxj < bhi {
-                let m =self.find_longest_match(maxi, ahi, maxj, bhi);
-                if m.is_some() {
-                    return m
+                if let Some(m) = self.find_longest_match(maxi, ahi, maxj, bhi) {
+                    if !(m.2 == 1 && left[m.0].as_bytes() == b"\n") {
+                        return Some(m)
+                    }
                 }
             }
         }
 
-        // match leading whitespace, up to start of line
-        while
-               besti > alo
-            && bestj > blo
-            && left[besti-1].as_bytes() == right[bestj-1].as_bytes()
-            && (isjunk(left[besti-1].as_bytes()) || (
-                   left[besti-1].as_bytes() == b"\n"
-                && besti >= 2
-                && left[besti-2].as_bytes() == b"\n"
-                && bestj >= 2
-                && right[bestj-2].as_bytes() == b"\n"
-            ))
-        {
-            besti -= 1;
-            bestj -= 1;
-            bestsize += 1;
-        }
-
-        // match trailing whitespace, up to end of line
-        while
-               besti+bestsize < ahi
-            && bestj+bestsize < bhi
-            && left[besti+bestsize].as_bytes() == right[bestj+bestsize].as_bytes()
-            && (
-                (
-                       left[besti+bestsize-1].as_bytes() != b"\n"
-                    && isjunk(left[besti+bestsize].as_bytes())
-                ) || left[besti+bestsize].as_bytes() == b"\n"
-            )
-        {
-            bestsize += 1;
-        }
+        let (besti, bestj, bestsize) = self.extend_match((besti, bestj, bestsize), alo, ahi, blo, bhi);
 
         let left_line = self.parent.get_lineno(0, besti);
         let right_line = self.parent.get_lineno(1, bestj);
@@ -227,11 +248,7 @@ impl<'a> WordDiffer<'a> {
                 // a[i:i+k] same as b[j:j+k]
                 // a[i+k:ahi] vs b[j+k:bhi] unknown
 
-                matching_blocks.push(Part{
-                    parent: self.parent,
-                    matches: true,
-                    slices: [i..i+k, j..j+k],
-                });
+                matching_blocks.push((i, j, k));
                 if alo < i && blo < j {
                     queue.push((alo, i, blo, j));
                 }
@@ -240,7 +257,37 @@ impl<'a> WordDiffer<'a> {
                 }
             }
         }
-        matching_blocks.sort_by_key(|a| a.slices[0].start);
-        matching_blocks
+        matching_blocks.sort_by_key(|a| a.0);
+
+        let mut parts = vec![];
+        for i in 0..matching_blocks.len() {
+            if matching_blocks[i].2 == 0 {
+                continue
+            }
+
+            let prev = if i > 0 { matching_blocks[i-1] } else { (alo, blo, 0) };
+            let next = matching_blocks.get(i+1).copied().unwrap_or((ahi, bhi, 0));
+
+            let mut block = self.extend_match(
+                matching_blocks[i],
+                prev.0 + prev.2, next.0,
+                prev.1 + prev.2, next.1,
+            );
+
+            if let Some(next) = matching_blocks.get_mut(i+1) {
+                if block.0 + block.2 == next.0 && block.1 + block.2 == next.1 {
+                    block.2 += next.2;
+                    next.2 = 0;
+                }
+            }
+
+            parts.push(Part{
+                parent: self.parent,
+                matches: true,
+                slices: [block.0..block.0+block.2, block.1..block.1+block.2],
+            });
+        }
+
+        parts
     }
 }

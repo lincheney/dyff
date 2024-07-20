@@ -95,7 +95,7 @@ impl<'a> LineDiffer<'a> {
             std::mem::swap(&mut j2len, &mut newj2len);
         }
 
-        if bestsize == 0 {
+        if bestsize <= 1 {
             return None
         }
 

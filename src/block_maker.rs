@@ -47,7 +47,7 @@ impl<'a> BlockMaker<'a> {
                     word_to_line[i].push(lineno);
                 }
             }
-            word_to_line[i].push(*word_to_line[i].last().unwrap() + 1);
+            word_to_line[i].push(line_to_word[i].len());
             line_to_word[i].push(w.len());
         }
 
@@ -113,7 +113,7 @@ impl<'a> BlockMaker<'a> {
             }
         }
 
-        // parts = [p for p in parts if not (p.is_empty(0) and p.is_empty(1))]:
+        parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
         Block{parts}
     }
 

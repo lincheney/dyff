@@ -25,6 +25,7 @@ fn find_common_suffix_length<
 }
 
 
+#[derive(Debug)]
 pub struct Block<'a> {
     pub parts: Vec<Part<'a>>,
 }
@@ -317,6 +318,10 @@ impl<'a> Block<'a> {
 
         // group parts based on line numbers
         for part in self.parts {
+            if part.is_empty(0) && part.is_empty(1) {
+                continue
+            }
+
             let block = &blocks.last().unwrap();
 
             if !block.parts.is_empty()
