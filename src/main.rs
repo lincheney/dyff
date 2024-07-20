@@ -79,7 +79,7 @@ fn main() -> Result<()> {
 
     if let Some((file1, file2)) = args.file1.zip(args.file2) {
         if let Some(filter) = args.filter {
-            if args.label.len() < 1 {
+            if args.label.is_empty() {
                 args.label.push(format!("{} | {}", file1, filter));
             }
             if args.label.len() < 2 {
@@ -119,7 +119,7 @@ fn main() -> Result<()> {
         };
 
         if args.color == ColorChoices::Never {
-            stdout.write(&buf)?;
+            stdout.write_all(&buf)?;
             continue
         }
 
@@ -132,15 +132,15 @@ fn main() -> Result<()> {
             if let Some(mut hunk) = hunk {
                 hunk.print(&mut stdout, line_numbers, merge_markers.as_ref())?;
             }
-            stdout.write(style::HEADER)?;
-            stdout.write(&captures["header"])?;
-            if captures["context"].len() > 0 {
-                stdout.write(b" ")?;
-                stdout.write(style::CONTEXT)?;
-                stdout.write(&captures["context"])?;
+            stdout.write_all(style::HEADER)?;
+            stdout.write_all(&captures["header"])?;
+            if !captures["context"].is_empty() {
+                stdout.write_all(b" ")?;
+                stdout.write_all(style::CONTEXT)?;
+                stdout.write_all(&captures["context"])?;
             }
-            stdout.write(style::RESET)?;
-            stdout.write(b"\n")?;
+            stdout.write_all(style::RESET)?;
+            stdout.write_all(b"\n")?;
             hunk = Some(Hunk::new());
             line_numbers = [
                 std::str::from_utf8(&captures["line_minus"])?.parse()?,
@@ -154,13 +154,13 @@ fn main() -> Result<()> {
             unified = true;
             merge_markers = Some(HashMap::new());
             // print_hunk(hunk, line_numbers, merge_markers)
-            stdout.write(style::HEADER)?;
-            stdout.write(&captures["header"])?;
-            stdout.write(b" ")?;
-            stdout.write(style::CONTEXT)?;
-            stdout.write(&captures["context"])?;
-            stdout.write(style::RESET)?;
-            stdout.write(b"\n")?;
+            stdout.write_all(style::HEADER)?;
+            stdout.write_all(&captures["header"])?;
+            stdout.write_all(b" ")?;
+            stdout.write_all(style::CONTEXT)?;
+            stdout.write_all(&captures["context"])?;
+            stdout.write_all(style::RESET)?;
+            stdout.write_all(b"\n")?;
             hunk = Some(Hunk::new());
             line_numbers = [
                 std::str::from_utf8(&captures["our_line_minus"])?.parse()?,
@@ -174,9 +174,9 @@ fn main() -> Result<()> {
             unified = false;
             merge_markers = None;
             // print_hunk(hunk, line_numbers, merge_markers);
-            stdout.write(style::HEADER)?;
-            stdout.write(&buf)?;
-            stdout.write(style::RESET)?;
+            stdout.write_all(style::HEADER)?;
+            stdout.write_all(&buf)?;
+            stdout.write_all(style::RESET)?;
             hunk = Some(Hunk::new());
             line_numbers = [
                 std::str::from_utf8(&captures["line_minus"])?.parse()?,
@@ -188,18 +188,18 @@ fn main() -> Result<()> {
         let regex = Regex::new("^(?<header>diff( -r| --recursive| --git)?) (?<filename1>[^-\"\\s][^\"\\s]+|\"(\\\\.|.)*\") (?<filename2>[^\"\\s]+|\"(\\\\.|.)*\")(?<trailer>.*)$").unwrap();
         if let Some(captures) = regex.captures(&stripped) {
             // print_hunk(hunk, line_numbers, merge_markers)
-            stdout.write(style::DIFF_HEADER.as_bytes())?;
-            stdout.write(&captures["header"])?;
-            stdout.write(b" ")?;
-            stdout.write(style::RESET)?;
-            stdout.write(style::FILENAME_HEADER.0)?;
-            stdout.write(&captures["filename1"])?;
-            stdout.write(b" ")?;
-            stdout.write(style::FILENAME_HEADER.1)?;
-            stdout.write(&captures["filename2"])?;
-            stdout.write(style::RESET)?;
-            stdout.write(&captures["trailer"])?;
-            stdout.write(b"\n")?;
+            stdout.write_all(style::DIFF_HEADER.as_bytes())?;
+            stdout.write_all(&captures["header"])?;
+            stdout.write_all(b" ")?;
+            stdout.write_all(style::RESET)?;
+            stdout.write_all(style::FILENAME_HEADER.0)?;
+            stdout.write_all(&captures["filename1"])?;
+            stdout.write_all(b" ")?;
+            stdout.write_all(style::FILENAME_HEADER.1)?;
+            stdout.write_all(&captures["filename2"])?;
+            stdout.write_all(style::RESET)?;
+            stdout.write_all(&captures["trailer"])?;
+            stdout.write_all(b"\n")?;
             hunk = Some(Hunk::new());
             continue
         }
@@ -217,9 +217,9 @@ fn main() -> Result<()> {
 
             let regex = Regex::new(r"^commit [0-9a-f]+").unwrap();
             if let Some(captures) = regex.captures(&stripped) {
-                stdout.write(&strip_style(&buf, format!("$0{}", style::COMMIT).as_bytes()))?;
+                stdout.write_all(&strip_style(&buf, format!("$0{}", style::COMMIT).as_bytes()))?;
             } else {
-                stdout.write(&buf)?;
+                stdout.write_all(&buf)?;
             }
             continue
         }
@@ -250,8 +250,8 @@ fn main() -> Result<()> {
             hunk = Some(Hunk::new());
             let regex = Regex::new(r"\s+\n").unwrap();
             let line = regex.replace_all(&stripped[1..], format!("{}$0", style::DIFF_TRAILING_WS).as_bytes());
-            // stdout.write(format_lineno(*line_numbers, minus_style=STYLE['lineno'], plus_style=STYLE['lineno']) + STYLE['sign'][2] + style::RESET + STYLE['diff_context'] + line)
-            stdout.write(&*line)?;
+            // stdout.write_all(format_lineno(*line_numbers, minus_style=STYLE['lineno'], plus_style=STYLE['lineno']) + STYLE['sign'][2] + style::RESET + STYLE['diff_context'] + line)
+            stdout.write_all(&line)?;
             line_numbers[0] += 1;
             line_numbers[1] += 1;
             continue
@@ -276,12 +276,12 @@ fn main() -> Result<()> {
         if *stripped == *b"\\ No newline at end of file\n" {
             h.print(&mut stdout, line_numbers, merge_markers.as_ref())?;
             if !h.left.is_empty() {
-                stdout.write(style::DIFF.0)?;
+                stdout.write_all(style::DIFF.0)?;
             }
             if !h.right.is_empty() {
-                stdout.write(style::DIFF.1)?;
+                stdout.write_all(style::DIFF.1)?;
             }
-            stdout.write(&buf)?;
+            stdout.write_all(&buf)?;
             hunk = Some(Hunk::new());
             continue
         }
@@ -323,13 +323,13 @@ fn main() -> Result<()> {
         h.print(&mut stdout, line_numbers, merge_markers.as_ref())?;
         let regex = Regex::new("^index ").unwrap();
         if regex.is_match(&stripped) {
-            stdout.write(&strip_style(&buf, format!("$0{}", style::DIFF_HEADER).as_bytes()))?;
+            stdout.write_all(&strip_style(&buf, format!("$0{}", style::DIFF_HEADER).as_bytes()))?;
             hunk = None;
             continue
         }
 
         hunk = Some(Hunk::new());
-        stdout.write(&stripped)?;
+        stdout.write_all(&stripped)?;
     }
 
     if let Some(mut hunk) = hunk {

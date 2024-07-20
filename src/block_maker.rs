@@ -64,23 +64,23 @@ impl<'a> BlockMaker<'a> {
 
             if previ < i || prevj < j {
                 let part = Part{parent: self, matches: false, slices: [previ..i, prevj..j]};
-                parts.extend(part.split().into_iter().filter_map(|p| p));
+                parts.extend(part.split().into_iter().flatten());
             }
 
             previ = part.slices[0].end;
             prevj = part.slices[1].end;
-            parts.extend(part.split().into_iter().filter_map(|p| p));
+            parts.extend(part.split().into_iter().flatten());
         }
 
         let maxi = self.words[0].len();
         let maxj = self.words[1].len();
         if previ < maxi || prevj < maxj {
             let part = Part{parent: self, matches: false, slices: [previ..maxi, prevj..maxj]};
-            parts.extend(part.split().into_iter().filter_map(|p| p));
+            parts.extend(part.split().into_iter().flatten());
         }
 
         // parts = [p for p in parts if not (p.is_empty(0) and p.is_empty(1))]:
-        return Block{parts}
+        Block{parts}
     }
 
 }

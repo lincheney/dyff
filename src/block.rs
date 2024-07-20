@@ -33,14 +33,14 @@ impl<'a> Block<'a> {
 
                 if newline {
                     let lineno = [part.first_lineno(0) + lineno, part.first_lineno(1) + lineno];
-                    // stdout.write(format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]);
-                    stdout.write(style::DIFF_CONTEXT)?;
+                    // stdout.write_all(format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]);
+                    stdout.write_all(style::DIFF_CONTEXT)?;
                     newline = false;
                 }
 
                 for word in part.get(0) {
                     // line = re.sub(rb'(\s+\n)', style['diff_trailing_ws'].replace(b'\\', b'\\\\') + rb'\1', line)
-                    stdout.write(word)?;
+                    stdout.write_all(word)?;
                     if word == b"\n" {
                         lineno += 1;
                         newline = true;
@@ -65,7 +65,7 @@ impl<'a> Block<'a> {
                 if newline {
                     let lineno = lineno + part.first_lineno(i);
                     // let lineno = [part.first_lineno(0) + lineno, part.first_lineno(1) + lineno];
-                    // stdout.write(format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]);
+                    // stdout.write_all(format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]);
                     // lineno_args[i] = lineno;
                     let bar_style = style::LINENO_BAR;
                     let bar_style = merge_markers.and_then(|m| m.get(&(i, lineno)).map(|x| x.as_ref())).unwrap_or(style::LINENO_BAR);
@@ -82,10 +82,10 @@ impl<'a> Block<'a> {
 
                 let highlight = if part.matches { style::DIFF_MATCHING } else { style::DIFF_NON_MATCHING };
                 let highlight = if i == 0 { highlight.0 } else { highlight.1 };
-                stdout.write(highlight)?;
+                stdout.write_all(highlight)?;
                 for word in part.get(i) {
                     // line = re.sub(rb'(\s+\n)', style['diff_trailing_ws'].replace(b'\\', b'\\\\') + rb'\1', line)
-                    stdout.write(word)?;
+                    stdout.write_all(word)?;
                     if word == b"\n" {
                         lineno += 1;
                         newline = true;

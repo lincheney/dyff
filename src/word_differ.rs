@@ -20,7 +20,7 @@ impl<'a> WordDiffer<'a> {
             let word = word.as_bytes();
             // whitespace at start is 'junk' as it is usually just indentation
             if !(line_start && word != b"\n" && word.iter().all(|c| c.is_ascii_whitespace())) {
-                b2j.entry(word).or_insert_with(|| vec![]).push(i);
+                b2j.entry(word).or_insert_with(Vec::new).push(i);
                 line_start = word == b"\n"
             }
         }

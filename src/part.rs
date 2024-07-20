@@ -15,7 +15,7 @@ pub struct Part<'a> {
 impl<'a> Part<'a> {
 
     pub fn get(&self, i: usize) -> impl Iterator<Item=&[u8]> {
-        self.parent.words[i][self.slices[i].clone()].into_iter().map(|x| x.as_bytes())
+        self.parent.words[i][self.slices[i].clone()].iter().map(|x| x.as_bytes())
     }
 
     fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=&[u8]> {
@@ -153,7 +153,7 @@ impl<'a> Part<'a> {
             }
         }
 
-        return [Some(self), None, None];
+        [Some(self), None, None]
     }
 }
 
