@@ -417,6 +417,11 @@ impl<'a> Block<'a> {
         format_lineno: F,
     ) -> Result<()> {
 
+        if self.parts.is_empty() {
+            return Ok(())
+        }
+        let line_numbers = [self.parts[0].first_lineno(0), self.parts[0].first_lineno(1)];
+
         if !style.show_both && self.parts.iter().all(|p| p.matches || (p.is_empty(0) && p.is_empty(1))) {
             // this is entirely matching
 
@@ -431,7 +436,7 @@ impl<'a> Block<'a> {
                     if newline {
                         if style.line_numbers {
                             stdout.write_all(format_lineno(
-                                Some(part.first_lineno(0) + lineno), Some(part.first_lineno(1) + lineno),
+                                Some(line_numbers[0] + lineno), Some(line_numbers[1] + lineno),
                                 Some(style::LINENO), Some(style::LINENO),
                                 None,
                             ).as_ref().as_bytes())?;
@@ -471,7 +476,7 @@ impl<'a> Block<'a> {
                 for word in part.get(i) {
 
                     if newline {
-                        let lineno = part.first_lineno(i) + lineno;
+                        let lineno = line_numbers[i] + lineno;
 
                         if style.line_numbers {
                             lineno_args[i] = Some(lineno);
