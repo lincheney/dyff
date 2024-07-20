@@ -202,7 +202,7 @@ fn main() -> Result<()> {
         }
 
         if hunk.is_none() {
-            if let Some(captures) = regex!(r"^(?<sign>---|\+\+\+) ([ab]/)?(?<filename>[^\t]*)(?<trailer>\t.*)?$".captures(&stripped)) {
+            if let Some(captures) = regex!(r"^(?<sign>---|\+\+\+) ([ab]/)?(?<filename>[^\t]*)(?<trailer>\t.*)?".captures(&stripped)) {
                 if &captures["sign"] == b"---" {
                     filename = Some(captures["filename"].to_owned());
                 } else {
