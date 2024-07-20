@@ -6,7 +6,6 @@ use anyhow::{Result};
 
 mod hunk;
 mod style;
-mod pair;
 mod block_maker;
 mod part;
 mod word_differ;
