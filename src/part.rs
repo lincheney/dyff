@@ -166,8 +166,8 @@ impl<'a> std::fmt::Debug for Part<'a> {
         write!(
             f,
             "(\"{}\", \"{}\")",
-            std::str::from_utf8(&self.get(0).collect::<Vec<_>>().concat().iter().map(|c| std::ascii::escape_default(*c)).flatten().collect::<Vec<_>>()).unwrap(),
-            std::str::from_utf8(&self.get(1).collect::<Vec<_>>().concat().iter().map(|c| std::ascii::escape_default(*c)).flatten().collect::<Vec<_>>()).unwrap(),
+            std::str::from_utf8(&self.get(0).collect::<Vec<_>>().concat().iter().flat_map(|c| std::ascii::escape_default(*c)).collect::<Vec<_>>()).unwrap(),
+            std::str::from_utf8(&self.get(1).collect::<Vec<_>>().concat().iter().flat_map(|c| std::ascii::escape_default(*c)).collect::<Vec<_>>()).unwrap(),
         )
     }
 }

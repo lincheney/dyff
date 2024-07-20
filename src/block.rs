@@ -40,13 +40,13 @@ impl<'a> Block<'a> {
 
     fn score(&self) -> f64 {
         // limit the effect of very long blocks
-        const maxlen: usize = 10;
-        let total: usize = self.parts.iter().map(|p| min(maxlen, p.word_len(0)) + min(maxlen, p.word_len(1))).sum();
+        const MAXLEN: usize = 10;
+        let total: usize = self.parts.iter().map(|p| min(MAXLEN, p.word_len(0)) + min(MAXLEN, p.word_len(1))).sum();
         if total == 0 {
             return 1f64
         }
 
-        let matches: usize = self.parts.iter().filter(|p| p.matches).map(|p| min(maxlen, p.word_len(0))).sum();
+        let matches: usize = self.parts.iter().filter(|p| p.matches).map(|p| min(MAXLEN, p.word_len(0))).sum();
         2. * matches as f64 / total as f64
     }
 
@@ -170,13 +170,13 @@ impl<'a> Block<'a> {
     }
 
     fn score_words(&self, words: &VecDeque<&[u8]>, parti: usize, i: usize, shift: isize) -> [[usize; 4]; 2] {
-        static prefixes: [&[u8]; 4] = [
+        static PREFIXES: [&[u8]; 4] = [
             b"\n",
             b" \t",
             b",;",
             b"{[(",
         ];
-        static suffixes: [&[u8]; 4] = [
+        static SUFFIXES: [&[u8]; 4] = [
             b"\n",
             b" \t",
             b",;",
@@ -187,14 +187,14 @@ impl<'a> Block<'a> {
         let mut prefix_scores = [0; 4];
 
         let mut skip = 0;
-        for (i, p) in prefixes.iter().enumerate() {
+        for (i, p) in PREFIXES.iter().enumerate() {
             let count = words.iter().skip(skip).take_while(|w| p.contains(&w[0])).count();
             skip += count;
             prefix_scores[i] += count;
         }
 
         let mut skip = 0;
-        for (i, p) in suffixes.iter().enumerate() {
+        for (i, p) in SUFFIXES.iter().enumerate() {
             let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
             skip += count;
             suffix_scores[i] += count;
@@ -327,17 +327,10 @@ impl<'a> Block<'a> {
         for part in self.parts {
             let block = &blocks.last().unwrap();
 
-            let join = if block.parts.is_empty() {
-                true
-            } else if block.last_non_empty(0).map(|last| part.first_lineno(0) == last.last_lineno(0)).unwrap_or(false) {
-                true
-            } else if block.last_non_empty(1).map(|last| part.first_lineno(1) == last.last_lineno(1)).unwrap_or(false) {
-                true
-            } else {
-                false
-            };
-
-            if !join {
+            if !block.parts.is_empty()
+                && block.last_non_empty(0).map(|last| last.last_lineno(0)) != Some(part.first_lineno(0))
+                && block.last_non_empty(1).map(|last| last.last_lineno(1)) != Some(part.first_lineno(1))
+            {
                 // different line
                 blocks.push(Block{parts: vec![]});
             }
