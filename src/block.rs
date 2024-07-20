@@ -1,5 +1,5 @@
 use std::io::{BufWriter, Write};
-use std::cmp::min;
+use std::cmp::{min, max};
 use std::collections::VecDeque;
 use anyhow::{Result};
 use super::part::Part;
@@ -203,7 +203,7 @@ impl<'a> Block<'a> {
         let part = &self.parts[parti];
 
         // check if this is at start of line
-        let start = (part.slices[i].start as isize + shift - 1) as usize;
+        let start = max(0, part.slices[i].start as isize + shift - 1) as usize;
         if start == 0 || part.parent.words[i][start].as_bytes() == b"\n" {
             prefix_scores[0] += 1;
         }

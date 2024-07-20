@@ -27,7 +27,7 @@ impl<'a> Part<'a> {
     }
 
     pub fn last_lineno(&self, i: usize) -> usize {
-        self.parent.get_lineno(i, max(self.slices[i].start, self.slices[i].end - 1))
+        self.parent.get_lineno(i, max(self.slices[i].start + 1, self.slices[i].end) - 1)
     }
 
     pub fn single_line(&self, i: usize) -> bool {
