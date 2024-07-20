@@ -2,6 +2,7 @@ use std::io::{BufWriter, Write};
 use anyhow::{Result};
 use super::part::Part;
 use super::style;
+use super::regexes::regex;
 
 pub struct Block<'a> {
     pub parts: Vec<Part<'a>>,
@@ -12,15 +13,19 @@ impl<'a> Block<'a> {
         vec![self]
     }
 
-    pub fn print<T: Write>(
+    pub fn print<
+        T: Write,
+        S: AsRef<str>,
+        F: Fn(Option<usize>, Option<usize>, Option<&str>, Option<&str>, Option<&str>)->S
+    >(
         &self,
         stdout: &mut BufWriter<T>,
         merge_markers: Option<&super::hunk::MergeMarkers>,
-        // format_lineno=format_lineno,
-        signs: bool,
+        style: style::Style,
+        format_lineno: F,
     ) -> Result<()> {
 
-        if self.parts.iter().all(|p| p.matches || (p.is_empty(0) && p.is_empty(1))) {
+        if !style.show_both && self.parts.iter().all(|p| p.matches || (p.is_empty(0) && p.is_empty(1))) {
             // this is entirely matching
 
             let mut lineno = 0;
@@ -32,18 +37,20 @@ impl<'a> Block<'a> {
 
                 for word in part.get(0) {
                     if newline {
-                        stdout.write_all(style::format_lineno(
-                            Some(part.first_lineno(0) + lineno),
-                            Some(part.first_lineno(1) + lineno),
-                        ).as_bytes())?;
-                        if signs {
+                        if style.line_numbers {
+                            stdout.write_all(format_lineno(
+                                Some(part.first_lineno(0) + lineno), Some(part.first_lineno(1) + lineno),
+                                Some(style::LINENO), Some(style::LINENO),
+                                None,
+                            ).as_ref().as_bytes())?;
+                        }
+                        if style.signs {
                             stdout.write_all(style::SIGN[2])?;
                         }
                         stdout.write_all(style::DIFF_CONTEXT)?;
                         newline = false;
                     }
-                    // line = re.sub(rb'(\s+\n)', style['diff_trailing_ws'].replace(b'\\', b'\\\\') + rb'\1', line)
-                    stdout.write_all(word)?;
+                    stdout.write_all(&regex!(r"\s+\n".replace_all(word, style::DIFF_TRAILING_WS)))?;
                     if word == b"\n" {
                         lineno += 1;
                         newline = true;
@@ -66,33 +73,33 @@ impl<'a> Block<'a> {
                     continue
                 }
 
-                // if insert && !lines[0].is_empty() {
-                    // // add an insertion marker
-                    // // if lines[0][0] == b'\n'[0]:
-                        // // lines[0] = b' ' + lines[0]
-                    // lines[0] = style['diff_insert'][i] + lines[0][0:1] + highlight + lines[0][1:];
-                // }
-                insert = false;
+                if insert {
+                    // add an insertion marker
+                    stdout.write_all(style::DIFF_INSERT[i])?;
+                    insert = false;
+                }
 
-                let highlight = if part.matches { style::DIFF_MATCHING } else { style::DIFF_NON_MATCHING };
-                let highlight = if i == 0 { highlight.0 } else { highlight.1 };
-                stdout.write_all(highlight)?;
+                let highlight = if part.matches { style.diff_matching } else { style.diff_non_matching };
+                stdout.write_all(highlight[i])?;
                 for word in part.get(i) {
 
                     if newline {
-                        // stdout.write_all(format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]);
-                        lineno_args[i] = Some(part.first_lineno(i) + lineno);
-                        stdout.write_all(style::format_lineno(
-                            lineno_args[0],
-                            lineno_args[1],
-                        ).as_bytes())?;
-                        if signs {
+                        let lineno = part.first_lineno(i) + lineno;
+
+                        if style.line_numbers {
+                            lineno_args[i] = Some(lineno);
+                            let bar_style = merge_markers.and_then(|m| m.get(&(i, lineno)).map(|x| x.as_ref()));
+                            stdout.write_all(format_lineno(
+                                lineno_args[0], lineno_args[1],
+                                None, None,
+                                bar_style,
+                            ).as_ref().as_bytes())?;
+                        }
+                        if style.signs {
                             stdout.write_all(style::SIGN[i])?;
                         }
-                        stdout.write_all(highlight)?;
+                        stdout.write_all(highlight[i])?;
 
-                        let bar_style = style::LINENO_BAR;
-                        let bar_style = merge_markers.and_then(|m| m.get(&(i, lineno)).map(|x| x.as_ref())).unwrap_or(style::LINENO_BAR);
                         newline = false;
                     }
 

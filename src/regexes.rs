@@ -6,3 +6,5 @@ macro_rules! regex {
         RE.with(|r| r.$method($($arg),*))
     }};
 }
+
+pub(crate) use regex;

@@ -9,6 +9,7 @@ mod block_maker;
 mod part;
 mod word_differ;
 mod block;
+mod types;
 #[macro_use]
 mod regexes;
 use hunk::Hunk;
@@ -65,15 +66,10 @@ fn main() -> Result<()> {
         args.color = ColorChoices::Never;
     }
 
-    // let lineno_format = if args.line_numbers {
-        // style::LINENO_FORMAT
-    // } else {
-        // b""
-    // };
-    let sign_format = if args.signs {
-        style::SIGN
-    } else {
-        [b"" as _; 3]
+    let style = style::Style{
+        line_numbers: args.line_numbers,
+        signs: args.signs,
+        ..style::Style::default()
     };
 
     if let Some((file1, file2)) = args.file1.zip(args.file2) {
@@ -128,7 +124,7 @@ fn main() -> Result<()> {
             unified = true;
             merge_markers = None;
             if let Some(mut hunk) = hunk {
-                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
+                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
             }
             stdout.write_all(style::HEADER)?;
             stdout.write_all(&captures["header"])?;
@@ -150,7 +146,9 @@ fn main() -> Result<()> {
         if let Some(captures) = regex!(r"^((?<header>@@@ -(?<our_line_minus>\d+)(,\d+)? -(?<their_line_minus>\d+)(,\d+)? \+(?<line_plus>\d+)(,\d+)? @@@)\s*)(?<context>.*)".captures(&stripped)) {
             unified = true;
             merge_markers = Some(HashMap::new());
-            // print_hunk(hunk, line_numbers, merge_markers)
+            if let Some(mut hunk) = hunk {
+                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+            }
             stdout.write_all(style::HEADER)?;
             stdout.write_all(&captures["header"])?;
             stdout.write_all(b" ")?;
@@ -169,7 +167,9 @@ fn main() -> Result<()> {
         if let Some(captures) = regex!(r"^(?<line_minus>\d+)(,\d+)?[acd](?<line_plus>\d+)(,\d+)?$".captures(&stripped)) {
             unified = false;
             merge_markers = None;
-            // print_hunk(hunk, line_numbers, merge_markers);
+            if let Some(mut hunk) = hunk {
+                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+            }
             stdout.write_all(style::HEADER)?;
             stdout.write_all(&buf)?;
             stdout.write_all(style::RESET)?;
@@ -181,8 +181,10 @@ fn main() -> Result<()> {
             continue
         }
 
-        if let Some(captures) = regex!("^(?<header>diff( -r| --recursive| --git)?) (?<filename1>[^-\"\\s][^\"\\s]+|\"(\\\\.|.)*\") (?<filename2>[^\"\\s]+|\"(\\\\.|.)*\")(?<trailer>.*)$".captures(&stripped)) {
-            // print_hunk(hunk, line_numbers, merge_markers)
+        if let Some(captures) = regex!("^(?<header>diff( -r| --recursive| --git)?) (?<filename1>[^\"\\s-][^\"\\s]+|\"(\\\\.|.)*\") (?<filename2>[^\"\\s]+|\"(\\\\.|.)*\")(?<trailer>.*)".captures(&stripped)) {
+            if let Some(mut hunk) = hunk {
+                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+            }
             stdout.write_all(style::DIFF_HEADER.as_bytes())?;
             stdout.write_all(&captures["header"])?;
             stdout.write_all(b" ")?;
@@ -200,17 +202,25 @@ fn main() -> Result<()> {
         }
 
         if hunk.is_none() {
-            if let Some(captures) = regex!(r"^(?<sign>---|\+\+\+) ([ab]/)?(?<filename>.*?)(?<trailer>\t.*)?$".captures(&stripped)) {
+            if let Some(captures) = regex!(r"^(?<sign>---|\+\+\+) ([ab]/)?(?<filename>[^\t]*)(?<trailer>\t.*)?$".captures(&stripped)) {
                 if &captures["sign"] == b"---" {
                     filename = Some(captures["filename"].to_owned());
                 } else {
-                    // print_filename(filename, match.group('filename'), STYLE['filename_sign'])
+                    Hunk::print_filename(
+                        &mut stdout,
+                        filename.as_ref().map(|f| f.as_ref()),
+                        Some(&captures["filename"]),
+                        style::FILENAME_SIGN,
+                        style,
+                    )?;
                 }
                 continue
             }
 
-            if let Some(captures) = regex!(r"^commit [0-9a-f]+".captures(&stripped)) {
+            if regex!(r"^commit [0-9a-f]+".is_match(&stripped)) {
+                stdout.write_all(style::COMMIT.as_bytes())?;
                 stdout.write_all(&strip_style(&buf, format!("$0{}", style::COMMIT).as_bytes()))?;
+                stdout.write_all(style::RESET)?;
             } else {
                 stdout.write_all(&buf)?;
             }
@@ -238,11 +248,19 @@ fn main() -> Result<()> {
         }
 
         if args.exact && stripped.starts_with(b" ") {
-            // print_hunk(hunk, line_numbers, merge_markers)
+            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+            stdout.write_all(style::format_lineno(
+                Some(line_numbers[0]), Some(line_numbers[1]),
+                Some(style::LINENO), Some(style::LINENO),
+                None,
+            ).as_ref())?;
+            if style.signs {
+                stdout.write_all(style::SIGN[2])?;
+            }
+            stdout.write_all(style::RESET)?;
+            stdout.write_all(&regex!(r"\s+\n".replace_all(&stripped[1..], style::DIFF_TRAILING_WS)))?;
+
             hunk = Some(Hunk::new());
-            let line = regex!(r"\s+\n".replace_all(&stripped[1..], format!("{}$0", style::DIFF_TRAILING_WS).as_bytes()));
-            // stdout.write_all(format_lineno(*line_numbers, minus_style=STYLE['lineno'], plus_style=STYLE['lineno']) + STYLE['sign'][2] + style::RESET + STYLE['diff_context'] + line)
-            stdout.write_all(&line)?;
             line_numbers[0] += 1;
             line_numbers[1] += 1;
             continue
@@ -254,17 +272,21 @@ fn main() -> Result<()> {
                 if &captures["sign"] == b"from" {
                     filename = Some(captures["filename"].to_owned());
                 } else {
-                    // print_filename(filename, match.group('filename'), (b'rename from\t', b'rename to\t'), style={
-                        // **STYLE,
-                        // 'filename_header': STYLE['filename'],
-                    // })
+                    Hunk::print_filename(
+                        &mut stdout,
+                        filename.as_ref().map(|f| f.as_ref()),
+                        Some(&captures["filename"]),
+                        ("rename from\t", "rename to\t"),
+                        style,
+                    )?;
+                    // 'filename_header': STYLE['filename'],
                 }
                 continue
             }
         }
 
         if *stripped == *b"\\ No newline at end of file\n" {
-            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
+            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
             if !h.left.is_empty() {
                 stdout.write_all(style::DIFF.0)?;
             }
@@ -303,12 +325,12 @@ fn main() -> Result<()> {
         }
 
         if &buf == b"\n" {
-            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
+            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
             hunk = None;
             continue
         }
 
-        h.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
+        h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
         if regex!("^index ".is_match(&stripped)) {
             stdout.write_all(&strip_style(&buf, format!("$0{}", style::DIFF_HEADER).as_bytes()))?;
             hunk = None;
@@ -320,7 +342,7 @@ fn main() -> Result<()> {
     }
 
     if let Some(mut hunk) = hunk {
-        hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), args.signs)?;
+        hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
     }
 
     // if hasattr(proc, 'returncode'):
