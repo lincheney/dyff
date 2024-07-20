@@ -4,7 +4,6 @@ fn both_sides<T, F: FnMut(usize)->T>(mut f: F) -> [T; 2] {
     [f(0), f(1)]
 }
 
-#[derive(Debug)]
 pub struct Part<'a> {
     pub parent: &'a super::block_maker::BlockMaker<'a>,
     pub matches: bool,
@@ -157,11 +156,11 @@ impl<'a> Part<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for Part<'a> {
+impl<'a> std::fmt::Debug for Part<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            "({:?}, {:?})",
+            "(\"{}\", \"{}\")",
             std::str::from_utf8(&self.get(0).collect::<Vec<_>>().concat().iter().map(|c| std::ascii::escape_default(*c)).flatten().collect::<Vec<_>>()).unwrap(),
             std::str::from_utf8(&self.get(1).collect::<Vec<_>>().concat().iter().map(|c| std::ascii::escape_default(*c)).flatten().collect::<Vec<_>>()).unwrap(),
         )

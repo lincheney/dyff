@@ -24,25 +24,24 @@ impl<'a> Block<'a> {
             // this is entirely matching
 
             let mut lineno = 0;
-            let mut newline = false;
+            let mut newline = true;
             for part in self.parts.iter() {
                 if !part.matches {
                     continue
                 }
 
-                if newline {
-                    stdout.write_all(style::format_lineno(
-                        Some(part.first_lineno(0) + lineno),
-                        Some(part.first_lineno(1) + lineno),
-                    ).as_bytes())?;
-                    if signs {
-                        stdout.write_all(style::SIGN[2])?;
-                    }
-                    stdout.write_all(style::DIFF_CONTEXT)?;
-                    newline = false;
-                }
-
                 for word in part.get(0) {
+                    if newline {
+                        stdout.write_all(style::format_lineno(
+                            Some(part.first_lineno(0) + lineno),
+                            Some(part.first_lineno(1) + lineno),
+                        ).as_bytes())?;
+                        if signs {
+                            stdout.write_all(style::SIGN[2])?;
+                        }
+                        stdout.write_all(style::DIFF_CONTEXT)?;
+                        newline = false;
+                    }
                     // line = re.sub(rb'(\s+\n)', style['diff_trailing_ws'].replace(b'\\', b'\\\\') + rb'\1', line)
                     stdout.write_all(word)?;
                     if word == b"\n" {
@@ -57,7 +56,7 @@ impl<'a> Block<'a> {
 
         for i in 0..=1 {
             let mut lineno = 0;
-            let mut newline = false;
+            let mut newline = true;
             let mut insert = false;
             let mut lineno_args = [None, None];
 
@@ -65,22 +64,6 @@ impl<'a> Block<'a> {
                 if part.is_empty(i) {
                     insert = true;
                     continue
-                }
-
-                if newline {
-                    // let lineno = [part.first_lineno(0) + lineno, part.first_lineno(1) + lineno];
-                    // stdout.write_all(format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]);
-                    lineno_args[i] = Some(part.first_lineno(i) + lineno);
-                    stdout.write_all(style::format_lineno(
-                        lineno_args[0],
-                        lineno_args[1],
-                    ).as_bytes())?;
-                    if signs {
-                        stdout.write_all(style::SIGN[i])?;
-                    }
-                    let bar_style = style::LINENO_BAR;
-                    let bar_style = merge_markers.and_then(|m| m.get(&(i, lineno)).map(|x| x.as_ref())).unwrap_or(style::LINENO_BAR);
-                    newline = false;
                 }
 
                 // if insert && !lines[0].is_empty() {
@@ -95,6 +78,24 @@ impl<'a> Block<'a> {
                 let highlight = if i == 0 { highlight.0 } else { highlight.1 };
                 stdout.write_all(highlight)?;
                 for word in part.get(i) {
+
+                    if newline {
+                        // stdout.write_all(format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]);
+                        lineno_args[i] = Some(part.first_lineno(i) + lineno);
+                        stdout.write_all(style::format_lineno(
+                            lineno_args[0],
+                            lineno_args[1],
+                        ).as_bytes())?;
+                        if signs {
+                            stdout.write_all(style::SIGN[i])?;
+                        }
+                        stdout.write_all(highlight)?;
+
+                        let bar_style = style::LINENO_BAR;
+                        let bar_style = merge_markers.and_then(|m| m.get(&(i, lineno)).map(|x| x.as_ref())).unwrap_or(style::LINENO_BAR);
+                        newline = false;
+                    }
+
                     // line = re.sub(rb'(\s+\n)', style['diff_trailing_ws'].replace(b'\\', b'\\\\') + rb'\1', line)
                     stdout.write_all(word)?;
                     if word == b"\n" {
