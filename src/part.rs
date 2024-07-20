@@ -72,6 +72,13 @@ impl<'a> Part<'a> {
         self.slices[i].is_empty()
     }
 
+    pub fn shift_slice(&self, a: isize, b: isize) -> [std::ops::Range<usize>; 2] {
+        [
+            (self.slices[0].start as isize + a) as usize .. (self.slices[0].end as isize + b) as usize,
+            (self.slices[1].start as isize + a) as usize .. (self.slices[1].end as isize + b) as usize,
+        ]
+    }
+
     fn splitable(&self, i: usize) -> bool {
         self.is_empty(i)
         || self.last_lineno(i) > self.first_lineno(i) // spans at least 2 lines

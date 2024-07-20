@@ -289,10 +289,7 @@ impl<'a> Block<'a> {
                 insert_start = Some(prev);
                 insert_start.as_mut().unwrap()
             });
-            prev.slices = [
-                prev.slices[0].start .. (part.slices[0].start as isize + shift) as usize,
-                prev.slices[1].start .. (part.slices[1].start as isize + shift) as usize,
-            ];
+            prev.slices = prev.shift_slice(0, *shift);
 
             let next = right.first_mut().unwrap_or_else(|| {
                 let mut next = part.partition(part.slices[0].end, part.slices[1].end).1;
@@ -300,15 +297,9 @@ impl<'a> Block<'a> {
                 insert_end = Some(next);
                 insert_end.as_mut().unwrap()
             });
-            next.slices = [
-                (part.slices[0].end as isize + shift) as usize .. next.slices[0].end,
-                (part.slices[1].end as isize + shift) as usize .. next.slices[1].end,
-            ];
+            next.slices = next.shift_slice(*shift, 0);
 
-            part.slices = [
-                prev.slices[0].end .. next.slices[0].start,
-                prev.slices[1].end .. next.slices[1].start,
-            ];
+            part.slices = part.shift_slice(*shift, *shift);
         }
 
         if let Some(insert_start) = insert_start {
