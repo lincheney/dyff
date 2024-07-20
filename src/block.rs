@@ -465,14 +465,14 @@ impl<'a> Block<'a> {
                     continue
                 }
 
-                if insert {
-                    // add an insertion marker
-                    stdout.write_all(style::DIFF_INSERT[i])?;
-                    insert = false;
-                }
-
                 let highlight = if part.matches { style.diff_matching } else { style.diff_non_matching };
                 stdout.write_all(highlight[i])?;
+
+                // add an insertion marker
+                if insert {
+                    stdout.write_all(style::DIFF_INSERT[i])?;
+                }
+
                 for word in part.get(i) {
 
                     if newline {
@@ -500,6 +500,11 @@ impl<'a> Block<'a> {
                     if word == b"\n" {
                         lineno += 1;
                         newline = true;
+                    }
+
+                    if insert {
+                        stdout.write_all(highlight[i])?;
+                        insert = false;
                     }
                 }
             }
