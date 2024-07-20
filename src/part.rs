@@ -4,6 +4,7 @@ fn both_sides<T, F: FnMut(usize)->T>(mut f: F) -> [T; 2] {
     [f(0), f(1)]
 }
 
+#[derive(Clone)]
 pub struct Part<'a> {
     pub parent: &'a super::block_maker::BlockMaker<'a>,
     pub matches: bool,
@@ -13,7 +14,7 @@ pub struct Part<'a> {
 
 impl<'a> Part<'a> {
 
-    pub fn get(&self, i: usize) -> impl Iterator<Item=&[u8]> {
+    pub fn get(&self, i: usize) -> impl DoubleEndedIterator<Item=&[u8]> + ExactSizeIterator {
         self.parent.words[i][self.slices[i].clone()].iter().map(|x| x.as_bytes())
     }
 
@@ -25,19 +26,23 @@ impl<'a> Part<'a> {
         self.parent.get_lineno(i, self.slices[i].start)
     }
 
-    fn last_lineno(&self, i: usize) -> usize {
+    pub fn last_lineno(&self, i: usize) -> usize {
         self.parent.get_lineno(i, max(self.slices[i].start, self.slices[i].end - 1))
     }
 
-    fn starts_line(&self, i: usize) -> bool {
+    pub fn single_line(&self, i: usize) -> bool {
+        self.first_lineno(i) == self.last_lineno(i)
+    }
+
+    pub fn starts_line(&self, i: usize) -> bool {
         self.slices[i].start == self.parent.get_wordno(i, self.first_lineno(i))
     }
 
-    fn ends_line(&self, i: usize) -> bool {
+    pub fn ends_line(&self, i: usize) -> bool {
         self.slices[i].end == self.parent.get_wordno(i, self.last_lineno(i) + 1)
     }
 
-    fn whole_line(&self) -> bool {
+    pub fn whole_line(&self) -> bool {
         self.starts_line(0) && self.starts_line(1) && self.ends_line(0) && self.ends_line(1)
     }
 
@@ -46,12 +51,12 @@ impl<'a> Part<'a> {
         self.get_non_whitespace(i).map(|word| word.len()).sum()
     }
 
-    fn word_len(&self, i: usize) -> usize {
+    pub fn word_len(&self, i: usize) -> usize {
         // score whitespace lower
         self.get_non_whitespace(i).count()
     }
 
-    fn partition(&self, a: usize, b: usize) -> (Self, Self) {
+    pub fn partition(&self, a: usize, b: usize) -> (Self, Self) {
         let a = a.clamp(self.slices[0].start, self.slices[0].end);
         let b = b.clamp(self.slices[1].start, self.slices[1].end);
         let first = [self.slices[0].start .. a, self.slices[1].start .. b];
