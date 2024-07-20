@@ -264,7 +264,8 @@ impl<'a> Block<'a> {
         for i in 0..self.parts.len() {
             {
                 let part = &self.parts[i];
-                if part.matches || (!part.is_empty(0) && !part.is_empty(1)) {
+                // must be one empty and one non empty
+                if part.matches || part.is_empty(0) == part.is_empty(1) {
                     continue
                 }
             }
