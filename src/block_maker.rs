@@ -36,6 +36,8 @@ impl<'a> BlockMaker<'a> {
                     word_to_line[i].push(lineno);
                 }
             }
+            word_to_line[i].push(*word_to_line[i].last().unwrap() + 1);
+            line_to_word[i].push(w.len() + 1);
         }
 
         Self{
