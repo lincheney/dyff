@@ -3,8 +3,12 @@ use std::cmp::{min, max};
 use super::block_maker::BlockMaker;
 use super::part::Part;
 
+fn is_whitespace(b: &[u8]) -> bool {
+    b.iter().all(|c| c.is_ascii_whitespace())
+}
+
 fn isjunk(b: &[u8]) -> bool {
-    b != b"\n" && b.iter().all(|c| c.is_ascii_whitespace())
+    b != b"\n" && is_whitespace(b)
 }
 
 pub struct WordDiffer<'a> {
@@ -24,7 +28,7 @@ impl<'a> WordDiffer<'a> {
         for (i, word) in parent.words[1].iter().enumerate() {
             let word = word.as_bytes();
             // whitespace at start is 'junk' as it is usually just indentation
-            if !(line_start && word != b"\n" && word.iter().all(|c| c.is_ascii_whitespace())) {
+            if !(line_start && word != b"\n" && is_whitespace(word)) {
                 b2j.entry(word).or_insert_with(Vec::new).push(i);
                 line_start = word == b"\n"
             }
@@ -94,11 +98,12 @@ impl<'a> WordDiffer<'a> {
     ) -> Option<(usize, usize, usize)> {
 
         let left = &self.parent.words[0];
-        // let right = &self.parent.words[1];
+        let right = &self.parent.words[1];
 
         let mut besti = alo;
         let mut bestj = blo;
         let mut bestsize = 0;
+        let mut best_non_ws = 0;
         let mut bestlen = 0;
         let mut bestline = usize::MAX;
 
@@ -150,8 +155,15 @@ impl<'a> WordDiffer<'a> {
                         continue
                     }
 
+                    let i = i + 1 - k;
+                    let j = j + 1 - k;
+                    let leading_ws = right[j..j+k].iter().take_while(|m| is_whitespace(m.as_bytes())).count();
+                    let trailing_ws = right[j..j+k].iter().rev().take_while(|m| is_whitespace(m.as_bytes())).count();
+                    let trailing_ws = min(k - leading_ws, trailing_ws);
+                    let non_ws = k - leading_ws - trailing_ws;
+
                     // prioritise more words, then longer words, then words on the expected line
-                    let mut cmp = k.cmp(&bestsize);
+                    let mut cmp = non_ws.cmp(&best_non_ws);
                     if cmp.is_lt() {
                         continue
                     }
@@ -164,15 +176,13 @@ impl<'a> WordDiffer<'a> {
                         bestcount = 0;
                     }
 
-                    let i = i + 1 - k;
-                    let j = j + 1 - k;
                     mini = min(mini, i);
                     minj = min(minj, j);
                     maxi = max(maxi, i+k);
                     maxj = max(maxj, j+k);
                     bestcount += 1;
 
-                    let l: usize = left[i .. i+k].iter().map(|w| w.len()).sum();
+                    let l: usize = left[i+leading_ws .. i+k-trailing_ws].iter().map(|w| w.len()).sum();
                     cmp = cmp.then(l.cmp(&bestlen));
                     if cmp.is_lt() {
                         continue
@@ -196,6 +206,7 @@ impl<'a> WordDiffer<'a> {
                     besti = i;
                     bestj = j;
                     bestsize = k;
+                    best_non_ws = non_ws;
                     bestlen = l;
                     bestline = lineno_dist;
                 }
