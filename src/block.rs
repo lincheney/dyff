@@ -390,7 +390,7 @@ impl<'a> Block<'a> {
                 block.parts.clear();
                 block.parts.extend_from_slice(&[first, second, third]);
                 block.squeeze_parts();
-                block.parts.retain(|p| !p.is_empty(0) || p.is_empty(1));
+                block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
                 // nothing matches
                 if block.parts.iter().all(|p| !p.matches) {
                     block.parts.clear();
