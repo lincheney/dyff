@@ -1,5 +1,11 @@
-type Line = Vec<Vec<u8>>;
+use std::collections::HashMap;
+use std::io::{BufWriter, Write};
+use anyhow::{Result};
 
+type Line = Vec<Vec<u8>>;
+pub type MergeMarkers = HashMap<(usize, usize), Vec<u8>>;
+
+#[derive(Debug)]
 pub struct Hunk {
     pub left: Line,
     pub right: Line,
@@ -24,4 +30,26 @@ impl Hunk {
     pub fn is_empty(&self) -> bool {
         self.left.is_empty() && self.right.is_empty()
     }
+
+    pub fn print<T: std::io::Write>(
+        &mut self,
+        stdout: &mut BufWriter<T>,
+        line_numbers: [usize; 2],
+        merge_markers: Option<&MergeMarkers>,
+    ) -> Result<()> {
+
+        if !self.is_empty() {
+
+            let maker = super::block_maker::BlockMaker::new(self, line_numbers);
+            let blocks = maker.make_block().split_block();
+
+            for block in blocks {
+                block.print(stdout, merge_markers)?;
+                stdout.write(super::style::RESET)?;
+                stdout.flush()?;
+            }
+        }
+        Ok(())
+    }
+
 }

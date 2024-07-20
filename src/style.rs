@@ -1,5 +1,6 @@
 type Bytes<'a> = &'a [u8];
 
+pub const RESET: &[u8] = b"\x1b[0m";
 pub const HEADER: Bytes            = b"\x1b[0;36m";
 pub const COMMIT: &str            = "\x1b[1;48;5;24m";
 pub const CONTEXT: Bytes           = b"\x1b[0;1;33;48;5;236m";
