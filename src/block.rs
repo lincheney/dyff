@@ -227,7 +227,7 @@ impl<'a> Block<'a> {
         scores.push((self.score_words(&words, parti, i, 0), 0));
 
         // try shift left ie move stuff at back to front
-        if parti > 0 {
+        if parti > 0 && self.parts[parti-1].matches {
             let prev_words = self.parts[parti-1].get(i);
             for (shift, word) in prev_words.rev().enumerate() {
                 if word != *words.back().unwrap() {
@@ -242,14 +242,16 @@ impl<'a> Block<'a> {
         let mut words = part.get(i).collect::<VecDeque<&[u8]>>();
         // try shift right ie move stuff at front to back
         if let Some(next_words) = self.parts.get(parti+1) {
-            let next_words = next_words.get(i);
-            for (shift, word) in next_words.enumerate() {
-                if word != words[0] {
-                    break
+            if next_words.matches {
+                let next_words = next_words.get(i);
+                for (shift, word) in next_words.enumerate() {
+                    if word != words[0] {
+                        break
+                    }
+                    words.rotate_left(1);
+                    let shift = 1 + shift as isize;
+                    scores.push((self.score_words(&words, parti, i, shift), shift));
                 }
-                words.rotate_left(1);
-                let shift = 1 + shift as isize;
-                scores.push((self.score_words(&words, parti, i, shift), shift));
             }
         }
 
