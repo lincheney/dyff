@@ -498,9 +498,14 @@ impl<'a> Block<'a> {
                         if newline {
                             if style.line_numbers {
                                 let mut lineno_args = line_numbers;
-                                if !inline || part.is_empty(1-i) {
+
+                                // draw the other line number if we are inline
+                                // OR the other side has non empty parts on same line
+                                let other = 1 - i;
+                                if !inline || !self.parts.iter().any(|p| !p.is_empty(other) && p.first_lineno(other) <= line_numbers[other] && line_numbers[other] <= p.last_lineno(other)) {
                                     lineno_args[1-i] = 0;
                                 }
+
                                 let bar_style = merge_markers.and_then(|m| m.get(&(i, line_numbers[i])).map(|x| x.as_ref()));
                                 stdout.write_all(format_lineno(
                                     lineno_args,
