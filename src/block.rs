@@ -483,7 +483,7 @@ impl<'a> Block<'a> {
 
                         if newline {
                             if style.line_numbers {
-                                let mut lineno_args = *&line_numbers;
+                                let mut lineno_args = line_numbers;
                                 if !style.inline || part.is_empty(1-i) {
                                     lineno_args[1-i] = 0;
                                 }
