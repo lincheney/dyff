@@ -28,7 +28,7 @@ impl<'a> BlockMaker<'a> {
                 let oldlen = w.len();
                 line_to_word[i].push(oldlen);
                 super::regexes::regex!(
-                    r"[A-Z]{2,}\d*"
+                    r"[A-Z][A-Z_]*[A-Z]\d*"
                     "|[A-Z][a-z0-9]*[a-z]"
                     "|[a-z0-9]+[a-z]"
                     r"|\d+"

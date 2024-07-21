@@ -156,8 +156,8 @@ impl<'a> WordDiffer<'a> {
 
                     let i = i + 1 - k;
                     let j = j + 1 - k;
-                    let leading_ws = right[j..j+k].iter().take_while(|m| is_whitespace(m.as_bytes())).count();
-                    let trailing_ws = right[j..j+k].iter().rev().take_while(|m| is_whitespace(m.as_bytes())).count();
+                    let leading_ws = right[j..j+k].iter().take_while(|m| isjunk(m.as_bytes())).count();
+                    let trailing_ws = right[j..j+k].iter().rev().take_while(|m| isjunk(m.as_bytes())).count();
                     let trailing_ws = min(k - leading_ws, trailing_ws);
                     let non_ws = k - leading_ws - trailing_ws;
 
@@ -180,12 +180,6 @@ impl<'a> WordDiffer<'a> {
                     maxi = max(maxi, i+k);
                     maxj = max(maxj, j+k);
 
-                    let l: usize = left[i+leading_ws .. i+k-trailing_ws].iter().map(|w| w.len()).sum();
-                    cmp = cmp.then(l.cmp(&bestlen));
-                    if cmp.is_lt() {
-                        continue
-                    }
-
                     let lineno_b = self.parent.get_lineno(1, j);
                     // compare the expected line b or a depending on which one has previously been matched
                     let lineno_dist = if let Some(expected_lineno_b) = expected_lineno_b {
@@ -197,6 +191,12 @@ impl<'a> WordDiffer<'a> {
                     };
 
                     cmp = cmp.then(bestline.cmp(&lineno_dist));
+                    if cmp.is_lt() {
+                        continue
+                    }
+
+                    let l: usize = left[i+leading_ws .. i+k-trailing_ws].iter().map(|w| w.len()).sum();
+                    cmp = cmp.then(l.cmp(&bestlen));
                     if cmp.is_lt() {
                         continue
                     }
