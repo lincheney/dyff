@@ -260,6 +260,11 @@ impl<'a> Block<'a> {
 
     fn shift_parts(&mut self) {
         // try to shift non matches around e.g. so that whitespace is at the ends
+
+        if self.parts.len() < 2 {
+            return
+        }
+
         let mut insert_start = None;
         let mut insert_end = None;
         for i in 0..self.parts.len() {
@@ -309,6 +314,7 @@ impl<'a> Block<'a> {
 
     pub fn split_block(mut self, simple_diff: bool) -> Vec<Self> {
         self.squeeze_parts();
+        self.shift_parts();
 
         let mut blocks = vec![Block{parts: vec![]}];
 
