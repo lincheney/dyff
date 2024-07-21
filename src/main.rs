@@ -169,7 +169,7 @@ fn main() -> Result<()> {
             continue
         }
 
-        if let Some(captures) = regex!(r"^(?<line_minus>\d+)(,\d+)?[acd](?<line_plus>\d+)(,\d+)?$".captures(&stripped)) {
+        if let Some(captures) = regex!(r"^(?<line_minus>\d+)(,\d+)?[acd](?<line_plus>\d+)(,\d+)?".captures(&stripped)) {
             unified = false;
             merge_markers = None;
             if let Some(mut hunk) = hunk {
