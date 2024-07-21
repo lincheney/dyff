@@ -487,12 +487,12 @@ impl<'a> Block<'a> {
                         if newline {
                             if style.line_numbers {
                                 let mut lineno_args = *&line_numbers;
-                                if !style.inline {
+                                if !style.inline || part.is_empty(1-i) {
                                     lineno_args[1-i] = 0;
                                 }
                                 let bar_style = merge_markers.and_then(|m| m.get(&(i, line_numbers[i])).map(|x| x.as_ref()));
                                 stdout.write_all(format_lineno(
-                                    line_numbers,
+                                    lineno_args,
                                     None, None,
                                     bar_style,
                                 ).as_ref().as_bytes())?;
@@ -506,8 +506,10 @@ impl<'a> Block<'a> {
                         }
 
                         if word == b"\n" {
-                            line_numbers[0] += 1;
-                            line_numbers[1] += 1;
+                            line_numbers[i] += 1;
+                            if style.inline {
+                                line_numbers[1-i] += 1;
+                            }
                             newline = true;
                         }
 
