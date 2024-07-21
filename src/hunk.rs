@@ -83,7 +83,7 @@ impl Hunk {
             diff_non_matching: FILENAME_NON_MATCHING,
             ..style
         };
-        let maker = BlockMaker::new(&hunk, [0, 0]);
+        let maker = BlockMaker::new(&hunk, [1, 1]);
         let blocks = maker.make_block().split_block(true);
         for block in blocks {
             block.print(stdout, None, style, |[num1, _]: [usize; 2], _, _, _| -> &'a str {
