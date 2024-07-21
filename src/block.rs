@@ -398,7 +398,11 @@ impl<'a> Block<'a> {
         }
 
         // merge again
-        let blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
+        let mut blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
+        // remove empty ones
+        for block in blocks.iter_mut() {
+            block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+        }
 
         blocks
     }
