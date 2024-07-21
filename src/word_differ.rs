@@ -290,6 +290,8 @@ impl<'a> WordDiffer<'a> {
             if let Some(next) = matching_blocks.get_mut(i+1) {
                 if block.0 + block.2 == next.0 && block.1 + block.2 == next.1 {
                     block.2 += next.2;
+                    next.0 += next.2;
+                    next.1 += next.2;
                     next.2 = 0;
                 }
             }

@@ -119,7 +119,7 @@ impl<'a> BlockMaker<'a> {
             }
 
             if previ < left.end || prevj < right.end {
-                    let part = self.make_part(false, previ..left.end, prevj..right.end);
+                let part = self.make_part(false, previ..left.end, prevj..right.end);
                 parts.extend(part.split().into_iter().flatten());
             }
         }
