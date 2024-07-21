@@ -21,7 +21,7 @@ fn strip_style<'a>(string: &'a [u8], replace: &[u8]) -> std::borrow::Cow<'a, [u8
 }
 
 fn shell_quote<S: AsRef<str>>(val: S) -> String {
-    let mut val = val.as_ref().replace("'", "'\\''");
+    let mut val = val.as_ref().replace('\'', "'\\''");
     val.insert(0, '\'');
     val.push('\'');
     val
