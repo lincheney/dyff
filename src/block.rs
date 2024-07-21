@@ -138,17 +138,22 @@ impl<'a> Block<'a> {
         for block in drain {
             let prev_perfect = prev.perfect();
             let new_perfect = block.perfect();
+            let prev_score = prev.score();
+            let new_score = block.score();
 
             let mut merge = if prev_perfect || new_perfect {
                 // check if both perfect
                 prev_perfect == new_perfect
+            } else if prev_score == 0. || new_score == 0. {
+                // check if both terrible
+                prev_score == new_score
             } else {
                 // check if they're both good or both bad
-                (prev.score() < cutoff) == (block.score() < cutoff)
+                (prev_score < cutoff) == (new_score < cutoff)
             };
 
             // do not merge blocks where one side is single line and the other is multiline
-            if merge && (prev.splits_to_multiline() && prev.score() > 0.) || (block.splits_to_multiline() && block.score() > 0.) {
+            if merge && (prev.splits_to_multiline() && prev_score > 0.) || (block.splits_to_multiline() && new_score > 0.) {
                 merge = false;
             }
 
