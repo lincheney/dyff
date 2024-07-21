@@ -57,24 +57,24 @@ impl<'a> Part<'a> {
         self.get_non_whitespace(i).count()
     }
 
-    pub fn partition(&self, a: usize, b: usize) -> (Self, Self) {
+    pub fn partition(&self, a: usize, b: usize, matches: bool) -> (Self, Self) {
         let a = a.clamp(self.slices[0].start, self.slices[0].end);
         let b = b.clamp(self.slices[1].start, self.slices[1].end);
         let first = [self.slices[0].start .. a, self.slices[1].start .. b];
         let last = [a .. self.slices[0].end, b .. self.slices[1].end];
 
         (
-            Self{parent: self.parent, matches: self.matches, slices: first},
-            Self{parent: self.parent, matches: self.matches, slices: last},
+            Self{parent: self.parent, matches, slices: first},
+            Self{parent: self.parent, matches, slices: last},
         )
     }
 
-    pub fn partition_from_start(&self, a: usize, b: usize) -> (Self, Self) {
-        self.partition(self.slices[0].start + a, self.slices[1].start + b)
+    pub fn partition_from_start(&self, a: usize, b: usize, matches: bool) -> (Self, Self) {
+        self.partition(self.slices[0].start + a, self.slices[1].start + b, matches)
     }
 
-    pub fn partition_from_end(&self, a: usize, b: usize) -> (Self, Self) {
-        self.partition(self.slices[0].end - a, self.slices[1].end - b)
+    pub fn partition_from_end(&self, a: usize, b: usize, matches: bool) -> (Self, Self) {
+        self.partition(self.slices[0].end - a, self.slices[1].end - b, matches)
     }
 
     pub fn is_empty(&self, i: usize) -> bool {
@@ -126,9 +126,9 @@ impl<'a> Part<'a> {
 
         if self.splitable(0) && self.splitable(1) {
             // partition at end of first line
-            let (first, second) = self.partition(prefix_pivot[0], prefix_pivot[1]);
+            let (first, second) = self.partition(prefix_pivot[0], prefix_pivot[1], self.matches);
             // partition at start of last line
-            let (second, third) = second.partition(suffix_pivot[0], suffix_pivot[1]);
+            let (second, third) = second.partition(suffix_pivot[0], suffix_pivot[1], self.matches);
             return [Some(first), Some(second), Some(third)]
         }
 
@@ -142,9 +142,9 @@ impl<'a> Part<'a> {
                     prefix_pivot[other] = self.slices[other].start;
                     suffix_pivot[other] = self.slices[other].end;
                     // partition at end of first line
-                    let (first, second) = self.partition(prefix_pivot[0], prefix_pivot[1]);
+                    let (first, second) = self.partition(prefix_pivot[0], prefix_pivot[1], self.matches);
                     // partition at start of last line
-                    let (second, third) = second.partition(suffix_pivot[0], suffix_pivot[1]);
+                    let (second, third) = second.partition(suffix_pivot[0], suffix_pivot[1], self.matches);
                     return [Some(first), Some(second), Some(third)]
                 }
 
@@ -156,18 +156,18 @@ impl<'a> Part<'a> {
                 let (first, second) = if starts_line[i] && ends_line[i] {
                     // whole line -> separate
                     if i == 0 {
-                        self.partition(self.slices[0].end, self.slices[1].start)
+                        self.partition(self.slices[0].end, self.slices[1].start, self.matches)
                     } else {
-                        self.partition(self.slices[0].start, self.slices[1].end)
+                        self.partition(self.slices[0].start, self.slices[1].end, self.matches)
                     }
                 } else if (starts_line[other] && !ends_line[i]) || starts_line[i] {
                     // matches up with end
                     suffix_pivot[other] = self.slices[other].start;
-                    self.partition(suffix_pivot[0], suffix_pivot[1])
+                    self.partition(suffix_pivot[0], suffix_pivot[1], self.matches)
                 } else {
                     // otherwise matches with start
                     prefix_pivot[other] = self.slices[other].end;
-                    self.partition(prefix_pivot[0], prefix_pivot[1])
+                    self.partition(prefix_pivot[0], prefix_pivot[1], self.matches)
                 };
                 return [Some(first), Some(second), None]
             }
