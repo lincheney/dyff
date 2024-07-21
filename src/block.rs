@@ -173,22 +173,25 @@ impl<'a> Block<'a> {
         self.parts.iter().rev().find(|p| !p.is_empty(i))
     }
 
-    fn score_words(&self, words: &VecDeque<&[u8]>, parti: usize, i: usize, shift: isize) -> [[usize; 4]; 2] {
-        static PREFIXES: [&[u8]; 4] = [
+    const NUM_SCORES: usize = 5;
+    fn score_words(&self, words: &VecDeque<&[u8]>, parti: usize, i: usize, shift: isize) -> [[usize; Block::NUM_SCORES]; 2] {
+        static PREFIXES: [&[u8]; Block::NUM_SCORES] = [
             b"\n",
             b" \t",
-            b",;",
+            b"{",
+            b"", // b",;",
             b"{[(",
         ];
-        static SUFFIXES: [&[u8]; 4] = [
+        static SUFFIXES: [&[u8]; Block::NUM_SCORES] = [
             b"\n",
             b" \t",
+            b"}",
             b",;",
             b"}])",
         ];
 
-        let mut suffix_scores = [0; 4];
-        let mut prefix_scores = [0; 4];
+        let mut suffix_scores = [0; Block::NUM_SCORES];
+        let mut prefix_scores = [0; Block::NUM_SCORES];
 
         let mut skip = 0;
         for (i, p) in PREFIXES.iter().enumerate() {
@@ -224,7 +227,7 @@ impl<'a> Block<'a> {
         [suffix_scores, prefix_scores]
     }
 
-    fn score_part_shift(&self, parti: usize, i: usize) -> Vec<([[usize; 4]; 2], isize)> {
+    fn score_part_shift(&self, parti: usize, i: usize) -> Vec<([[usize; Block::NUM_SCORES]; 2], isize)> {
         let part = &self.parts[parti];
         let mut scores = vec![];
 
