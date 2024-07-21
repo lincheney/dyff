@@ -111,7 +111,6 @@ impl<'a> WordDiffer<'a> {
         let mut minj = bhi;
         let mut maxi = 0;
         let mut maxj = 0;
-        let mut bestcount = 0;
 
         let first_line_a = self.parent.get_lineno(0, alo);
         let first_line_b = self.parent.get_lineno(1, blo);
@@ -169,20 +168,17 @@ impl<'a> WordDiffer<'a> {
                     }
 
                     // aggregate based on num non whitespace words
-                    // but don't double count e.g. if we just added ws the count will be the same
-                    if besti != i && cmp.is_gt() {
+                    if cmp.is_gt() {
                         mini = ahi;
                         minj = bhi;
                         maxi = 0;
                         maxj = 0;
-                        bestcount = 0;
                     }
 
                     mini = min(mini, i);
                     minj = min(minj, j);
                     maxi = max(maxi, i+k);
                     maxj = max(maxj, j+k);
-                    bestcount += 1;
 
                     let l: usize = left[i+leading_ws .. i+k-trailing_ws].iter().map(|w| w.len()).sum();
                     cmp = cmp.then(l.cmp(&bestlen));
@@ -224,7 +220,7 @@ impl<'a> WordDiffer<'a> {
         // more than one "best" match
         // try find matches elsewhere first
         // they may populate self.matched_lines which helps us narrow down which is better
-        if bestcount > 1 {
+        if maxi != mini + bestsize {
             // this means there's multiple solutions
             if alo < mini && blo < minj {
                 if let Some(m) = self.find_longest_match(alo, mini, blo, minj) {
