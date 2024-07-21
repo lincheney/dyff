@@ -422,7 +422,6 @@ impl<'a> Block<'a> {
         if !style.show_both && self.parts.iter().all(|p| p.matches || (p.is_empty(0) && p.is_empty(1))) {
             // this is entirely matching
 
-            let mut lineno = 0;
             let mut newline = true;
             for part in self.parts.iter() {
                 if !part.matches {
@@ -470,7 +469,7 @@ impl<'a> Block<'a> {
                 let highlight = if !part.matches {
                     style.diff_non_matching
                 } else if style.inline {
-                    [style::RESET, style::RESET]
+                    [style::DIFF_MATCHING_INLINE, style::DIFF_MATCHING_INLINE]
                 } else {
                     style.diff_matching
                 };

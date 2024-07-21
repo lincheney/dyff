@@ -24,34 +24,93 @@ impl<'a> std::default::Default for Style<'a> {
     }
 }
 
-pub const RESET: Bytes = b"\x1b[0m";
-pub const HEADER: Bytes            = b"\x1b[0;36m";
-pub const COMMIT: &str            = "\x1b[1;48;5;24m";
-pub const CONTEXT: Bytes           = b"\x1b[0;1;33;48;5;236m";
-pub const DIFF_HEADER: &str       = "\x1b[0;1m";
-pub const FILENAME_HEADER: (Bytes, Bytes, Bytes)   = (b"\x1b[0;1;31;48;5;238m", b"\x1b[0;1;32;48;5;238m", b"");
-pub const FILENAME: (Bytes, Bytes, Bytes)          = (b"\x1b[0;31m", b"\x1b[0;32m", b"");
-pub const DIFF: (Bytes, Bytes)              = (b"\x1b[0;31m", b"\x1b[0;32m");
-// pub const DIFF_MATCHING =     (b"\x1b[0;38;2;250;100;100m", b"\x1b[0;38;2;100;250;100m");
-pub const DIFF_MATCHING: [Bytes; 2]     = [b"\x1b[0;38;2;220;190;210;48;2;35;20;20m", b"\x1b[0;38;2;190;220;210;48;2;20;35;20m"];
-// pub const DIFF_MATCHING =     (b"\x1b[0;38;5;225m", b"\x1b[0;38;5;195m");
-// pub const DIFF_MATCHING =     (b"\x1b[0m", b"\x1b[0m");
-// pub const DIFF_NON_MATCHING = (b"\x1b[0;48;2;200;80;80;38;5;235m", b"\x1b[0;48;2;80;200;80;38;5;235m");
-pub const DIFF_NON_MATCHING: [Bytes; 2] = [b"\x1b[0;1;31;48;2;80;30;30m", b"\x1b[0;1;32;48;2;25;80;25m"];
-// pub const DIFF_NON_MATCHING =     (b"\x1b[0;48;2;60;0;0m", b"\x1b[0;48;2;0;60;0m");
-// pub const DIFF_NON_MATCHING = (b"\x1b[0;41;38;5;235m", b"\x1b[0;42;38;5;235m");
-pub const DIFF_TRAILING_WS: Bytes  = b"\x1b[2;7m$0";
-pub const DIFF_INSERT: [Bytes; 2]       = [b"\x1b[4:3:58:5:10m", b"\x1b[4:3;58;5;9m"];
-// pub const DIFF_INSERT =       (b"\x1b[0;7;2;48;5;211;38;5;52m", b"\x1b[0;7;2;48;5;158;38;5;22m");
-pub const DIFF_CONTEXT: Bytes      = b"\x1b[0;38;5;242m";
-pub const SIGN: [Bytes; 3]              = [b"-", b"+", RESET];
-pub const FILENAME_SIGN: (&str, &str)     = ("\x1b[0;31;48;5;238;7m---\x1b[27m ", "\x1b[0;32;48;5;238;7m+++\x1b[27m ");
-pub const LINENO: &str            = "\x1b[0;38;5;242m";
-pub const LINENO_BAR: &str        = "\x1b[0;38;5;242m▏";
-pub const LINENO_OUR_BAR: &str    = "\x1b[0;38;5;187m(";
-pub const LINENO_THEIR_BAR: &str  = "\x1b[0;38;5;117m)";
-pub const LINENO_MERGE_BAR: &str  = "\x1b[0;38;5;13;1m|";
-pub const LINENO_DIFF: (&str, &str)       = ("\x1b[0;31m", "\x1b[0;32m");
+macro_rules! concat_bytes {
+    (_, $A:expr, $B:expr) => {{
+        const LEN: usize = $A.len() + $B.len();
+        const fn combine(a: &'static [u8], b: &'static [u8]) -> [u8; LEN] {
+            let out = [0u8; LEN];
+            let out = copy_slice(a, out, 0);
+            let out = copy_slice(b, out, a.len());
+            out
+        }
+        const fn copy_slice(input: &[u8], mut output: [u8; LEN], offset: usize) -> [u8; LEN] {
+            let mut index = 0;
+            while index < input.len() {
+                output[offset+index] = input[index];
+                index += 1;
+            }
+            output
+        }
+        &combine($A, $B)
+    }};
+
+    ($A:expr, $B:expr, $($rest:expr),+) => {{
+        concat_bytes!(concat_bytes!($A, $B), $($rest),*)
+    }};
+    ($A:expr, $B:expr) => {{
+        concat_bytes!(_, $A, $B)
+    }};
+}
+
+macro_rules! concat_str {
+    ($($expr:expr),+) => {{
+        const BYTES: Bytes = concat_bytes!($($expr.as_bytes()),+);
+        let Ok(result) = std::str::from_utf8(BYTES) else {
+            panic!(concat!("unable to concat: ", stringify!($($expr),+)));
+        };
+        result
+    }};
+}
+
+pub const RESET: Bytes      = b"\x1b[0m";
+pub const BOLD: &str        =  "\x1b[1m";
+pub const HEADER: Bytes     = b"\x1b[0;36m";
+pub const COMMIT: &str      =  "\x1b[1;48;5;24m";
+pub const CONTEXT: Bytes    = b"\x1b[0;1;33;48;5;236m";
+pub const DIFF_HEADER: &str = BOLD;
+pub const SIGN: [Bytes; 3]  = [b"-", b"+", RESET];
+
+const DIFF_STR: (&str, &str)   = ("\x1b[0;31m", "\x1b[0;32m");
+pub const DIFF: (Bytes, Bytes) = (DIFF_STR.0.as_bytes(), DIFF_STR.1.as_bytes());
+
+pub const LINENO: &str              = "\x1b[0;38;5;242m";
+pub const LINENO_BAR: &str          = concat_str!(LINENO, "▏");
+pub const LINENO_OUR_BAR: &str      = "\x1b[0;38;5;187m(";
+pub const LINENO_THEIR_BAR: &str    = "\x1b[0;38;5;117m)";
+pub const LINENO_MERGE_BAR: &str    = "\x1b[0;38;5;13;1m|";
+pub const LINENO_DIFF: (&str, &str) = DIFF_STR;
+
+const FILENAME_BG: Bytes                         = b"\x1b[48;5;238m";
+pub const FILENAME: (Bytes, Bytes, Bytes)        = (DIFF.0, DIFF.1, b"");
+pub const FILENAME_HEADER: (Bytes, Bytes, Bytes) = (
+    concat_bytes!(FILENAME.0, BOLD.as_bytes(), FILENAME_BG),
+    concat_bytes!(FILENAME.1, BOLD.as_bytes(), FILENAME_BG),
+    b"",
+);
+pub const FILENAME_SIGN: (&str, &str)   = (
+    concat_str!(DIFF_STR.0, "\x1b[48;5;238;7m---\x1b[27m "),
+    concat_str!(DIFF_STR.1, "\x1b[48;5;238;7m+++\x1b[27m "),
+);
+pub const FILENAME_NON_MATCHING: [Bytes; 2] = [
+    concat_bytes!(DIFF_NON_MATCHING[0], b"\x1b[1;7m"),
+    concat_bytes!(DIFF_NON_MATCHING[1], b"\x1b[1;7m"),
+];
+
+pub const DIFF_MATCHING: [Bytes; 2] = [
+    b"\x1b[0;38;2;220;190;210;48;2;35;20;20m",
+    b"\x1b[0;38;2;190;220;210;48;2;20;35;20m",
+];
+pub const DIFF_NON_MATCHING: [Bytes; 2] = [
+    concat_bytes!(DIFF.0, b"\x1b[1;48;2;80;30;30m"),
+    concat_bytes!(DIFF.1, b"\x1b[1;48;2;25;80;25m"),
+];
+pub const DIFF_INSERT: [Bytes; 2] = [
+    b"\x1b[4:3:58:5:10m",
+    b"\x1b[4:3;58;5;9m",
+];
+pub const DIFF_MATCHING_INLINE: Bytes = b"\x1b[0;38;5;252m";
+pub const DIFF_CONTEXT: Bytes = LINENO.as_bytes();
+pub const DIFF_TRAILING_WS: Bytes = b"\x1b[2;7m$0";
 
 pub fn format_lineno(
     [num1, num2]: [usize; 2],

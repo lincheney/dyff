@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{BufWriter, Write};
 use anyhow::{Result};
-use super::style::{Style, FILENAME_HEADER, DIFF_NON_MATCHING};
+use super::style::{Style, FILENAME_HEADER, FILENAME_NON_MATCHING};
 use super::types::*;
 use super::block_maker::BlockMaker;
 
@@ -74,24 +74,13 @@ impl Hunk {
             hunk.get_mut(i).push(filename);
         }
 
-        // add bold to it
-        const EXTRA: &[u8] = b"\x1b[1;7m";
-        let mut diff_non_matching = [
-            [0u8; DIFF_NON_MATCHING[0].len() + EXTRA.len()],
-            [0u8; DIFF_NON_MATCHING[1].len() + EXTRA.len()],
-        ];
-        diff_non_matching[0][..DIFF_NON_MATCHING[0].len()].copy_from_slice(DIFF_NON_MATCHING[0]);
-        diff_non_matching[1][..DIFF_NON_MATCHING[1].len()].copy_from_slice(DIFF_NON_MATCHING[1]);
-        diff_non_matching[0][DIFF_NON_MATCHING[0].len()..].copy_from_slice(EXTRA);
-        diff_non_matching[1][DIFF_NON_MATCHING[1].len()..].copy_from_slice(EXTRA);
-
         let style = Style{
             signs: false,
             line_numbers: true,
             show_both: true,
             inline: false,
             diff_matching: [FILENAME_HEADER.0, FILENAME_HEADER.1],
-            diff_non_matching: [&diff_non_matching[0], &diff_non_matching[1]],
+            diff_non_matching: FILENAME_NON_MATCHING,
             ..style
         };
         let maker = BlockMaker::new(&hunk, [0, 0]);
