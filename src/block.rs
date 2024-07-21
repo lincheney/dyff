@@ -1,5 +1,5 @@
 use std::io::{BufWriter, Write};
-use std::cmp::{min, max};
+use std::cmp::{min};
 use std::collections::VecDeque;
 use anyhow::{Result};
 use super::part::Part;
@@ -201,16 +201,18 @@ impl<'a> Block<'a> {
 
         let part = &self.parts[parti];
 
-        // check if this is at start of line
-        let start = max(0, part.slices[i].start as isize + shift - 1) as usize;
-        if start == 0 || part.parent.words[i][start].as_bytes() == b"\n" {
-            prefix_scores[0] += 1;
-        }
+        if words[0] != b"\n" && words.back().unwrap() != b"\n" {
+            // check if this is at start of line
+            let start = (part.slices[i].start as isize + shift) as usize;
+            if start == 0 || part.parent.words[i][start-1].as_bytes() == b"\n" {
+                prefix_scores[0] += 1;
+            }
 
-        // check if this is at end of line
-        let end = (part.slices[i].end as isize + shift) as usize;
-        if part.parent.words[i].get(end).map(|s| s.as_bytes() == b"\n") == Some(true) {
-            suffix_scores[0] += 1;
+            // check if this is at end of line
+            let end = (part.slices[i].end as isize + shift) as usize;
+            if end == part.parent.words[i].len() || part.parent.words[i][end].as_bytes() == b"\n" {
+                suffix_scores[0] += 1;
+            }
         }
 
         // prefer suffix scores

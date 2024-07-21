@@ -81,20 +81,27 @@ impl<'a> BlockMaker<'a> {
 
         for (left, right) in LineDiffer::new(self).get_matching_blocks() {
             if previ < left.start || prevj < right.start {
-                ranges.push((previ .. left.start, prevj .. right.start));
+                ranges.push((false, previ .. left.start, prevj .. right.start));
             }
             previ = left.end;
             prevj = right.end;
-            ranges.push((left, right));
+            ranges.push((true, left, right));
         }
         if previ < maxi || prevj < maxj {
-            ranges.push((previ .. maxi, prevj .. maxj));
+            ranges.push((false, previ .. maxi, prevj .. maxj));
         }
 
         let mut parts = vec![];
         let mut differ = WordDiffer::new(self);
 
-        for (left, right) in ranges {
+        for (matches, left, right) in ranges {
+            if matches {
+                // just one make part if it matches
+                let part = self.make_part(true, left, right);
+                parts.push(part);
+                continue
+            }
+
             let mut previ = left.start;
             let mut prevj = right.start;
             for part in differ.get_matching_blocks(left.start, left.end, right.start, right.end) {
