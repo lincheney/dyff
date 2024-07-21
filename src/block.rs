@@ -391,10 +391,7 @@ impl<'a> Block<'a> {
                 // nothing matches
                 if block.parts.iter().all(|p| !p.matches) {
                     block.parts.clear();
-                    // separate them
-                    let (first, second) = part.partition(part.slices[0].end, part.slices[1].start, false);
-                    block.parts.push(first);
-                    block.parts.push(second);
+                    block.parts.push(part);
                 }
             }
         }
@@ -462,26 +459,28 @@ impl<'a> Block<'a> {
             return Ok(())
         }
 
-        let outer_loop = if style.inline { 0..=0 } else { 0..=1 };
+        let inline = style.inline && self.parts.iter().any(|p| p.matches);
+
+        let outer_loop = if inline { 0..=0 } else { 0..=1 };
         for i in outer_loop {
             let mut newline = true;
             let mut insert = false;
 
             for part in self.parts.iter() {
-                if !style.inline && part.is_empty(i) {
+                if !inline && part.is_empty(i) {
                     insert = true;
                     continue
                 }
 
                 let highlight = if !part.matches {
                     style.diff_non_matching
-                } else if style.inline {
+                } else if inline {
                     [style::DIFF_MATCHING_INLINE, style::DIFF_MATCHING_INLINE]
                 } else {
                     style.diff_matching
                 };
 
-                let inner_loop = if style.inline && !part.matches { 0..=1 } else { i..=i };
+                let inner_loop = if inline && !part.matches { 0..=1 } else { i..=i };
                 for i in inner_loop {
                     stdout.write_all(highlight[i])?;
 
@@ -490,7 +489,7 @@ impl<'a> Block<'a> {
                         if newline {
                             if style.line_numbers {
                                 let mut lineno_args = line_numbers;
-                                if !style.inline || part.is_empty(1-i) {
+                                if !inline || part.is_empty(1-i) {
                                     lineno_args[1-i] = 0;
                                 }
                                 let bar_style = merge_markers.and_then(|m| m.get(&(i, line_numbers[i])).map(|x| x.as_ref()));
@@ -510,7 +509,7 @@ impl<'a> Block<'a> {
 
                         if word == b"\n" {
                             line_numbers[i] += 1;
-                            if style.inline {
+                            if inline {
                                 line_numbers[1-i] += 1;
                             }
                             newline = true;
