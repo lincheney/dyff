@@ -69,7 +69,7 @@ struct Cli {
     extras: Vec<String>,
 }
 
-fn main() -> Result<ExitCode> {
+fn _main() -> Result<ExitCode> {
     let mut args = Cli::parse();
 
     {
@@ -423,4 +423,17 @@ fn main() -> Result<ExitCode> {
     } else {
         Ok(ExitCode::SUCCESS)
     }
+}
+
+fn main() -> Result<ExitCode> {
+    let result = _main();
+
+    if let Err(e) = &result {
+        if let Some(e) = e.downcast_ref::<std::io::Error>() {
+            if e.kind() == std::io::ErrorKind::BrokenPipe {
+                return Ok(ExitCode::from(141))
+            }
+        }
+    }
+    result
 }
