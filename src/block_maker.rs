@@ -67,6 +67,10 @@ impl<'a> BlockMaker<'a> {
         self.line_to_word[i][lineno - self.line_numbers[i]]
     }
 
+    pub fn make_part(&self, matches: bool, left: std::ops::Range<usize>, right: std::ops::Range<usize>) -> Part {
+        Part{parent: self, matches, slices: [left, right]}
+    }
+
     pub fn make_block(&self) -> Block {
         // diff by line first
         let mut ranges = vec![];
@@ -98,7 +102,7 @@ impl<'a> BlockMaker<'a> {
                 let j = part.slices[1].start;
 
                 if previ < i || prevj < j {
-                    let part = Part{parent: self, matches: false, slices: [previ..i, prevj..j]};
+                    let part = self.make_part(false, previ..i, prevj..j);
                     parts.extend(part.split().into_iter().flatten());
                 }
 
@@ -108,7 +112,7 @@ impl<'a> BlockMaker<'a> {
             }
 
             if previ < left.end || prevj < right.end {
-                let part = Part{parent: self, matches: false, slices: [previ..left.end, prevj..right.end]};
+                    let part = self.make_part(false, previ..left.end, prevj..right.end);
                 parts.extend(part.split().into_iter().flatten());
             }
         }

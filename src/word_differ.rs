@@ -168,7 +168,9 @@ impl<'a> WordDiffer<'a> {
                         continue
                     }
 
-                    if cmp.is_gt() {
+                    // aggregate based on num non whitespace words
+                    // but don't double count e.g. if we just added ws the count will be the same
+                    if besti != i && cmp.is_gt() {
                         mini = ahi;
                         minj = bhi;
                         maxi = 0;
@@ -219,6 +221,9 @@ impl<'a> WordDiffer<'a> {
             return None
         }
 
+        // more than one "best" match
+        // try find matches elsewhere first
+        // they may populate self.matched_lines which helps us narrow down which is better
         if bestcount > 1 {
             // this means there's multiple solutions
             if alo < mini && blo < minj {
@@ -244,6 +249,7 @@ impl<'a> WordDiffer<'a> {
         let right_line = self.parent.get_lineno(1, bestj);
         self.matched_lines.entry((0, left_line)).or_insert(right_line);
         self.matched_lines.entry((1, right_line)).or_insert(left_line);
+
         Some((besti, bestj, bestsize))
     }
 
@@ -292,11 +298,7 @@ impl<'a> WordDiffer<'a> {
                 }
             }
 
-            parts.push(Part{
-                parent: self.parent,
-                matches: true,
-                slices: [block.0..block.0+block.2, block.1..block.1+block.2],
-            });
+            parts.push(self.parent.make_part(true, block.0..block.0+block.2, block.1..block.1+block.2));
         }
 
         parts
