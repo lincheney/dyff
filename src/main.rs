@@ -60,7 +60,9 @@ struct Cli {
     #[arg(long)]
     label: Vec<String>,
 
+    #[arg(allow_hyphen_values = true)]
     file1: Option<String>,
+    #[arg(allow_hyphen_values = true)]
     file2: Option<String>,
 
     #[arg(allow_hyphen_values = true)]
@@ -69,6 +71,28 @@ struct Cli {
 
 fn main() -> Result<ExitCode> {
     let mut args = Cli::parse();
+
+    {
+        fn not_flag<S: AsRef<str>>(x: S) -> bool {
+            !x.as_ref().starts_with('-')
+        }
+
+        if args.file2.as_ref().map(not_flag) == Some(false) {
+            args.extras.insert(0, args.file2.take().unwrap());
+        }
+
+        if args.file1.as_ref().map(not_flag) == Some(false) {
+            args.extras.insert(0, args.file1.take().unwrap());
+            args.file1 = args.file2.take();
+        }
+
+        if args.file1.is_none() {
+            args.file1 = args.extras.iter().position(not_flag).map(|i| args.extras.remove(i));
+        }
+        if args.file2.is_none() {
+            args.file2 = args.extras.iter().position(not_flag).map(|i| args.extras.remove(i));
+        }
+    }
 
     let stdout = std::io::stdout().lock();
     let is_tty = stdout.is_terminal();
