@@ -468,6 +468,7 @@ impl<'a> Block<'a> {
             return Ok(())
         }
 
+        let score = self.score();
         let inline = style.inline && self.parts.iter().any(|p| p.matches);
 
         let outer_loop = if inline { 0..=0 } else { 0..=1 };
@@ -477,7 +478,7 @@ impl<'a> Block<'a> {
 
             for part in self.parts.iter() {
                 if !inline && part.is_empty(i) {
-                    insert = true;
+                    insert = score > 0.;
                     continue
                 }
 
