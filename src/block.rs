@@ -311,7 +311,7 @@ impl<'a> Block<'a> {
         }
     }
 
-    pub fn split_block(mut self) -> Vec<Self> {
+    pub fn split_block(mut self, simple_diff: bool) -> Vec<Self> {
         self.squeeze_parts();
 
         let mut blocks = vec![Block{parts: vec![]}];
@@ -370,24 +370,28 @@ impl<'a> Block<'a> {
                     ],
                 };
 
-                // find common prefix
-                let prefix = find_common_prefix_length(part.get(0), part.get(1));
-                let (mut first, second) = part.partition_relative(prefix as _, prefix as _);
-                first.matches = true;
-
-                // find common suffix
-                let suffix = if second.single_line(0) && second.single_line(1) {
-                    find_common_suffix_length(second.get(0), second.get(1))
-                } else {
-                    0
-                };
-                let (second, mut third) = second.partition(second.slices[0].end - suffix, second.slices[1].end - suffix);
-                third.matches = true;
-
                 block.parts.clear();
-                block.parts.extend_from_slice(&[first, second, third]);
-                block.squeeze_parts();
-                block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+
+                if simple_diff {
+                    // find common prefix
+                    let prefix = find_common_prefix_length(part.get(0), part.get(1));
+                    let (mut first, second) = part.partition_relative(prefix as _, prefix as _);
+                    first.matches = true;
+
+                    // find common suffix
+                    let suffix = if second.single_line(0) && second.single_line(1) {
+                        find_common_suffix_length(second.get(0), second.get(1))
+                    } else {
+                        0
+                    };
+                    let (second, mut third) = second.partition(second.slices[0].end - suffix, second.slices[1].end - suffix);
+                    third.matches = true;
+
+                    block.parts.extend_from_slice(&[first, second, third]);
+                    block.squeeze_parts();
+                    block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+                }
+
                 // nothing matches
                 if block.parts.iter().all(|p| !p.matches) {
                     block.parts.clear();
