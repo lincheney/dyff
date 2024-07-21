@@ -395,7 +395,10 @@ impl<'a> Block<'a> {
                 // nothing matches
                 if block.parts.iter().all(|p| !p.matches) {
                     block.parts.clear();
-                    block.parts.push(part);
+                    // separate them
+                    let (first, second) = part.partition(part.slices[0].end, part.slices[1].start);
+                    block.parts.push(first);
+                    block.parts.push(second);
                 }
             }
         }
