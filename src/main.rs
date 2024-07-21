@@ -28,7 +28,7 @@ fn shell_quote<S: AsRef<str>>(val: S) -> String {
 }
 
 #[derive(Clone, PartialEq, Debug, clap::ValueEnum)]
-enum ColorChoices {
+enum AutoChoices {
     Never,
     Auto,
     Always,
@@ -38,8 +38,8 @@ enum ColorChoices {
 #[command(name = "diff")]
 struct Cli {
 
-    #[arg(long, value_enum, default_value_t = ColorChoices::Auto)]
-    color: ColorChoices,
+    #[arg(long, value_enum, default_value_t = AutoChoices::Auto)]
+    color: AutoChoices,
 
     #[arg(short = 'N', long = "no-line-numbers", action = clap::ArgAction::SetFalse)]
     line_numbers: bool,
@@ -47,8 +47,8 @@ struct Cli {
     #[arg(short, long)]
     signs: bool,
 
-    #[arg(short = 'I', long = "no-inline", action = clap::ArgAction::SetFalse)]
-    inline: bool,
+    #[arg(short = 'I', long, value_enum, default_value_t = AutoChoices::Auto)]
+    inline: AutoChoices,
 
     #[arg(long)]
     exact: bool,
@@ -96,14 +96,19 @@ fn main() -> Result<ExitCode> {
 
     let stdout = std::io::stdout().lock();
     let is_tty = stdout.is_terminal();
-    if !is_tty && args.color == ColorChoices::Auto {
-        args.color = ColorChoices::Never;
+    if !is_tty {
+        if args.color == AutoChoices::Auto {
+            args.color = AutoChoices::Never;
+        }
+        if args.inline == AutoChoices::Auto {
+            args.inline = AutoChoices::Never;
+        }
     }
 
     let style = style::Style{
         line_numbers: args.line_numbers,
         signs: args.signs,
-        inline: args.inline && !args.exact,
+        inline: args.inline != AutoChoices::Never && !args.exact,
         ..style::Style::default()
     };
 
@@ -171,7 +176,7 @@ fn main() -> Result<ExitCode> {
         };
         diff = true;
 
-        if args.color == ColorChoices::Never {
+        if args.color == AutoChoices::Never {
             stdout.write_all(&buf)?;
             continue
         }
