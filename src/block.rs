@@ -363,7 +363,8 @@ impl<'a> Block<'a> {
 
         // if score is too low, make the whole thing non matching
         for block in blocks.iter_mut() {
-            if block.score() < Block::CUTOFF {
+            let score = block.score();
+            if 0. < score && score < Block::CUTOFF {
                 let first = &block.parts[0];
                 let part = Part{
                     parent: first.parent,
