@@ -89,6 +89,7 @@ impl Hunk {
             signs: false,
             line_numbers: true,
             show_both: true,
+            inline: false,
             diff_matching: [FILENAME_HEADER.0, FILENAME_HEADER.1],
             diff_non_matching: [&diff_non_matching[0], &diff_non_matching[1]],
             ..style
@@ -96,8 +97,8 @@ impl Hunk {
         let maker = BlockMaker::new(&hunk, [0, 0]);
         let blocks = maker.make_block().split_block();
         for block in blocks {
-            block.print(stdout, None, style, |num1: Option<usize>, _, _, _, _| -> &'a str {
-                if num1.is_some() { prefix.0 } else { prefix.1 }
+            block.print(stdout, None, style, |[num1, _]: [usize; 2], _, _, _| -> &'a str {
+                if num1 != 0 { prefix.0 } else { prefix.1 }
             })?;
         }
         Ok(())

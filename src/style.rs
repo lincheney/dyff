@@ -5,6 +5,7 @@ pub struct Style<'a> {
     pub line_numbers: bool,
     pub signs: bool,
     pub show_both: bool,
+    pub inline: bool,
 
     pub diff_matching: [Bytes<'a>; 2],
     pub diff_non_matching: [Bytes<'a>; 2],
@@ -16,6 +17,7 @@ impl<'a> std::default::Default for Style<'a> {
             line_numbers: true,
             signs: false,
             show_both: false,
+            inline: false,
             diff_matching: DIFF_MATCHING,
             diff_non_matching: DIFF_NON_MATCHING,
         }
@@ -52,14 +54,14 @@ pub const LINENO_MERGE_BAR: &str  = "\x1b[0;38;5;13;1m|";
 pub const LINENO_DIFF: (&str, &str)       = ("\x1b[0;31m", "\x1b[0;32m");
 
 pub fn format_lineno(
-    num1: Option<usize>,
-    num2: Option<usize>,
+    [num1, num2]: [usize; 2],
     left_style: Option<&str>,
     right_style: Option<&str>,
     bar_style: Option<&str>,
 ) -> String {
-    let num1 = num1.map(|n| n.to_string());
-    let num2 = num2.map(|n| n.to_string());
+    let num1 = if num1 != 0 { Some(num1.to_string()) } else { None };
+    let num2 = if num2 != 0 { Some(num2.to_string()) } else { None };
+
     format!(
         "{}{:<4}{}{}{:<4}{} ",
         left_style.unwrap_or(LINENO_DIFF.0),

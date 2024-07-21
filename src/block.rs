@@ -21,7 +21,7 @@ fn find_common_suffix_length<
     B: DoubleEndedIterator<Item=Bytes<'a>> + ExactSizeIterator,
 >(a: A, b: B) -> usize {
 
-    a.zip(b).rev().take_while(|(a, b)| a == b).count()
+    a.rev().zip(b.rev()).take_while(|(a, b)| a == b).count()
 }
 
 
@@ -405,7 +405,7 @@ impl<'a> Block<'a> {
     pub fn print<
         T: Write,
         S: AsRef<str>,
-        F: Fn(Option<usize>, Option<usize>, Option<&str>, Option<&str>, Option<&str>)->S
+        F: Fn([usize; 2], Option<&str>, Option<&str>, Option<&str>)->S
     >(
         &self,
         stdout: &mut BufWriter<T>,
@@ -417,7 +417,7 @@ impl<'a> Block<'a> {
         if self.parts.is_empty() {
             return Ok(())
         }
-        let line_numbers = [self.parts[0].first_lineno(0), self.parts[0].first_lineno(1)];
+        let mut line_numbers = [self.parts[0].first_lineno(0), self.parts[0].first_lineno(1)];
 
         if !style.show_both && self.parts.iter().all(|p| p.matches || (p.is_empty(0) && p.is_empty(1))) {
             // this is entirely matching
@@ -433,7 +433,7 @@ impl<'a> Block<'a> {
                     if newline {
                         if style.line_numbers {
                             stdout.write_all(format_lineno(
-                                Some(line_numbers[0] + lineno), Some(line_numbers[1] + lineno),
+                                line_numbers,
                                 Some(style::LINENO), Some(style::LINENO),
                                 None,
                             ).as_ref().as_bytes())?;
@@ -446,7 +446,8 @@ impl<'a> Block<'a> {
                     }
                     stdout.write_all(&regex!(r"\s+\n".replace_all(word, style::DIFF_TRAILING_WS)))?;
                     if word == b"\n" {
-                        lineno += 1;
+                        line_numbers[0] += 1;
+                        line_numbers[1] += 1;
                         newline = true;
                     }
                 }
@@ -455,62 +456,74 @@ impl<'a> Block<'a> {
             return Ok(())
         }
 
-        for i in 0..=1 {
-            let mut lineno = 0;
+        let outer_loop = if style.inline { 0..=0 } else { 0..=1 };
+        for i in outer_loop {
             let mut newline = true;
             let mut insert = false;
-            let mut lineno_args = [None, None];
 
             for part in self.parts.iter() {
-                if part.is_empty(i) {
+                if !style.inline && part.is_empty(i) {
                     insert = true;
                     continue
                 }
 
-                let highlight = if part.matches { style.diff_matching } else { style.diff_non_matching };
-                stdout.write_all(highlight[i])?;
+                let highlight = if !part.matches {
+                    style.diff_non_matching
+                } else if style.inline {
+                    [style::RESET, style::RESET]
+                } else {
+                    style.diff_matching
+                };
 
-                for word in part.get(i) {
+                let inner_loop = if style.inline && !part.matches { 0..=1 } else { i..=i };
+                for i in inner_loop {
+                    stdout.write_all(highlight[i])?;
 
-                    if newline {
-                        let lineno = line_numbers[i] + lineno;
+                    for word in part.get(i) {
 
-                        if style.line_numbers {
-                            lineno_args[i] = Some(lineno);
-                            let bar_style = merge_markers.and_then(|m| m.get(&(i, lineno)).map(|x| x.as_ref()));
-                            stdout.write_all(format_lineno(
-                                lineno_args[0], lineno_args[1],
-                                None, None,
-                                bar_style,
-                            ).as_ref().as_bytes())?;
+                        if newline {
+                            if style.line_numbers {
+                                let mut lineno_args = *&line_numbers;
+                                if !style.inline {
+                                    lineno_args[1-i] = 0;
+                                }
+                                let bar_style = merge_markers.and_then(|m| m.get(&(i, line_numbers[i])).map(|x| x.as_ref()));
+                                stdout.write_all(format_lineno(
+                                    line_numbers,
+                                    None, None,
+                                    bar_style,
+                                ).as_ref().as_bytes())?;
+                            }
+                            if style.signs {
+                                stdout.write_all(style::SIGN[i])?;
+                            }
+                            stdout.write_all(highlight[i])?;
+
+                            newline = false;
                         }
-                        if style.signs {
-                            stdout.write_all(style::SIGN[i])?;
+
+                        if word == b"\n" {
+                            line_numbers[0] += 1;
+                            line_numbers[1] += 1;
+                            newline = true;
                         }
-                        stdout.write_all(highlight[i])?;
 
-                        newline = false;
-                    }
-
-                    if word == b"\n" {
-                        lineno += 1;
-                        newline = true;
-                    }
-
-                    let word = regex!(r"\s+\n".replace_all(word, style::DIFF_TRAILING_WS));
-                    if insert {
-                        // add an insertion marker
-                        // write only one char
-                        stdout.write_all(style::DIFF_INSERT[i])?;
-                        stdout.write_all(&word[0..1])?;
-                        stdout.write_all(highlight[i])?;
-                        stdout.write_all(&word[1..])?;
-                        insert = false;
-                    } else {
-                        stdout.write_all(&word)?;
+                        let word = regex!(r"\s+\n".replace_all(word, style::DIFF_TRAILING_WS));
+                        if insert {
+                            // add an insertion marker
+                            // write only one char
+                            stdout.write_all(style::DIFF_INSERT[i])?;
+                            stdout.write_all(&word[0..1])?;
+                            stdout.write_all(highlight[i])?;
+                            stdout.write_all(&word[1..])?;
+                            insert = false;
+                        } else {
+                            stdout.write_all(&word)?;
+                        }
                     }
                 }
             }
+
         }
 
         Ok(())

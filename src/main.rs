@@ -40,6 +40,9 @@ struct Cli {
     signs: bool,
 
     #[arg(long)]
+    inline: bool,
+
+    #[arg(long)]
     exact: bool,
 
     #[arg(short, long)]
@@ -70,6 +73,7 @@ fn main() -> Result<()> {
     let style = style::Style{
         line_numbers: args.line_numbers,
         signs: args.signs,
+        inline: args.inline,
         ..style::Style::default()
     };
 
@@ -251,9 +255,9 @@ fn main() -> Result<()> {
         if args.exact && stripped.starts_with(b" ") {
             h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
             stdout.write_all(style::format_lineno(
-                Some(line_numbers[0]), Some(line_numbers[1]),
-                Some(style::LINENO), Some(style::LINENO),
-                None,
+                    line_numbers,
+                    Some(style::LINENO), Some(style::LINENO),
+                    None,
             ).as_ref())?;
             if style.signs {
                 stdout.write_all(style::SIGN[2])?;
