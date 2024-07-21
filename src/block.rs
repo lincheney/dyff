@@ -319,7 +319,7 @@ impl<'a> Block<'a> {
         }
     }
 
-    pub fn split_block(mut self, simple_diff: bool) -> Vec<Self> {
+    pub fn split_block(mut self) -> Vec<Self> {
         self.squeeze_parts();
         self.shift_parts();
 
@@ -382,21 +382,21 @@ impl<'a> Block<'a> {
 
                 block.parts.clear();
 
-                if simple_diff {
-                    // find common prefix
-                    let prefix = find_common_prefix_length(part.get(0), part.get(1));
-                    let (mut first, second) = part.partition_from_start(prefix, prefix, false);
-                    first.matches = true;
+                // find common prefix
+                let prefix = find_common_prefix_length(part.get(0), part.get(1));
+                let (mut first, second) = part.partition_from_start(prefix, prefix, false);
+                first.matches = true;
 
-                    // find common suffix
-                    let suffix = if second.single_line(0) && second.single_line(1) {
-                        find_common_suffix_length(second.get(0), second.get(1))
-                    } else {
-                        0
-                    };
-                    let (second, mut third) = second.partition_from_end(suffix, suffix, false);
-                    third.matches = true;
+                // find common suffix
+                let suffix = if second.single_line(0) && second.single_line(1) {
+                    find_common_suffix_length(second.get(0), second.get(1))
+                } else {
+                    0
+                };
+                let (second, mut third) = second.partition_from_end(suffix, suffix, false);
+                third.matches = true;
 
+                if second.inlineable() {
                     block.parts.extend_from_slice(&[first, second, third]);
                     block.squeeze_parts();
                     block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
@@ -474,7 +474,8 @@ impl<'a> Block<'a> {
         }
 
         let score = self.score();
-        let inline = style.inline && self.parts.iter().any(|p| p.matches);
+        let inline = style.inline && (score > Block::CUTOFF || self.parts.iter().all(|p| p.inlineable()));
+        // let inline = style.inline && self.parts.iter().all(|p| p.inlineable());
 
         let outer_loop = if inline { 0..=0 } else { 0..=1 };
         for i in outer_loop {

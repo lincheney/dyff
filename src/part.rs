@@ -57,6 +57,16 @@ impl<'a> Part<'a> {
         self.get_non_whitespace(i).count()
     }
 
+    pub fn inlineable(&self) -> bool {
+        self.matches
+        || self.is_empty(0)
+        || self.is_empty(1)
+        || (
+            !self.get(0).any(|word| word.iter().all(|c| c.is_ascii_whitespace()))
+            && !self.get(1).any(|word| word.iter().all(|c| c.is_ascii_whitespace()))
+        )
+    }
+
     pub fn partition(&self, a: usize, b: usize, matches: bool) -> (Self, Self) {
         let a = a.clamp(self.slices[0].start, self.slices[0].end);
         let b = b.clamp(self.slices[1].start, self.slices[1].end);
