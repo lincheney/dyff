@@ -68,7 +68,7 @@ pub const HEADER: Bytes     = b"\x1b[0;36m";
 pub const COMMIT: &str      =  "\x1b[1;48;5;24m";
 pub const CONTEXT: Bytes    = b"\x1b[0;1;33;48;5;236m";
 pub const DIFF_HEADER: &str = BOLD;
-pub const SIGN: [Bytes; 3]  = [b"-", b"+", RESET];
+pub const SIGN: [Bytes; 3]  = [b"-", b"+", concat_bytes!(RESET, b" ")];
 
 const DIFF_STR: (&str, &str)   = ("\x1b[0;31m", "\x1b[0;32m");
 pub const DIFF: (Bytes, Bytes) = (DIFF_STR.0.as_bytes(), DIFF_STR.1.as_bytes());
