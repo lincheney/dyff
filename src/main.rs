@@ -39,7 +39,7 @@ struct Cli {
     #[arg(short, long)]
     signs: bool,
 
-    #[arg(long)]
+    #[arg(short = 'I', long = "no-inline", action = clap::ArgAction::SetFalse)]
     inline: bool,
 
     #[arg(long)]
@@ -73,7 +73,7 @@ fn main() -> Result<()> {
     let style = style::Style{
         line_numbers: args.line_numbers,
         signs: args.signs,
-        inline: args.inline,
+        inline: args.inline && !args.exact,
         ..style::Style::default()
     };
 
