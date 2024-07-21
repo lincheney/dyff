@@ -1,4 +1,5 @@
-use std::io::{BufRead, BufWriter, Write, IsTerminal};
+use std::io::{BufRead, BufReader, BufWriter, Write, IsTerminal};
+use std::process::ExitCode;
 use std::collections::HashMap;
 use clap::Parser;
 use anyhow::{Result};
@@ -17,6 +18,13 @@ use hunk::Hunk;
 
 fn strip_style<'a>(string: &'a [u8], replace: &[u8]) -> std::borrow::Cow<'a, [u8]> {
     regex!(r"\x1b\[[\d;]*m".replace_all(string, replace))
+}
+
+fn shell_quote<S: AsRef<str>>(val: S) -> String {
+    let mut val = val.as_ref().replace("'", "'\\''");
+    val.insert(0, '\'');
+    val.push('\'');
+    val
 }
 
 #[derive(Clone, PartialEq, Debug, clap::ValueEnum)]
@@ -59,12 +67,10 @@ struct Cli {
     extras: Vec<String>,
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<ExitCode> {
     let mut args = Cli::parse();
 
     let stdout = std::io::stdout().lock();
-    let mut stdin = std::io::stdin().lock();
-
     let is_tty = stdout.is_terminal();
     if !is_tty && args.color == ColorChoices::Auto {
         args.color = ColorChoices::Never;
@@ -77,7 +83,10 @@ fn main() -> Result<()> {
         ..style::Style::default()
     };
 
-    if let Some((file1, file2)) = args.file1.zip(args.file2) {
+    let command;
+    let mut diff_proc = if let Some((file1, file2)) = args.file1.zip(args.file2) {
+        let mut diff_args;
+
         if let Some(filter) = args.filter {
             if args.label.is_empty() {
                 args.label.push(format!("{} | {}", file1, filter));
@@ -85,23 +94,40 @@ fn main() -> Result<()> {
             if args.label.len() < 2 {
                 args.label.push(format!("{} | {}", file2, filter));
             }
-            // diff_args = ' '.join(map(shlex.quote, [
-                // 'diff', *extras,
-                // '--label', args.label[0],
-                // '--label', args.label[1],
-            // ]))
-            // diff_args = ['bash', '-c', f'{diff_args} <(set -- {shlex.quote(args.file1)}; cat "$1" | {args.filter}) <(set -- {shlex.quote(args.file2)}; cat "$1" | {args.filter})']
+
+            // shell quote
+            let file1 = shell_quote(file1);
+            let file2 = shell_quote(file2);
+            let label1 = shell_quote(&args.label[0]);
+            let label2 = shell_quote(&args.label[1]);
+            let extras = args.extras.iter().map(shell_quote).collect::<Vec<_>>().join(" ");
+            command = format!("diff {extras} --label {label1} --label {label2} <( < {file1} {filter} ) <( < {file2} {filter} ) ");
+
+            diff_args = vec!["bash", "-c", command.as_str()];
+
         } else {
             for l in args.label {
                 args.extras.push(format!("--label={}", l))
             }
-            // diff_args = ['diff', *extras, args.file1, args.file2]
+            diff_args = vec!["diff"];
+            diff_args.extend(args.extras.iter().map(|x| x.as_str()));
+            diff_args.push(file1.as_ref());
+            diff_args.push(file2.as_ref());
         }
 
-        // diff_proc = subprocess.Popen(diff_args, stdout=subprocess.PIPE, close_fds=False)
+        let diff_proc = std::process::Command::new(diff_args[0])
+            .args(&diff_args[1..])
+            .stdout(std::process::Stdio::piped())
+            .stdin(std::process::Stdio::null())
+            .spawn()?;
+        Some(diff_proc)
+
     } else {
-        // diff_proc = contextlib.nullcontext(SimpleNamespace(stdout=sys.stdin.buffer))
-    }
+        None
+    };
+
+    let mut proc_stdin = diff_proc.as_mut().map(|p| BufReader::new(p.stdout.take().unwrap()));
+    let mut stdin = std::io::stdin().lock();
 
     let mut hunk: Option<Hunk> = None;
     let mut line_numbers = [0, 0];
@@ -111,12 +137,15 @@ fn main() -> Result<()> {
     let mut stdout = BufWriter::new(stdout);
 
     let mut buf = Vec::<u8>::new();
+    let mut diff = false;
     loop {
         buf.clear();
-        match stdin.read_until(b'\n', &mut buf) {
+
+        match proc_stdin.as_mut().map(|x| x.read_until(b'\n', &mut buf)).unwrap_or_else(|| stdin.read_until(b'\n', &mut buf)) {
             Ok(0) => break,
             x => x?,
         };
+        diff = true;
 
         if args.color == ColorChoices::Never {
             stdout.write_all(&buf)?;
@@ -290,7 +319,7 @@ fn main() -> Result<()> {
             }
         }
 
-        if *stripped == *b"\\ No newline at end of file\n" {
+        if &*stripped == b"\\ No newline at end of file\n" || &*stripped == b"\\ No newline at end of file" {
             h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
             if !h.left.is_empty() {
                 stdout.write_all(style::DIFF.0)?;
@@ -350,10 +379,19 @@ fn main() -> Result<()> {
         hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
     }
 
-    // if hasattr(proc, 'returncode'):
-        // return proc.returncode
-    // if line:
-        // return 1
+    if let Some(mut diff_proc) = diff_proc {
+        if let Some(code) = diff_proc.try_wait()?.and_then(|x| x.code()) {
+            return if code <= u8::MAX as _ {
+                Ok(ExitCode::from(code as u8))
+            } else {
+                Ok(ExitCode::FAILURE)
+            }
+        }
+    }
 
-    Ok(())
+    if diff {
+        Ok(ExitCode::FAILURE)
+    } else {
+        Ok(ExitCode::SUCCESS)
+    }
 }
