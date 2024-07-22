@@ -133,24 +133,18 @@ impl<'a> WordDiffer<'a> {
             let expected_lineno_b = self.matched_lines.get(&(0, lineno_a));
 
             if let Some(j) = self.b2j.get(word) {
-                for j in j.iter() {
-                    let j = *j;
+                let junk = isjunk(word);
+
+                for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
                     // a[i] matches b[j]
-                    if j < blo {
-                        continue
-                    }
-                    if j >= bhi {
-                        break
-                    }
                     let k = if j == 0 { 1 } else { j2len.get(&(j-1)).unwrap_or(&0) + 1 };
 
                     // do not allow matches to start with a newline
                     if word != b"\n" {
                         newj2len.insert(j, k);
                     }
-
                     // don't match whitespace (but allow matching beyond it later)
-                    if isjunk(word) {
+                    if junk {
                         continue
                     }
 

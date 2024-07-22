@@ -70,15 +70,8 @@ impl<'a> LineDiffer<'a> {
             let value = self.left[i];
 
             if let Some(j) = self.b2j.get(&value) {
-                for j in j.iter() {
-                    let j = *j;
+                for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
                     // a[i] matches b[j]
-                    if j < blo {
-                        continue
-                    }
-                    if j >= bhi {
-                        break
-                    }
                     let k = if j == 0 { 1 } else { j2len.get(&(j-1)).unwrap_or(&0) + 1 };
 
                     newj2len.insert(j, k);
