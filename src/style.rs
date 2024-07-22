@@ -99,8 +99,8 @@ pub const FILENAME_SIGN: (&str, &str, &str)   = (
     concat_str!(            bytes_to_str(FILENAME_BG), "\x1b[7m###\x1b[27m "),
 );
 pub const FILENAME_NON_MATCHING: [Bytes; 2] = [
-    concat_bytes!(DIFF_NON_MATCHING[0], b"\x1b[1;7m"),
-    concat_bytes!(DIFF_NON_MATCHING[1], b"\x1b[1;7m"),
+    concat_bytes!(DIFF_NON_MATCHING[0], FILENAME_BG, b"\x1b[1m"),
+    concat_bytes!(DIFF_NON_MATCHING[1], FILENAME_BG, b"\x1b[1m"),
 ];
 
 pub const DIFF_MATCHING: [Bytes; 2] = [
