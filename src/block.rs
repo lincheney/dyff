@@ -162,11 +162,12 @@ impl<'a> Block<'a> {
         self.parts.iter().rev().find(|p| !p.is_empty(i))
     }
 
-    const NUM_SCORES: usize = 5;
+    const NUM_SCORES: usize = 6;
     fn score_words(&self, words: &VecDeque<Bytes>, parti: usize, i: usize, shift: isize) -> [[usize; Block::NUM_SCORES]; 2] {
         static PREFIXES: [Bytes; Block::NUM_SCORES] = [
             b"\n",
             b" \t",
+            b"", // b",;",
             b"{",
             b"", // b",;",
             b"{[(",
@@ -174,6 +175,7 @@ impl<'a> Block<'a> {
         static SUFFIXES: [Bytes; Block::NUM_SCORES] = [
             b"\n",
             b" \t",
+            b",;",
             b"}",
             b",;",
             b"}])",
