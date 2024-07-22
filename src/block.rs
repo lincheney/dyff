@@ -1,6 +1,5 @@
 use std::io::{BufWriter, Write};
 use std::cmp::{min};
-use std::collections::VecDeque;
 use anyhow::{Result};
 use super::part::Part;
 use super::style;
@@ -162,159 +161,9 @@ impl<'a> Block<'a> {
         self.parts.iter().rev().find(|p| !p.is_empty(i))
     }
 
-    const NUM_SCORES: usize = 4;
-    fn score_words(&self, words: &VecDeque<Bytes>, parti: usize, i: usize, shift: isize) -> [[usize; Block::NUM_SCORES]; 2] {
-        static PREFIXES: [(usize, Bytes); 3] = [
-            (0, b"\n"),
-            (1, b" \t"),
-            // (1, b"{"),
-            // (1, b",;"),
-            (2, b"{[("),
-        ];
-        static SUFFIXES: [(usize, Bytes); 6] = [
-            (0, b"\n"),
-            (1, b" \t"),
-            (2, b"}"),
-            (1, b" \t"),
-            (2, b",;"),
-            (2, b"}])"),
-        ];
-
-        let mut suffix_scores = [0; Block::NUM_SCORES];
-        let mut prefix_scores = [0; Block::NUM_SCORES];
-
-        let mut skip = 0;
-        for &(ix, p) in PREFIXES.iter() {
-            let count = words.iter().skip(skip).take_while(|w| p.contains(&w[0])).count();
-            skip += count;
-            prefix_scores[ix] += count;
-        }
-
-        let mut skip = 0;
-        for &(ix, p) in SUFFIXES.iter() {
-            let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
-            skip += count;
-            suffix_scores[ix] += count;
-        }
-
-        let part = &self.parts[parti];
-
-        if words[0] != b"\n" && words.back().unwrap() != b"\n" {
-            // check if this is at start of line
-            let start = (part.slices[i].start as isize + shift) as usize;
-            if start == 0 || part.parent.words[i][start-1] == b"\n" {
-                prefix_scores[0] += 1;
-            }
-
-            // check if this is at end of line
-            let end = (part.slices[i].end as isize + shift) as usize;
-            if end == part.parent.words[i].len() || part.parent.words[i][end] == b"\n" {
-                suffix_scores[0] += 1;
-            }
-        }
-
-        // prefer suffix scores
-        [suffix_scores, prefix_scores]
-    }
-
-    fn score_part_shift(&self, parti: usize, i: usize) -> Vec<([[usize; Block::NUM_SCORES]; 2], isize)> {
-        let part = &self.parts[parti];
-        let mut scores = vec![];
-
-        let mut words: VecDeque<_> = part.get(i).iter().copied().collect();
-        // no shift; more score if it is start or end of line
-        // let mut iter = std::iter::once((self.score_words(&words, parti, i, 0), 0));
-        scores.push((self.score_words(&words, parti, i, 0), 0));
-
-        // try shift left ie move stuff at back to front
-        if parti > 0 && self.parts[parti-1].matches {
-            let prev_words = self.parts[parti-1].get(i);
-            for (shift, word) in prev_words.iter().rev().enumerate() {
-                if word != words.back().unwrap() {
-                    break
-                }
-                words.rotate_right(1);
-                let shift = -(1 + shift as isize);
-                scores.push((self.score_words(&words, parti, i, shift), shift));
-            }
-        }
-
-        let mut words: VecDeque<_> = part.get(i).iter().copied().collect();
-        // try shift right ie move stuff at front to back
-        if let Some(next_words) = self.parts.get(parti+1) {
-            if next_words.matches {
-                let next_words = next_words.get(i);
-                for (shift, &word) in next_words.iter().enumerate() {
-                    if word != words[0] {
-                        break
-                    }
-                    words.rotate_left(1);
-                    let shift = 1 + shift as isize;
-                    scores.push((self.score_words(&words, parti, i, shift), shift));
-                }
-            }
-        }
-
-        scores
-    }
-
-    fn shift_parts(&mut self) {
-        // try to shift non matches around e.g. so that whitespace is at the ends
-
-        if self.parts.len() < 2 {
-            return
-        }
-
-        let mut insert_start = None;
-        let mut insert_end = None;
-        for i in 0..self.parts.len() {
-            {
-                let part = &self.parts[i];
-                // must be one empty and one non empty
-                if part.matches || part.is_empty(0) == part.is_empty(1) {
-                    continue
-                }
-            }
-
-            let side = if self.parts[i].is_empty(0) { 1 } else { 0 };
-            // prefer better score, less shifting, and shifting right
-            let scores = self.score_part_shift(i, side);
-            let (_score, shift) = scores.iter().max_by_key(|(score, shift)| (score, -shift.abs(), shift)).unwrap();
-
-            if *shift == 0 {
-                continue
-            }
-
-            let (left, right) = self.parts.split_at_mut(i);
-            let (mid, right) = right.split_at_mut(1);
-            let part = &mut mid[0];
-
-            let prev = left.last_mut().unwrap_or_else(|| {
-                insert_start = Some(part.partition_from_start(0, 0, true).0);
-                insert_start.as_mut().unwrap()
-            });
-            prev.slices = prev.shift_slice(0, *shift);
-
-            let next = right.first_mut().unwrap_or_else(|| {
-                insert_end = Some(part.partition_from_end(0, 0, true).1);
-                insert_end.as_mut().unwrap()
-            });
-            next.slices = next.shift_slice(*shift, 0);
-
-            part.slices = part.shift_slice(*shift, *shift);
-        }
-
-        if let Some(insert_start) = insert_start {
-            self.parts.insert(0, insert_start);
-        }
-        if let Some(insert_end) = insert_end {
-            self.parts.push(insert_end);
-        }
-    }
-
     pub fn split_block(mut self) -> Vec<Self> {
         self.squeeze_parts();
-        self.shift_parts();
+        super::shift::shift_parts(&mut self.parts);
 
         let mut blocks = vec![Block{parts: vec![]}];
 
@@ -355,7 +204,7 @@ impl<'a> Block<'a> {
         let mut blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
 
         for block in blocks.iter_mut() {
-            block.shift_parts();
+            super::shift::shift_parts(&mut block.parts);
             block.squeeze_parts();
         }
 

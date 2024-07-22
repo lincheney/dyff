@@ -13,6 +13,7 @@ mod line_differ;
 mod block;
 mod types;
 mod whitespace;
+mod shift;
 #[macro_use]
 mod regexes;
 use hunk::Hunk;
