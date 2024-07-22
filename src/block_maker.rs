@@ -3,6 +3,7 @@ use super::word_differ::WordDiffer;
 use super::line_differ::LineDiffer;
 use super::part::Part;
 use super::block::Block;
+use super::whitespace::CheckAllWhitespace;
 
 #[derive(Debug)]
 pub struct BlockMaker<'a> {
@@ -89,7 +90,7 @@ impl<'a> BlockMaker<'a> {
                 // check if all the lines are merely indented
                 let get_line = |i: usize, lineno: usize| {
                     let line = self.get_line(i, lineno);
-                    let start = line.iter().position(|w| !w.iter().all(|c| c.is_ascii_whitespace())).unwrap_or(0);
+                    let start = line.iter().position(|w| !w.is_ascii_whitespace()).unwrap_or(0);
                     &line[start..]
                 };
 

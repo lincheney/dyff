@@ -1,4 +1,5 @@
 use std::cmp::{max};
+use super::whitespace::CheckAllWhitespace;
 
 fn both_sides<T, F: FnMut(usize)->T>(mut f: F) -> [T; 2] {
     [f(0), f(1)]
@@ -19,7 +20,7 @@ impl<'a> Part<'a> {
     }
 
     fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=&[u8]> {
-        self.get(i).iter().copied().filter(|word| !word.iter().all(|c| c.is_ascii_whitespace()))
+        self.get(i).iter().copied().filter(|word| !word.is_ascii_whitespace())
     }
 
     pub fn first_lineno(&self, i: usize) -> usize {
@@ -62,8 +63,8 @@ impl<'a> Part<'a> {
         || self.is_empty(0)
         || self.is_empty(1)
         || (
-            !self.get(0).iter().any(|word| word.iter().all(|c| c.is_ascii_whitespace()))
-            && !self.get(1).iter().any(|word| word.iter().all(|c| c.is_ascii_whitespace()))
+            !self.get(0).iter().any(|word| word.is_ascii_whitespace())
+            && !self.get(1).iter().any(|word| word.is_ascii_whitespace())
         )
     }
 

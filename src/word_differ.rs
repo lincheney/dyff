@@ -2,13 +2,10 @@ use std::collections::HashMap;
 use std::cmp::{min, max};
 use super::block_maker::BlockMaker;
 use super::part::Part;
-
-fn is_whitespace(b: &[u8]) -> bool {
-    b.iter().all(|c| c.is_ascii_whitespace())
-}
+use super::whitespace::CheckAllWhitespace;
 
 fn isjunk(b: &[u8]) -> bool {
-    b != b"\n" && is_whitespace(b)
+    b != b"\n" && b.is_ascii_whitespace()
 }
 
 pub struct WordDiffer<'a> {
@@ -27,7 +24,7 @@ impl<'a> WordDiffer<'a> {
         let mut line_start = true;
         for (i, &word) in parent.words[1].iter().enumerate() {
             // whitespace at start is 'junk' as it is usually just indentation
-            if !(line_start && word != b"\n" && is_whitespace(word)) {
+            if !(line_start && word != b"\n" && word.is_ascii_whitespace()) {
                 b2j.entry(word).or_insert_with(Vec::new).push(i);
                 line_start = word == b"\n"
             }
