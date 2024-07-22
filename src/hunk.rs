@@ -59,7 +59,7 @@ impl Hunk {
         stdout: &mut BufWriter<T>,
         left: Option<Bytes>,
         right: Option<Bytes>,
-        prefix: (&'a str, &'a str),
+        prefix: (&'a str, &'a str, &'a str),
         // suffix: (&'a str, &'a str),
         style: Style,
     ) -> Result<()> {
@@ -78,16 +78,21 @@ impl Hunk {
             signs: false,
             line_numbers: true,
             show_both: true,
-            inline: false,
+            // inline: false,
             diff_matching: [FILENAME_HEADER.0, FILENAME_HEADER.1],
+            diff_matching_inline: super::style::FILENAME_RENAME,
             diff_non_matching: FILENAME_NON_MATCHING,
             ..style
         };
         let maker = BlockMaker::new(&hunk, [1, 1]);
         let blocks = maker.make_block().split_block();
         for block in blocks {
-            block.print(stdout, None, style, |[num1, _]: [usize; 2], _, _, _| -> &'a str {
-                if num1 != 0 { prefix.0 } else { prefix.1 }
+            block.print(stdout, None, style, |num: [usize; 2], _, _, _| -> &'a str {
+                match num {
+                    [0, _] => prefix.0,
+                    [_, 0] => prefix.1,
+                    [_, _] => prefix.2,
+                }
             })?;
         }
         Ok(())

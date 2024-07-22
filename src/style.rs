@@ -8,6 +8,7 @@ pub struct Style<'a> {
     pub inline: bool,
 
     pub diff_matching: [Bytes<'a>; 2],
+    pub diff_matching_inline: Bytes<'a>,
     pub diff_non_matching: [Bytes<'a>; 2],
 }
 
@@ -19,6 +20,7 @@ impl<'a> std::default::Default for Style<'a> {
             show_both: false,
             inline: false,
             diff_matching: DIFF_MATCHING,
+            diff_matching_inline: DIFF_MATCHING_INLINE,
             diff_non_matching: DIFF_NON_MATCHING,
         }
     }
@@ -52,13 +54,16 @@ macro_rules! concat_bytes {
     }};
 }
 
+const fn bytes_to_str(bytes: &[u8]) -> &str {
+    let Ok(result) = std::str::from_utf8(bytes) else {
+        panic!(concat!("invalid utf8: ", stringify!(bytes)));
+    };
+    result
+}
+
 macro_rules! concat_str {
     ($($expr:expr),+) => {{
-        const BYTES: Bytes = concat_bytes!($($expr.as_bytes()),+);
-        let Ok(result) = std::str::from_utf8(BYTES) else {
-            panic!(concat!("unable to concat: ", stringify!($($expr),+)));
-        };
-        result
+        bytes_to_str(concat_bytes!($($expr.as_bytes()),+))
     }};
 }
 
@@ -80,16 +85,18 @@ pub const LINENO_THEIR_BAR: &str    = "\x1b[0;38;5;117m)";
 pub const LINENO_MERGE_BAR: &str    = "\x1b[0;38;5;13;1m|";
 pub const LINENO_DIFF: (&str, &str) = DIFF_STR;
 
-const FILENAME_BG: Bytes                         = b"\x1b[48;5;238m";
 pub const FILENAME: (Bytes, Bytes, Bytes)        = (DIFF.0, DIFF.1, b"");
+const FILENAME_BG: Bytes                         = b"\x1b[48;5;238m";
+pub const FILENAME_RENAME: Bytes                 = concat_bytes!(b"\x1b[0m", b"\x1b[48;5;238m");
 pub const FILENAME_HEADER: (Bytes, Bytes, Bytes) = (
     concat_bytes!(FILENAME.0, BOLD.as_bytes(), FILENAME_BG),
     concat_bytes!(FILENAME.1, BOLD.as_bytes(), FILENAME_BG),
     b"",
 );
-pub const FILENAME_SIGN: (&str, &str)   = (
-    concat_str!(DIFF_STR.0, "\x1b[48;5;238;7m---\x1b[27m "),
-    concat_str!(DIFF_STR.1, "\x1b[48;5;238;7m+++\x1b[27m "),
+pub const FILENAME_SIGN: (&str, &str, &str)   = (
+    concat_str!(DIFF_STR.0, bytes_to_str(FILENAME_BG), "\x1b[7m---\x1b[27m "),
+    concat_str!(DIFF_STR.1, bytes_to_str(FILENAME_BG), "\x1b[7m+++\x1b[27m "),
+    concat_str!(            bytes_to_str(FILENAME_BG), "\x1b[7m###\x1b[27m "),
 );
 pub const FILENAME_NON_MATCHING: [Bytes; 2] = [
     concat_bytes!(DIFF_NON_MATCHING[0], b"\x1b[1;7m"),

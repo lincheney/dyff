@@ -341,10 +341,9 @@ fn _main() -> Result<ExitCode> {
                         &mut stdout,
                         filename.as_ref().map(|f| f.as_ref()),
                         Some(&captures["filename"]),
-                        ("rename from\t", "rename to\t"),
+                        ("rename from\t", "rename to\t", "rename from/to\t"),
                         style,
                     )?;
-                    // 'filename_header': STYLE['filename'],
                 }
                 continue
             }

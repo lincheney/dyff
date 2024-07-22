@@ -23,7 +23,7 @@ pub struct Block<'a> {
 
 impl<'a> Block<'a> {
     const CUTOFF: f64 = 0.6;
-    const MIN_SIZE_EOL: usize = 2;
+    const _MIN_SIZE_EOL: usize = 2;
     const MIN_SIZE: usize = 7;
 
     fn perfect(&self) -> bool {
@@ -503,7 +503,7 @@ impl<'a> Block<'a> {
                 let highlight = if !part.matches {
                     style.diff_non_matching
                 } else if inline {
-                    [style::DIFF_MATCHING_INLINE, style::DIFF_MATCHING_INLINE]
+                    [style.diff_matching_inline, style.diff_matching_inline]
                 } else {
                     style.diff_matching
                 };

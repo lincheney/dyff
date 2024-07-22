@@ -49,7 +49,7 @@ impl<'a> Part<'a> {
         self.starts_line(0) && self.starts_line(1) && self.ends_line(0) && self.ends_line(1)
     }
 
-    fn char_len(&self, i: usize) -> usize {
+    fn _char_len(&self, i: usize) -> usize {
         // score whitespace lower
         self.get_non_whitespace(i).map(|word| word.len()).sum()
     }
