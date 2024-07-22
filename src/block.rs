@@ -7,21 +7,12 @@ use super::style;
 use super::regexes::regex;
 use super::types::*;
 
-fn find_common_prefix_length<
-    'a,
-    A: Iterator<Item=&'a [u8]>,
-    B: Iterator<Item=&'a [u8]>,
->(a: A, b: B) -> usize {
-    a.zip(b).take_while(|(a, b)| a == b).count()
+fn find_common_prefix_length(a: &[Bytes], b: &[Bytes]) -> usize {
+    a.iter().zip(b).take_while(|(a, b)| a == b).count()
 }
 
-fn find_common_suffix_length<
-    'a,
-    A: DoubleEndedIterator<Item=Bytes<'a>> + ExactSizeIterator,
-    B: DoubleEndedIterator<Item=Bytes<'a>> + ExactSizeIterator,
->(a: A, b: B) -> usize {
-
-    a.rev().zip(b.rev()).take_while(|(a, b)| a == b).count()
+fn find_common_suffix_length(a: &[Bytes], b: &[Bytes]) -> usize {
+    a.iter().rev().zip(b.iter().rev()).take_while(|(a, b)| a == b).count()
 }
 
 
@@ -63,16 +54,14 @@ impl<'a> Block<'a> {
                 let total_length = part.slices[0].len();
 
                 // strip newlines
-                let leading_nl = part.get(0).take_while(|w| w == b"\n").count();
-                let trailing_nl = part.get(0).rev().take_while(|w| w == b"\n").count();
-                let trailing_nl = min(trailing_nl, total_length - leading_nl);
                 let length: usize = part.get(0)
-                    .skip(leading_nl)
-                    .take(total_length - trailing_nl - leading_nl)
+                    .iter()
+                    .skip_while(|&w| w == b"\n")
+                    .take_while(|&w| w != b"\n")
                     .map(|w| w.len())
                     .sum();
 
-                if part.whole_line() || (total_length == 1 && part.get(0).next().unwrap() == b"\n") {
+                if part.whole_line() || (total_length == 1 && part.get(0)[0] == b"\n") {
 
                 // elif len(parts) >= 2 and any(parts[-1].is_empty(i) and not parts[-2].is_empty(i) for i in SIDES):
                     // // this is actually next to another part
@@ -212,13 +201,13 @@ impl<'a> Block<'a> {
         if words[0] != b"\n" && words.back().unwrap() != b"\n" {
             // check if this is at start of line
             let start = (part.slices[i].start as isize + shift) as usize;
-            if start == 0 || part.parent.words[i][start-1].as_bytes() == b"\n" {
+            if start == 0 || part.parent.words[i][start-1] == b"\n" {
                 prefix_scores[0] += 1;
             }
 
             // check if this is at end of line
             let end = (part.slices[i].end as isize + shift) as usize;
-            if end == part.parent.words[i].len() || part.parent.words[i][end].as_bytes() == b"\n" {
+            if end == part.parent.words[i].len() || part.parent.words[i][end] == b"\n" {
                 suffix_scores[0] += 1;
             }
         }
@@ -231,7 +220,7 @@ impl<'a> Block<'a> {
         let part = &self.parts[parti];
         let mut scores = vec![];
 
-        let mut words = part.get(i).collect::<VecDeque<&[u8]>>();
+        let mut words: VecDeque<_> = part.get(i).iter().copied().collect();
         // no shift; more score if it is start or end of line
         // let mut iter = std::iter::once((self.score_words(&words, parti, i, 0), 0));
         scores.push((self.score_words(&words, parti, i, 0), 0));
@@ -239,8 +228,8 @@ impl<'a> Block<'a> {
         // try shift left ie move stuff at back to front
         if parti > 0 && self.parts[parti-1].matches {
             let prev_words = self.parts[parti-1].get(i);
-            for (shift, word) in prev_words.rev().enumerate() {
-                if word != *words.back().unwrap() {
+            for (shift, word) in prev_words.iter().rev().enumerate() {
+                if word != words.back().unwrap() {
                     break
                 }
                 words.rotate_right(1);
@@ -249,12 +238,12 @@ impl<'a> Block<'a> {
             }
         }
 
-        let mut words = part.get(i).collect::<VecDeque<&[u8]>>();
+        let mut words: VecDeque<_> = part.get(i).iter().copied().collect();
         // try shift right ie move stuff at front to back
         if let Some(next_words) = self.parts.get(parti+1) {
             if next_words.matches {
                 let next_words = next_words.get(i);
-                for (shift, word) in next_words.enumerate() {
+                for (shift, &word) in next_words.iter().enumerate() {
                     if word != words[0] {
                         break
                     }

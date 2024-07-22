@@ -1,4 +1,3 @@
-use regex::bytes::Match;
 use super::hunk::{Hunk};
 use super::word_differ::WordDiffer;
 use super::line_differ::LineDiffer;
@@ -9,7 +8,7 @@ use super::block::Block;
 pub struct BlockMaker<'a> {
     line_numbers: [usize; 2],
 
-    pub words: [Vec<Match<'a>>; 2],
+    pub words: [Vec<&'a [u8]>; 2],
 
     word_to_line: [Vec<usize>; 2],
     pub line_to_word: [Vec<usize>; 2],
@@ -41,7 +40,7 @@ impl<'a> BlockMaker<'a> {
                     r")+"
                     "|."
                     "|\n",
-                    |r| { w.extend(r.find_iter(line)) }
+                    |r| { w.extend(r.find_iter(line).map(|m| m.as_bytes())) }
                 );
                 for _ in oldlen..w.len() {
                     word_to_line[i].push(lineno);
@@ -67,7 +66,7 @@ impl<'a> BlockMaker<'a> {
         self.line_to_word[i][lineno - self.line_numbers[i]]
     }
 
-    fn get_line(&self, i: usize, lineno: usize) -> &[Match] {
+    fn get_line(&self, i: usize, lineno: usize) -> &[&[u8]] {
         &self.words[i][self.get_wordno(i, lineno) .. self.get_wordno(i, lineno+1)]
     }
 
@@ -89,7 +88,7 @@ impl<'a> BlockMaker<'a> {
                 // these lines are in the middle
                 // check if all the lines are merely indented
                 let get_line = |i: usize, lineno: usize| {
-                    self.get_line(i, lineno).iter().flat_map(|m| m.as_bytes()).skip_while(|c| c.is_ascii_whitespace())
+                    self.get_line(i, lineno).iter().copied().flatten().skip_while(|c| c.is_ascii_whitespace())
                 };
 
                 let start_line = self.get_lineno(0, left.start);

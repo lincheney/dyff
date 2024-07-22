@@ -24,11 +24,7 @@ impl<'a> LineDiffer<'a> {
                 let end = bounds[1];
 
                 let words = &parent.words[i][start..end];
-                let line = words.iter()
-                    .flat_map(|m| m.as_bytes())
-                    // .skip_while(|c| c.is_ascii_whitespace())
-                    .copied()
-                    .collect::<Vec<u8>>();
+                let line = words.concat();
 
                 let key = *line_index.entry(line).or_insert(key);
                 sides[i].push(key);

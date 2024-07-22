@@ -14,12 +14,12 @@ pub struct Part<'a> {
 
 impl<'a> Part<'a> {
 
-    pub fn get(&self, i: usize) -> impl DoubleEndedIterator<Item=&[u8]> + ExactSizeIterator {
-        self.parent.words[i][self.slices[i].clone()].iter().map(|x| x.as_bytes())
+    pub fn get(&self, i: usize) -> &[&[u8]] {
+        &self.parent.words[i][self.slices[i].clone()]
     }
 
     fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=&[u8]> {
-        self.get(i).filter(|word| !word.iter().all(|c| c.is_ascii_whitespace()))
+        self.get(i).iter().copied().filter(|word| !word.iter().all(|c| c.is_ascii_whitespace()))
     }
 
     pub fn first_lineno(&self, i: usize) -> usize {
@@ -62,8 +62,8 @@ impl<'a> Part<'a> {
         || self.is_empty(0)
         || self.is_empty(1)
         || (
-            !self.get(0).any(|word| word.iter().all(|c| c.is_ascii_whitespace()))
-            && !self.get(1).any(|word| word.iter().all(|c| c.is_ascii_whitespace()))
+            !self.get(0).iter().any(|word| word.iter().all(|c| c.is_ascii_whitespace()))
+            && !self.get(1).iter().any(|word| word.iter().all(|c| c.is_ascii_whitespace()))
         )
     }
 
@@ -192,8 +192,8 @@ impl<'a> std::fmt::Debug for Part<'a> {
         write!(
             f,
             "(\"{}\", \"{}\")",
-            std::str::from_utf8(&self.get(0).collect::<Vec<_>>().concat().iter().flat_map(|c| std::ascii::escape_default(*c)).collect::<Vec<_>>()).unwrap(),
-            std::str::from_utf8(&self.get(1).collect::<Vec<_>>().concat().iter().flat_map(|c| std::ascii::escape_default(*c)).collect::<Vec<_>>()).unwrap(),
+            std::str::from_utf8(&self.get(0).concat().iter().flat_map(|c| std::ascii::escape_default(*c)).collect::<Vec<_>>()).unwrap(),
+            std::str::from_utf8(&self.get(1).concat().iter().flat_map(|c| std::ascii::escape_default(*c)).collect::<Vec<_>>()).unwrap(),
         )
     }
 }

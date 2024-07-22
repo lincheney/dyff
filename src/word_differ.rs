@@ -25,8 +25,7 @@ impl<'a> WordDiffer<'a> {
         let matched_lines = HashMap::new();
 
         let mut line_start = true;
-        for (i, word) in parent.words[1].iter().enumerate() {
-            let word = word.as_bytes();
+        for (i, &word) in parent.words[1].iter().enumerate() {
             // whitespace at start is 'junk' as it is usually just indentation
             if !(line_start && word != b"\n" && is_whitespace(word)) {
                 b2j.entry(word).or_insert_with(Vec::new).push(i);
@@ -56,13 +55,13 @@ impl<'a> WordDiffer<'a> {
         while
                i > alo
             && j > blo
-            && left[i-1].as_bytes() == right[j-1].as_bytes()
-            && (isjunk(left[i-1].as_bytes()) || (
-                   left[i-1].as_bytes() == b"\n"
+            && left[i-1] == right[j-1]
+            && (isjunk(left[i-1]) || (
+                   left[i-1] == b"\n"
                 && i >= 2
-                && left[i-2].as_bytes() == b"\n"
+                && left[i-2] == b"\n"
                 && j >= 2
-                && right[j-2].as_bytes() == b"\n"
+                && right[j-2] == b"\n"
             ))
         {
             i -= 1;
@@ -74,12 +73,12 @@ impl<'a> WordDiffer<'a> {
         while
                i+k < ahi
             && j+k < bhi
-            && left[i+k].as_bytes() == right[j+k].as_bytes()
+            && left[i+k] == right[j+k]
             && (
-                left[i+k].as_bytes() == b"\n"
+                left[i+k] == b"\n"
                 || (
-                       left[i+k-1].as_bytes() != b"\n"
-                    && isjunk(left[i+k].as_bytes())
+                       left[i+k-1] != b"\n"
+                    && isjunk(left[i+k])
                 )
             )
         {
@@ -128,7 +127,7 @@ impl<'a> WordDiffer<'a> {
             // look at all instances of a[i] in b; note that because
             // b2j has no junk keys, the loop is skipped if a[i] is junk
             newj2len.clear();
-            let word = left[i].as_bytes();
+            let word = left[i];
             let lineno_a = self.parent.get_lineno(0, i);
             let expected_lineno_b = self.matched_lines.get(&(0, lineno_a));
 
@@ -150,8 +149,8 @@ impl<'a> WordDiffer<'a> {
 
                     let i = i + 1 - k;
                     let j = j + 1 - k;
-                    let leading_ws = right[j..j+k].iter().take_while(|m| isjunk(m.as_bytes())).count();
-                    let trailing_ws = right[j..j+k].iter().rev().take_while(|m| isjunk(m.as_bytes())).count();
+                    let leading_ws = right[j..j+k].iter().take_while(|m| isjunk(m)).count();
+                    let trailing_ws = right[j..j+k].iter().rev().take_while(|m| isjunk(m)).count();
                     let trailing_ws = min(k - leading_ws, trailing_ws);
                     let non_ws = k - leading_ws - trailing_ws;
 
@@ -219,14 +218,14 @@ impl<'a> WordDiffer<'a> {
             if alo < mini && blo < minj {
                 if let Some(m) = self.find_longest_match(alo, mini, blo, minj) {
                     // we didn't just match a newline
-                    if !(m.2 == 1 && left[m.0].as_bytes() == b"\n") {
+                    if !(m.2 == 1 && left[m.0] == b"\n") {
                         return Some(m)
                     }
                 }
             }
             if maxi < ahi && maxj < bhi {
                 if let Some(m) = self.find_longest_match(maxi, ahi, maxj, bhi) {
-                    if !(m.2 == 1 && left[m.0].as_bytes() == b"\n") {
+                    if !(m.2 == 1 && left[m.0] == b"\n") {
                         return Some(m)
                     }
                 }
