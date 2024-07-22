@@ -4,7 +4,6 @@ use std::collections::VecDeque;
 use anyhow::{Result};
 use super::part::Part;
 use super::style;
-use super::regexes::regex;
 use super::types::*;
 use super::whitespace::CheckAllWhitespace;
 
