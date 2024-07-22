@@ -1,5 +1,5 @@
 use std::io::{BufRead, BufReader, BufWriter, Write, IsTerminal};
-use std::process::ExitCode;
+use std::process::{Command, Stdio, ExitCode};
 use std::collections::HashMap;
 use clap::Parser;
 use anyhow::{Result};
@@ -147,10 +147,10 @@ fn _main() -> Result<ExitCode> {
             diff_args.push(file2.as_ref());
         }
 
-        let diff_proc = std::process::Command::new(diff_args[0])
+        let diff_proc = Command::new(diff_args[0])
             .args(&diff_args[1..])
-            .stdout(std::process::Stdio::piped())
-            .stdin(std::process::Stdio::null())
+            .stdout(Stdio::piped())
+            .stdin(Stdio::null())
             .spawn()?;
         Some(diff_proc)
 
