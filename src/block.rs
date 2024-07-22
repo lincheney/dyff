@@ -388,7 +388,8 @@ impl<'a> Block<'a> {
                 let (second, mut third) = second.partition_from_end(suffix, suffix, false);
                 third.matches = true;
 
-                if second.inlineable() {
+                // matching common prefix/suffix looks weird when score is low and inlined
+                if !second.inlineable() {
                     block.parts.extend_from_slice(&[first, second, third]);
                     block.squeeze_parts();
                     block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
