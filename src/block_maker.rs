@@ -67,6 +67,10 @@ impl<'a> BlockMaker<'a> {
         self.line_to_word[i][lineno - self.line_numbers[i]]
     }
 
+    fn get_line(&self, i: usize, lineno: usize) -> &[Match] {
+        &self.words[i][self.get_wordno(i, lineno) .. self.get_wordno(i, lineno+1)]
+    }
+
     pub fn make_part(&self, matches: bool, left: std::ops::Range<usize>, right: std::ops::Range<usize>) -> Part {
         Part{parent: self, matches, slices: [left, right]}
     }
@@ -80,6 +84,35 @@ impl<'a> BlockMaker<'a> {
         let maxj = self.words[1].len();
 
         for (left, right) in LineDiffer::new(self).get_matching_blocks() {
+
+            if previ < left.start && prevj < right.start && left.end < maxi && right.end < maxj {
+                // these lines are in the middle
+                // check if all the lines are merely indented
+                let get_line = |i: usize, lineno: usize| {
+                    self.get_line(i, lineno).iter().flat_map(|m| m.as_bytes()).skip_while(|c| c.is_ascii_whitespace())
+                };
+
+                let start_line = self.get_lineno(0, left.start);
+                let end_line = self.get_lineno(0, left.end);
+
+                if (start_line..end_line-1).all(|l| get_line(0, l).eq(get_line(0, l+1))) {
+                    let all_same = {
+                        let prev_left = get_line(0, start_line-1);
+                        let next_right = get_line(1, self.get_lineno(1, right.end));
+                        prev_left.zip(next_right).zip(get_line(0, start_line)).all(|((a, b), c)| a == b && b == c)
+                    } || {
+                        let prev_right = get_line(1, self.get_lineno(1, right.start-1));
+                        let next_left = get_line(0, end_line);
+                        prev_right.zip(next_left).zip(get_line(0, start_line)).all(|((a, b), c)| a == b && b == c)
+                    };
+
+                    if all_same {
+                        // diff for indentation instead
+                        continue
+                    }
+                };
+            }
+
             if previ < left.start || prevj < right.start {
                 ranges.push((false, previ .. left.start, prevj .. right.start));
             }
