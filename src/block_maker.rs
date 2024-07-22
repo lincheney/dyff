@@ -30,8 +30,8 @@ impl<'a> BlockMaker<'a> {
                 line_to_word[i].push(oldlen);
                 super::regexes::regex!(
                     r"[A-Z][A-Z_]*[A-Z]\d*"
-                    "|[A-Z][a-z0-9]*[a-z]"
-                    "|[a-z0-9]+[a-z]"
+                    r"|[A-Z][a-z0-9]*[a-z]"
+                    r"|[a-z0-9]+[a-z]"
                     r"|\d+"
                     r"|\s"
                     r"|[-!=~+]="
