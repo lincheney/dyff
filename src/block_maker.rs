@@ -88,21 +88,24 @@ impl<'a> BlockMaker<'a> {
                 // these lines are in the middle
                 // check if all the lines are merely indented
                 let get_line = |i: usize, lineno: usize| {
-                    self.get_line(i, lineno).iter().copied().flatten().skip_while(|c| c.is_ascii_whitespace())
+                    let line = self.get_line(i, lineno);
+                    let start = line.iter().position(|w| !w.iter().all(|c| c.is_ascii_whitespace())).unwrap_or(0);
+                    &line[start..]
                 };
 
                 let start_line = self.get_lineno(0, left.start);
                 let end_line = self.get_lineno(0, left.end);
+                let line = get_line(0, start_line);
 
-                if (start_line..end_line-1).all(|l| get_line(0, l).eq(get_line(0, l+1))) {
+                if (start_line+1..end_line).all(|l| get_line(0, l) == line) {
                     let all_same = {
                         let prev_left = get_line(0, start_line-1);
                         let next_right = get_line(1, self.get_lineno(1, right.end));
-                        prev_left.zip(next_right).zip(get_line(0, start_line)).all(|((a, b), c)| a == b && b == c)
+                        prev_left == next_right && prev_left == line
                     } || {
                         let prev_right = get_line(1, self.get_lineno(1, right.start-1));
                         let next_left = get_line(0, end_line);
-                        prev_right.zip(next_left).zip(get_line(0, start_line)).all(|((a, b), c)| a == b && b == c)
+                        prev_right == next_left && prev_right == line
                     };
 
                     if all_same {
