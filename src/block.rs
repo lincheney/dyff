@@ -389,7 +389,7 @@ impl<'a> Block<'a> {
                 third.matches = true;
 
                 // matching common prefix/suffix looks weird when score is low and inlined
-                if !second.inlineable() {
+                if second.is_empty(0) || second.is_empty(1) || !second.inlineable() {
                     block.parts.extend_from_slice(&[first, second, third]);
                     block.squeeze_parts();
                     block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
