@@ -3,15 +3,16 @@ use std::cmp::{min, max};
 use super::block_maker::BlockMaker;
 use super::part::Part;
 use super::whitespace::CheckAllWhitespace;
+use super::types::*;
 
-fn isjunk(b: &[u8]) -> bool {
+fn isjunk(b: Bytes) -> bool {
     b != b"\n" && b.is_ascii_whitespace()
 }
 
 pub struct WordDiffer<'a> {
     parent: &'a BlockMaker<'a>,
 
-    b2j: HashMap<&'a [u8], Vec<usize>>,
+    b2j: HashMap<Bytes<'a>, Vec<usize>>,
 
     matched_lines: HashMap<(usize, usize), usize>,
 }

@@ -163,15 +163,15 @@ impl<'a> Block<'a> {
     }
 
     const NUM_SCORES: usize = 5;
-    fn score_words(&self, words: &VecDeque<&[u8]>, parti: usize, i: usize, shift: isize) -> [[usize; Block::NUM_SCORES]; 2] {
-        static PREFIXES: [&[u8]; Block::NUM_SCORES] = [
+    fn score_words(&self, words: &VecDeque<Bytes>, parti: usize, i: usize, shift: isize) -> [[usize; Block::NUM_SCORES]; 2] {
+        static PREFIXES: [Bytes; Block::NUM_SCORES] = [
             b"\n",
             b" \t",
             b"{",
             b"", // b",;",
             b"{[(",
         ];
-        static SUFFIXES: [&[u8]; Block::NUM_SCORES] = [
+        static SUFFIXES: [Bytes; Block::NUM_SCORES] = [
             b"\n",
             b" \t",
             b"}",

@@ -16,8 +16,9 @@ mod whitespace;
 #[macro_use]
 mod regexes;
 use hunk::Hunk;
+use types::*;
 
-fn strip_style<'a>(string: &'a [u8], replace: &[u8]) -> std::borrow::Cow<'a, [u8]> {
+fn strip_style<'a>(string: Bytes<'a>, replace: Bytes) -> std::borrow::Cow<'a, [u8]> {
     regex!(r"\x1b\[[\d;]*m".replace_all(string, replace))
 }
 

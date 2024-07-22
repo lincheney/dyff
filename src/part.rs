@@ -1,5 +1,6 @@
 use std::cmp::{max};
 use super::whitespace::CheckAllWhitespace;
+use super::types::*;
 
 fn both_sides<T, F: FnMut(usize)->T>(mut f: F) -> [T; 2] {
     [f(0), f(1)]
@@ -15,11 +16,11 @@ pub struct Part<'a> {
 
 impl<'a> Part<'a> {
 
-    pub fn get(&self, i: usize) -> &[&[u8]] {
+    pub fn get(&self, i: usize) -> &[Bytes] {
         &self.parent.words[i][self.slices[i].clone()]
     }
 
-    fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=&[u8]> {
+    fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=Bytes> {
         self.get(i).iter().copied().filter(|word| !word.is_ascii_whitespace())
     }
 

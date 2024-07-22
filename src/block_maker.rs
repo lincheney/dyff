@@ -4,12 +4,13 @@ use super::line_differ::LineDiffer;
 use super::part::Part;
 use super::block::Block;
 use super::whitespace::CheckAllWhitespace;
+use super::types::*;
 
 #[derive(Debug)]
 pub struct BlockMaker<'a> {
     line_numbers: [usize; 2],
 
-    pub words: [Vec<&'a [u8]>; 2],
+    pub words: [Vec<Bytes<'a>>; 2],
 
     word_to_line: [Vec<usize>; 2],
     pub line_to_word: [Vec<usize>; 2],
@@ -67,7 +68,7 @@ impl<'a> BlockMaker<'a> {
         self.line_to_word[i][lineno - self.line_numbers[i]]
     }
 
-    fn get_line(&self, i: usize, lineno: usize) -> &[&[u8]] {
+    fn get_line(&self, i: usize, lineno: usize) -> &[Bytes] {
         &self.words[i][self.get_wordno(i, lineno) .. self.get_wordno(i, lineno+1)]
     }
 
