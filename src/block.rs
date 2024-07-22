@@ -375,11 +375,22 @@ impl<'a> Block<'a> {
                 };
 
                 block.parts.clear();
+                block.parts.push(part);
+            }
+        }
+
+        // merge again
+        let mut blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
+
+        for block in blocks.iter_mut() {
+            // try to do a very simple diff for low scoring blocks
+
+            if block.parts.len() == 1 && block.score() == 0. {
+                let part = &block.parts[0];
 
                 // find common prefix
                 let prefix = find_common_prefix_length(part.get(0), part.get(1));
-                let (mut first, second) = part.partition_from_start(prefix, prefix, false);
-                first.matches = true;
+                let (first, second) = part.partition_from_start(prefix, prefix, true);
 
                 // find common suffix
                 let suffix = if second.single_line(0) && second.single_line(1) {
@@ -387,26 +398,25 @@ impl<'a> Block<'a> {
                 } else {
                     0
                 };
-                let (second, mut third) = second.partition_from_end(suffix, suffix, false);
-                third.matches = true;
+                let (mut second, third) = second.partition_from_end(suffix, suffix, true);
+                second.matches = false;
 
                 // matching common prefix/suffix looks weird when score is low and inlined
                 if second.is_empty(0) || second.is_empty(1) || !second.inlineable() {
-                    block.parts.extend_from_slice(&[first, second, third]);
+                    // try it out
+                    let old_parts = std::mem::replace(&mut block.parts, vec![first, second, third]);
                     block.squeeze_parts();
                     block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+
+                    // nothing matches, go back to the way it was before
+                    if block.parts.iter().all(|p| !p.matches) {
+                        block.parts = old_parts;
+                    }
                 }
 
-                // nothing matches
-                if block.parts.iter().all(|p| !p.matches) {
-                    block.parts.clear();
-                    block.parts.push(part);
-                }
             }
         }
 
-        // merge again
-        let mut blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
         // remove empty ones
         for block in blocks.iter_mut() {
             block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
