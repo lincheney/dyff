@@ -162,38 +162,39 @@ impl<'a> Block<'a> {
         self.parts.iter().rev().find(|p| !p.is_empty(i))
     }
 
-    const NUM_SCORES: usize = 5;
+    const NUM_SCORES: usize = 4;
     fn score_words(&self, words: &VecDeque<Bytes>, parti: usize, i: usize, shift: isize) -> [[usize; Block::NUM_SCORES]; 2] {
-        static PREFIXES: [Bytes; Block::NUM_SCORES] = [
-            b"\n",
-            b" \t",
-            b"{",
-            b"", // b",;",
-            b"{[(",
+        static PREFIXES: [(usize, Bytes); 3] = [
+            (0, b"\n"),
+            (1, b" \t"),
+            // (1, b"{"),
+            // (1, b",;"),
+            (2, b"{[("),
         ];
-        static SUFFIXES: [Bytes; Block::NUM_SCORES] = [
-            b"\n",
-            b" \t",
-            b"}",
-            b",;",
-            b"}])",
+        static SUFFIXES: [(usize, Bytes); 6] = [
+            (0, b"\n"),
+            (1, b" \t"),
+            (2, b"}"),
+            (1, b" \t"),
+            (2, b",;"),
+            (2, b"}])"),
         ];
 
         let mut suffix_scores = [0; Block::NUM_SCORES];
         let mut prefix_scores = [0; Block::NUM_SCORES];
 
         let mut skip = 0;
-        for (i, p) in PREFIXES.iter().enumerate() {
+        for &(ix, p) in PREFIXES.iter() {
             let count = words.iter().skip(skip).take_while(|w| p.contains(&w[0])).count();
             skip += count;
-            prefix_scores[i] += count;
+            prefix_scores[ix] += count;
         }
 
         let mut skip = 0;
-        for (i, p) in SUFFIXES.iter().enumerate() {
+        for &(ix, p) in SUFFIXES.iter() {
             let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
             skip += count;
-            suffix_scores[i] += count;
+            suffix_scores[ix] += count;
         }
 
         let part = &self.parts[parti];
