@@ -89,8 +89,8 @@ impl Hunk {
         for block in blocks {
             block.print(stdout, None, style, |num: [usize; 2], _, _, _| -> &'a str {
                 match num {
-                    [_, 0] => prefix.1,
-                    [0, _] => prefix.0,
+                    [_, 0] => prefix.0,
+                    [0, _] => prefix.1,
                     [_, _] => prefix.2,
                 }
             })?;
