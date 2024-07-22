@@ -110,7 +110,8 @@ pub const DIFF_INSERT: [Bytes; 2] = [
 ];
 pub const DIFF_MATCHING_INLINE: Bytes = b"\x1b[0;38;5;252m";
 pub const DIFF_CONTEXT: Bytes = LINENO.as_bytes();
-pub const DIFF_TRAILING_WS: Bytes = b"\x1b[2;7m$0";
+pub const DIFF_TRAILING_WS: Bytes = b"\x1b[2;7m";
+pub const DIFF_TRAILING_WS_PAT: Bytes = concat_bytes!(DIFF_TRAILING_WS, b"$0");
 
 pub fn format_lineno(
     [num1, num2]: [usize; 2],

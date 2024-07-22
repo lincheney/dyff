@@ -6,6 +6,7 @@ use super::part::Part;
 use super::style;
 use super::regexes::regex;
 use super::types::*;
+use super::whitespace::CheckAllWhitespace;
 
 fn find_common_prefix_length(a: &[Bytes], b: &[Bytes]) -> usize {
     a.iter().zip(b).take_while(|(a, b)| a == b).count()
@@ -439,7 +440,9 @@ impl<'a> Block<'a> {
                     continue
                 }
 
-                for word in part.get(0) {
+                let words = part.get(0);
+                let last = words.len() - 1;
+                for (j, word) in words.iter().enumerate() {
                     if newline {
                         if style.line_numbers {
                             stdout.write_all(format_lineno(
@@ -454,7 +457,13 @@ impl<'a> Block<'a> {
                         stdout.write_all(style::DIFF_CONTEXT)?;
                         newline = false;
                     }
-                    stdout.write_all(&regex!(r"\s+\n".replace_all(word, style::DIFF_TRAILING_WS)))?;
+
+                    let trailing_ws = words[last] == b"\n" && words[j..last].iter().all(|&w| w.is_ascii_whitespace());
+                    if trailing_ws {
+                        stdout.write_all(style::DIFF_TRAILING_WS)?;
+                    }
+                    stdout.write_all(word)?;
+
                     if word == b"\n" {
                         line_numbers[0] += 1;
                         line_numbers[1] += 1;
@@ -493,7 +502,13 @@ impl<'a> Block<'a> {
                 for i in inner_loop {
                     stdout.write_all(highlight[i])?;
 
-                    for word in part.get(i) {
+                    let words = part.get(i);
+                    if words.is_empty() {
+                        continue
+                    }
+
+                    let last = words.len() - 1;
+                    for (j, word) in words.iter().enumerate() {
 
                         if newline {
                             if style.line_numbers {
@@ -529,16 +544,26 @@ impl<'a> Block<'a> {
                             newline = true;
                         }
 
-                        let word = regex!(r"\s+\n".replace_all(word, style::DIFF_TRAILING_WS));
+                        let trailing_ws = words[last] == b"\n" && words[j..last].iter().all(|&w| w.is_ascii_whitespace());
+
                         if insert {
                             // add an insertion marker
                             // write only one char
                             stdout.write_all(style::DIFF_INSERT[i])?;
+                            if trailing_ws {
+                                stdout.write_all(style::DIFF_TRAILING_WS)?;
+                            }
                             stdout.write_all(&word[0..1])?;
+                            if trailing_ws {
+                                stdout.write_all(style::DIFF_TRAILING_WS)?;
+                            }
                             stdout.write_all(highlight[i])?;
                             stdout.write_all(&word[1..])?;
                             insert = false;
                         } else {
+                            if trailing_ws {
+                                stdout.write_all(style::DIFF_TRAILING_WS)?;
+                            }
                             stdout.write_all(&word)?;
                         }
                     }
