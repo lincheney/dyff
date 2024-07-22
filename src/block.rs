@@ -537,7 +537,7 @@ impl<'a> Block<'a> {
 
                         if word == b"\n" {
                             line_numbers[i] += 1;
-                            if inline {
+                            if inline && part.matches {
                                 line_numbers[1-i] += 1;
                             }
                             newline = true;
