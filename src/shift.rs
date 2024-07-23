@@ -143,6 +143,8 @@ pub fn shift_parts(parts: &mut Vec<Part>) {
         next.slices = next.shift_slice(shift, 0);
     }
 
-    parts.extend(insert_start);
+    if let Some(insert_start) = insert_start {
+        parts.insert(0, insert_start);
+    }
     parts.extend(insert_end);
 }
