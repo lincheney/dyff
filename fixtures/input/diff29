@@ -1,0 +1,36 @@
+diff --git a/libsagna/aws/__init__.py b/libsagna/aws/__init__.py
+index 068e074..5fe20ef 100644
+--- a/libsagna/aws/__init__.py
++++ b/libsagna/aws/__init__.py
+@@ -177,6 +177,31 @@ async def _async_paginator(self, pages, sentinel=object()):
+                 break
+             yield item
+ 
++class _paginator:
++    def __init__(self, is_async, pages):
++        self.is_async = is_async
++        self.pages = pages
++
++    def collect(self):
++        if self.is_async:
++            return asyncio.get_running_loop().run_in_executor(None, self._collect)
++        return self._collect()
++
++    def _collect(self):
++        return list(self)
++
++    def __iter__(self):
++        return self.pages
++
++    async def __aiter__(self):
++        sentinel = object()
++        loop = asyncio.get_event_loop()
++        while True:
++            item = await loop.run_in_executor(None, next, self.pages, sentinel)
++            if item is sentinel:
++                break
++            yield item
++
+ class utils_proxy:
+     def __init__(self, aws):
+         self.aws = aws

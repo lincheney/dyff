@@ -1,0 +1,58 @@
+diff --git a/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua b/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua
+index 6a9804c0..75d25868 100644
+--- a/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua
++++ b/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua
+@@ -47,33 +47,32 @@ Plugins.on_load('LuaSnip', function()
+             -- skip all
+             if k ~= 'all' then
+                 for i, snip in ipairs(v) do
+-                    if snip.docstring:match(text) then
++                    if snip.docstring:match(text) and not seen[snip.trigger] then
++                        seen[snip.trigger] = true;
++
+                         local docstring = snip.docstring:gsub('^\\%$', '$'):gsub('\n$', ''):gsub('%s*\n%s*', NEWLINE_CHAR)
+                         if #docstring > MAXLEN then
+                             docstring = docstring:sub(1, MAXLEN-1) .. ELLIPSIS
+                         end
+ 
+-                        if not seen[snip.trigger] then
+-                            seen[snip.trigger] = true;
+-                            local description = snip.description[1] or ''
+-                            local documentation = ('```%s\n%s\n```'):format(params.context.filetype, snip.docstring)
+-                            if description ~= '' then
+-                                description = description:match('^"(.*)"$') or description
+-                                description = description:match("^'(.*)'$") or description
+-                                documentation = '# ' .. description .. ' \n' .. documentation
+-                                -- documentation = description..'\n'..('='):rep(#description)..'\n'..documentation
+-                            end
+-
+-                            table.insert(matches, {
+-                                insertTextFormat = cmp.lsp.InsertTextFormat.Snippet,
+-                                -- labelDetails = {detail = 'snip:'..snip.name},
+-                                -- labelDetails = {detail = 'snip:'..snip.trigger},
+-                                label = docstring,
+-                                insertText = snip.trigger:gsub('%$', '\\$'),
+-                                filterText = snip.docstring:gsub('^\\%$', '$'):gsub('\n', ' ')..' '..description..' '..snip.name..' $',
+-                                documentation = documentation,
+-                            })
++                        local description = snip.description[1] or ''
++                        local documentation = ('```%s\n%s\n```'):format(params.context.filetype, snip.docstring)
++                        if description ~= '' then
++                            description = description:match('^"(.*)"$') or description
++                            description = description:match("^'(.*)'$") or description
++                            documentation = '# ' .. description .. ' \n' .. documentation
++                            -- documentation = description..'\n'..('='):rep(#description)..'\n'..documentation
+                         end
++
++                        table.insert(matches, {
++                            insertTextFormat = cmp.lsp.InsertTextFormat.Snippet,
++                            -- labelDetails = {detail = 'snip:'..snip.name},
++                            -- labelDetails = {detail = 'snip:'..snip.trigger},
++                            label = docstring,
++                            insertText = snip.trigger:gsub('%$', '\\$'),
++                            filterText = snip.docstring:gsub('^\\%$', '$'):gsub('\n', ' ')..' '..description..' '..snip.name..' $',
++                            documentation = documentation,
++                        })
+                     end
+                 end
+             end

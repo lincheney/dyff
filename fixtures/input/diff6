@@ -1,0 +1,12 @@
+diff --git a/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua b/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua
+index 6a9804c0..75d25868 100644
+--- a/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua
++++ b/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua
+@@ -47,33 +47,32 @@ Plugins.on_load('LuaSnip', function()
+ hello  
+-    x(robert)  
++#    y(robert)  
+ world
+- big day
++ day
+ right  

@@ -1,0 +1,15 @@
+diff --git a/bin/custom_differ.py b/bin/custom_differ.py
+index 3909d336..5fa470c3 100755
+--- a/bin/custom_differ.py
++++ b/bin/custom_differ.py
+@@ -180,10 +180,10 @@ def isjunk(b):
+                         lineno_dist = abs(matched_lines[(1, lineno_b)] - lineno_a)
+                     elif single_line_a:
+                         # single line so prefer things at the edges
+-                        lineno_dist = min(abs(lineno_a - first_line_a), abs(lineno_a - last_line_a))
++                        lineno_dist = min(abs(lineno_b - first_line_b), abs(lineno_b - last_line_b))
+                     elif single_line_b:
+                         # single line so prefer things at the edges
+-                        lineno_dist = min(abs(lineno_b - first_line_b), abs(lineno_b - last_line_b))
++                        lineno_dist = min(abs(lineno_a - first_line_a), abs(lineno_a - last_line_a))
+                     else:

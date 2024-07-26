@@ -1,0 +1,28 @@
+diff --git a/shadow/.config/nvim/lua/qianli/git.lua b/shadow/.config/nvim/lua/qianli/git.lua
+index 331212e5..84cb8937 100644
+--- a/shadow/.config/nvim/lua/qianli/git.lua
++++ b/shadow/.config/nvim/lua/qianli/git.lua
+@@ -84,35 +84,46 @@ local function do_git(args)
+     local title = ' ' .. table.concat({'git', unpack(args)}, ' ') .. ' '
+     local gitdir = M.gitdir()
+-    local opts = {height=0.8, width=0.8, title=title, cwd=gitdir}
++    local opts = {window = {height=0.8, width=0.8, title=title}, cwd=gitdir}
+     local pager = 'core.pager=less -RX'
+-    local tmp_opts = {unpack(opts), delayclose=5000, width=0.3, col=vim.o.columns*0.7, row=0, height=15, enter=false, winopts={winblend=15}}
++    local tmp_opts = vim.tbl_deep_extend('force', opts, {
++        delayclose=5000,
++        startinsert=false,
++        window = {
++            width=0.3,
++            col=vim.o.columns*0.7,
++            row=0,
++            height=15,
++            enter=false,
++            opts={ winblend=15 },
++        },
++    })
+     if #args == 0 then
+         TERMINAL.open{'shell', cwd = gitdir}
+         vim.fn.feedkeys('git ')
+     elseif args[1] == 'some' then
+         opts.delayclose = false

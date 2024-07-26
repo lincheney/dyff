@@ -1,0 +1,20 @@
+diff --git a/bin/custom_differ.py b/bin/custom_differ.py
+index 49b1a64b..87c00d15 100755
+--- a/bin/custom_differ.py
++++ b/bin/custom_differ.py
+@@ -148,13 +148,19 @@ def isjunk(b):
+                 if not isjunk(c):
+                     l = sum(map(len, left[i - k + 1 : i + 1]))
+                     lineno_b = word_to_line[1][j]
+-                    lineno_dist = 0 if expected_lineno_b is None else abs(expected_lineno_b - lineno_b)
++
++                    # compare the expected line b or a depending on which one has previously been matched
++                    if expected_lineno_b is not None:
++                        lineno_dist = abs(expected_lineno_b - lineno_b)
++                    else:
++                        lineno_dist = abs(matched_lines.get((1, lineno_b), lineno_a) - lineno_a)
++
+                     # prioritise more words, then longer words, then words on the expected line
+                     if (k, l, -lineno_dist) >= (bestsize, bestlen, -bestline):
+                         besti, bestj, bestsize, bestlen, bestline = i-k+1, j-k+1, k, l, lineno_dist
+             j2len, newj2len = newj2len, j2len

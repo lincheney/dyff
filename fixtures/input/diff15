@@ -1,0 +1,18 @@
+diff --git a/projects/telstra/dfir/main.py b/projects/telstra/dfir/main.py
+index 1840cd4..cd4f7b7 100644
+--- a/projects/telstra/dfir/main.py
++++ b/projects/telstra/dfir/main.py
+@@ -10,7 +10,12 @@
+ from libsagna.config.aws import AWSFilter
+ 
+ @cache
+-def assume_role(account_id):
++def get_account_map():
++    return {account['Name']: account['Id'] for account in aws.organizations.list_accounts()['Accounts']}
++
++@cache
++def assume_role(account_name):
++    account_id = get_account_map()[account_name]
+     if account_id != aws.utils.account_id():
+         return aws.assume_role(f'arn:aws:iam::{account_id}:role/AWSControlTowerExecution')
+ 

@@ -1,0 +1,9 @@
+--- /tmp/difftastic-master/sample_files/clojure_1.clj	2024-07-09 17:18:59.000000000 +1000
++++ /tmp/difftastic-master/sample_files/clojure_2.clj	2024-07-09 17:18:59.000000000 +1000
+@@ -6,3 +6,3 @@
+-  (println "hello!")
+-  {:more (inc x)
+-   :less (dec x)})
++  (-> {:more (inc x)
++       :less (dec x)}
++      (assoc :twice (+ x x))))

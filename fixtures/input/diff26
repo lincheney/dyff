@@ -1,0 +1,15 @@
+diff --git a/src/block_maker.rs b/src/block_maker.rs
+index 0df59d4..73fd0dd 100644
+--- a/src/block_maker.rs
++++ b/src/block_maker.rs
+@@ -67,6 +67,10 @@ pub fn get_wordno(&self, i: usize, lineno: usize) -> usize {
+         self.line_to_word[i][lineno - self.line_numbers[i]]
+     }
+ 
++    pub fn make_part(&self, matches: bool, left: std::ops::Range<usize>, right: std::ops::Range<usize>) -> Part {
++        Part{parent: self, matches, slices: [left, right]}
++    }
++
+     pub fn make_block(&self) -> Block {
+         // diff by line first
+         let mut ranges = vec![];

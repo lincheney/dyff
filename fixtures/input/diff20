@@ -1,0 +1,8 @@
+@@ -180,6 +181,7 @@ .search-result {
+         max-height: 10em;
+         font-size: 0.8em;
+         overflow-y: auto;
++        margin-bottom: 0;
+     }
+ }
+

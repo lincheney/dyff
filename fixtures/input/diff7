@@ -1,0 +1,19 @@
+commit 46d0ecf20db1c90359c9a514abb3e03b92175335
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sat Jun 1 23:20:14 2024 +1000
+
+    flag to ignore barrier
+
+diff --git a/bin/supermaven b/bin/supermaven
+index 0558ad2e..9cf36feb 100755
+--- a/bin/supermaven
++++ b/bin/supermaven
+@@ -36,7 +36,7 @@ def write(proc, input, filename, id):
+     }) + '\n')
+     proc.stdin.flush()
+ 
+-def reader(proc, x=1, json_format=False):
++def reader(proc, ignore_barrier=False, x=1, json_format=False):
+     prev_id = None
+     collection = []
+     drop = False

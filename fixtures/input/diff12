@@ -1,0 +1,15 @@
+diff --git a/shadow/.config/nvim/lua/qianli/completion/sources/first-word.lua b/shadow/.config/nvim/lua/qianli/completion/sources/first-word.lua
+index efab8b54..d09ebb8a 100644
+--- a/shadow/.config/nvim/lua/qianli/completion/sources/first-word.lua
++++ b/shadow/.config/nvim/lua/qianli/completion/sources/first-word.lua
+@@ -3,19 +3,21 @@ local M = {
+     keyword_pattern = '^\\s*\\zs\\k\\+',
+ }
+     local items = {}
+-                table.insert(items, word)
+-            end
++            seen[word] = true
++            table.insert(items, word)
+         end
+     end
+     callback(items)

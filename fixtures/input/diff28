@@ -1,0 +1,92 @@
+commit 4a0e52aaf5ffea5e495241b1f7669ccc3f46c9bf
+Author: 林千里 <lincheney@gmail.com>
+Date:   Mon Jul 22 11:15:50 2024 +1000
+
+    read byte by byte
+
+diff --git a/rust/src/folder.rs b/rust/src/folder.rs
+index 397b766..00c264f 100644
+--- a/rust/src/folder.rs
++++ b/rust/src/folder.rs
+@@ -60,75 +60,81 @@ fn run()-> Result<(), std::io::Error> {
+     let mut parser = parser::Parser::new(args.width, 3);
+     parser.resize_scrollback(None);
+     parser.mode.insert(parser::ModeFlags::CRLF);
+     let mut cursor = get_line_coord(&parser, parser.cursor.x, parser.cursor.y).unwrap();
+     let mut x = 0;
+ 
+-    for c in buffer.iter() {
+-        parser.write(&[*c], |_parser, _event| {});
+-
+-        if parser.cursor.x <= x && new_cursor > cursor {
+-            if wrap && args.break_at_non_word {
+-                if let Some((a, b)) = prev_data.last().zip(this_data.first()) {
+-                    if !NON_WORD.contains(a) && !NON_WORD.contains(b) {
+-                        if let Some((_last, first)) = splits.next().zip(splits.next()) {
+-                            if coords[first.len() + 1].offset - coords[0].offset >= min_width {
+-                                overflow = true;
++    let mut buffer: [u8; 4096] = [0; 4096];
++
++    loop {
++        let size = stdin.read(&mut buffer)?;
++        if size == 0 {
++            break
++        }
++
++        for c in buffer[..size].iter() {
++            parser.write(&[*c], |_parser, _event| {});
++
++            if parser.cursor.x <= x && new_cursor > cursor {
++                if wrap && args.break_at_non_word {
++                    if let Some((a, b)) = prev_data.last().zip(this_data.first()) {
++                        if !NON_WORD.contains(a) && !NON_WORD.contains(b) {
++                            if let Some((_last, first)) = splits.next().zip(splits.next()) {
++                                if coords[first.len() + 1].offset - coords[0].offset >= min_width {
++                                    overflow = true;
++                                }
+                             }
+                         }
+                     }
+                 }
+-            }
+ 
+-            stdout.write_all(&[b'\n'])?;
++                stdout.write_all(&[b'\n'])?;
+ 
+-            if wrap {
+-                if overflow || args.show_break.is_some() {
+-                    let attrs = parser.attrs;
++                if wrap {
++                    if overflow || args.show_break.is_some() {
++                        let attrs = parser.attrs;
+ 
+-                    if let Some(ref show_break) = args.show_break {
+-                        parser.write(show_break.as_bytes(), |_parser, _event| {});
+-                    }
+-                    if !this_data.is_empty() {
+-                        parser.attrs = attrs;
++                        if let Some(ref show_break) = args.show_break {
++                            parser.write(show_break.as_bytes(), |_parser, _event| {});
++                        }
++                        if !this_data.is_empty() {
++                            parser.attrs = attrs;
++                        }
+                     }
++                } else {
++                    parser.clear_scrollback();
+                 }
+-            } else {
+-                parser.clear_scrollback();
+-            }
+ 
+-            new_cursor = get_line_coord(&parser, parser.cursor.x, parser.cursor.y).unwrap();
++                new_cursor = get_line_coord(&parser, parser.cursor.x, parser.cursor.y).unwrap();
++            }
++            cursor = new_cursor;
++            x = parser.cursor.x;
+         }
+-        cursor = new_cursor;
+-        x = parser.cursor.x;
+     }
+ 
+     let start = get_line_coord(&parser, 0, parser.cursor.y).unwrap();

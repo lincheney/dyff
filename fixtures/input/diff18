@@ -1,0 +1,16 @@
+diff --git a/shadow/.config/nvim/lua/qianli/copypaste.lua b/shadow/.config/nvim/lua/qianli/copypaste.lua
+index fa6e08b4..a9044af0 100644
+--- a/shadow/.config/nvim/lua/qianli/copypaste.lua
++++ b/shadow/.config/nvim/lua/qianli/copypaste.lua
+@@ -14,9 +14,9 @@ map.i.silent['<a-p>'] = function()
+             menu_format = '[%s] ',
+             menu_hl_group = 'CmpItemMenuRegister',
+         },
+-        sources = {
++        sources = { {
+             {
+-                get_keyword_pattern = function() end,
++                keyword_pattern = '',
+                 complete = function(self, params, callback)
+                     local matches = {}
+                     for c in REGISTERS:gmatch('.') do

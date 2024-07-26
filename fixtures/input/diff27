@@ -1,0 +1,24 @@
+commit 3ba272eb97133f5625f6fdc3bcf81917cc2f5032
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sat Jul 20 01:41:18 2024 +1000
+
+    change some colours
+
+diff --git a/css/markdown.css b/css/markdown.css
+index e57729b..4c912a0 100644
+--- a/css/markdown.css
++++ b/css/markdown.css
+@@ -49,14 +49,17 @@ #content-area {
+     }
+     code {
+         font-size: 1.2em;
+         padding: 0 0.3em;
+         cursor: text;
+         text-decoration: none;
+     }
++    a.interpolated {
++        color: var(--interpolated-fg);
++    }
+     a.interpolated.error {
+         /* make it sepia then red */
+         filter: sepia(100%) saturate(500%) brightness(70%) hue-rotate(-60deg);

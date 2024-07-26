@@ -1,0 +1,28 @@
+commit 08aeea7168ad1d0c31beec3db59dd882309dec53
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sat Jun 15 13:44:25 2024 +1000
+
+    fix a whole bunch of stuff with windows and buffers
+
+diff --git a/shadow/.config/nvim/lua/qianli/buffers/init.lua b/shadow/.config/nvim/lua/qianli/buffers/init.lua
+index 098e903d..31fe63d1 100644
+--- a/shadow/.config/nvim/lua/qianli/buffers/init.lua
++++ b/shadow/.config/nvim/lua/qianli/buffers/init.lua
+@@ -44,9 +44,15 @@ map.n.nore.silent['<leader>c'] = function()
+     end
+ end
+ vim.api.nvim_create_autocmd('WinEnter', {callback=function()
+-    if #vim.api.nvim_list_wins() == 1 and not vim.bo.buflisted then
+-        vim.cmd('quit!')
++    local windows = vim.api.nvim_list_wins()
++    for i = 1, # windows do
++        local buf = vim.api.nvim_win_get_buf(windows[i])
++        if vim.bo[buf].buflisted then
++            return
++        end
+     end
++    -- quit if no window has a listed buffer
++    vim.cmd('quit!')
+ end})
+ -- close window
+ map.n.nore.silent['<c-q>'] = 'ZQ'

@@ -1,0 +1,33 @@
+diff --git a/shadow/.config/nvim/lua/qianli/completion/matcher.lua b/shadow/.config/nvim/lua/qianli/completion/matcher.lua
+index 8faa58ff..72511886 100644
+--- a/shadow/.config/nvim/lua/qianli/completion/matcher.lua
++++ b/shadow/.config/nvim/lua/qianli/completion/matcher.lua
+@@ -2,43 +2,29 @@ local M = {}
+ 
+ -- this is taken from python's difflib
+ 
+-local CHAR_A = string.byte('a')
+-local CHAR_Z = string.byte('z')
+-local UPPERCASE = string.byte('A') - CHAR_A
++local CHAR_a = string.byte('a')
++local CHAR_z = string.byte('z')
++local CHAR_A = string.byte('A')
++-- local CHAR_Z = string.byte('Z')
++local UPPERCASE = CHAR_A - CHAR_a
+ 
+-local function make_b2j(b)
+-    local b2j = {}
+-    for i = 1, #b do
+-        local elt = string.byte(b, i)
+-        b2j[elt] = b2j[elt] or {}
+-        b2j[elt][#b2j[elt] + 1] = i
+-
+-        if CHAR_A <= elt and elt <= CHAR_Z then
+-            elt = elt + UPPERCASE
+-            b2j[elt] = b2j[elt] or {}
+-            b2j[elt][#b2j[elt] + 1] = i
+-        end
+-    end
+-    return b2j
+-end
+-

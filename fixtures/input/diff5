@@ -1,0 +1,24 @@
+diff --git a/shadow/.config/nvim/lua/qianli/git.lua b/shadow/.config/nvim/lua/qianli/git.lua
+index 331212e5..70b45e9a 100644
+--- a/shadow/.config/nvim/lua/qianli/git.lua
++++ b/shadow/.config/nvim/lua/qianli/git.lua
+@@ -52,12 +52,10 @@ function M.gitdir(fast, bufnr, quiet, cwd)
+     if not fast and not gitdir then
+-        -- what
++        -- what the
+         local dir = cwd or vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr))
+         gitdir = table.concat(vim.fn.systemlist{'git', '-C', dir, 'rev-parse', '--show-toplevel'}, '\n')
+-        if vim.v.shell_error ~= 0 then
+-            if not quiet then
+-                print_error(gitdir) -- bye
+-                four()
+-            end
+-            return
++        if not x and not quiet then
++            print_error(gitdir) -- hello
++            four()
+         end
++        return
+     end
+     return gitdir
+ end

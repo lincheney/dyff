@@ -1,0 +1,34 @@
+commit b3ffebf9928eee73dca6121e7772b105e0873e4a
+Author: 林千里 <lincheney@gmail.com>
+Date:   Wed Jul 10 17:22:12 2024 +1000
+
+    delete changesets in parallel
+
+diff --git a/libsagna/aws/stack.py b/libsagna/aws/stack.py
+index b4bd3cc..d8d8d17 100644
+--- a/libsagna/aws/stack.py
++++ b/libsagna/aws/stack.py
+@@ -8,6 +8,7 @@
+ import difflib
+ 
+ import libsagna
++import libsagna.executor
+ from libsagna.aws import aws
+ from libsagna import DANGEROUS, DRY_RUN_MOCK
+ import libsagna.dry_run
+@@ -58,9 +59,12 @@ def cleanup_if_failed(self):
+ 
+     def cleanup_unavailable_change_sets(self):
+         with ignore_stack_does_not_exist():
+-            for change in self.aws.cloudformation.list_change_sets(StackName=self.name)['Summaries']:
+-                if change['ExecutionStatus'] != 'AVAILABLE':
+-                    DANGEROUS(self.aws.cloudformation.delete_change_set, ChangeSetName=change['ChangeSetId'])
++            # get the changes
++            changes = self.aws.cloudformation.list_change_sets(StackName=self.name)['Summaries']
++            # that are unavailable
++            changes = (c['ChangeSetId'] for c in changes if c['ExecutionStatus'] != 'AVAILABLE')
++            # and delet them
++            list(libsagna.executor.ThreadPool.map(lambda c: DANGEROUS(self.aws.cloudformation.delete_change_set, ChangeSetName=c), changes))
+ 
+     def describe_stack_events(self):
+         with ignore_stack_does_not_exist():

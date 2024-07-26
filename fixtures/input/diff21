@@ -1,0 +1,33 @@
+diff --git a/bin/custom_differ.py b/bin/custom_differ.py
+index ba2a8fac..28c4066c 100755
+--- a/bin/custom_differ.py
++++ b/bin/custom_differ.py
+@@ -192,8 +192,19 @@ def isjunk(b):
+ 
+                 # don't match whitespace (but allow matching beyond it later)
+                 if multiline or not isjunk(c):
++                    # prioritise more words, then longer words, then words on the expected line
++
++                    if k < bestsize:
++                        continue
++
+                     l = sum(map(len, left[i - k + 1 : i + 1]))
++                    if l < bestlen:
++                        continue
++
+                     lineno_b = word_to_line[1][j]
++                    exact_linematch = lineno_a in self.exact_linematch[lineno_b]
++                    if exact_linematch < best_exact_linematch:
++                        continue
+ 
+                     # compare the expected line b or a depending on which one has previously been matched
+                     if expected_lineno_b is not None:
+@@ -446,7 +457,7 @@ def __init__(self, parts):
+     def perfect(self):
+         return all(p.match and p.whole_line() for p in self.parts)
+ 
+-    def score(self, maxlen: int=float('inf')):
++    def score(self, maxlen: int=10):
+         # limit the effect of very long blocks
+         matches = 0
+         total = 0

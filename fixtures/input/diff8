@@ -1,0 +1,8 @@
+diff --git a/bin/custom_differ.py b/bin/custom_differ.py
+index 79c0102a..8657553c 100755
+--- a/bin/custom_differ.py
++++ b/bin/custom_differ.py
+@@ -20,9 +23,11 @@
+-    'diff_matching':     (b'\x1b[0;38;5;211;48;2;60;0;0m', b'\x1b[0;38;5;158;48;2;0;60;0m'),
++    # 'diff_matching':     (b'\x1b[0;38;5;211;48;2;60;0;0m', b'\x1b[0;38;5;158;48;2;0;60;0m'),
++    'diff_matching':     (b'\x1b[0;38;5;211m', b'\x1b[0;38;5;121m'),

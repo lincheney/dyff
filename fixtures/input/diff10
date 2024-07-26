@@ -1,0 +1,17 @@
+diff --git a/bin/custom_differ.py b/bin/custom_differ.py
+index 7173d6f7..6b4ef7c2 100755
+--- a/bin/custom_differ.py
++++ b/bin/custom_differ.py
+@@ -580,8 +580,9 @@ def print(self, merge_markers, show_both=False, format_lineno=format_lineno, sty
+                     new_lineno = [part.first_line(0) + i, part.first_line(1) + i]
+                     if lineno_args != new_lineno:
+                         lineno_args = new_lineno
+-                        sys.stdout.buffer.write((format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno'])))
+-                    sys.stdout.buffer.write(style['sign'][2] + RESET + style['diff_context'] + text)
++                        sys.stdout.buffer.write((format_lineno(*lineno_args, minus_style=style['lineno'], plus_style=style['lineno']) + style['sign'][2]))
++                    line = re.sub(rb'(\s+\n)', style['diff_trailing_ws'].replace(b'\\', b'\\\\') + rb'\1', line))
++                    sys.stdout.buffer.write(style['diff_context'] + line)
+             return
+ 
+         for i in range(2):
+         

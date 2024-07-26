@@ -1,0 +1,26 @@
+diff --git a/libsagna/config/__init__.py b/libsagna/config/__init__.py
+index 2e656dc..3aa7c6c 100644
+--- a/libsagna/config/__init__.py
++++ b/libsagna/config/__init__.py
+@@ -22,7 +22,7 @@ def __init__(self, data: dict|str, *args: str):
+ 
+     def set_attributes(self, value, parent='', sep=':'):
+         if parent:
+-            self.add(f'attribute{self.SEP}{parent}{self.SEP}{value}')
++            self.add(f'attribute{sep}{parent}{self.SEP}{value}')
+ 
+         if isinstance(value, dict):
+             for k, v in value.items():
+diff --git a/modules/aws/aws-event-logging/config.yaml b/modules/aws/aws-event-logging/config.yaml
+index 0488a54..3aa4b09 100644
+--- a/modules/aws/aws-event-logging/config.yaml
++++ b/modules/aws/aws-event-logging/config.yaml
+@@ -1,7 +1,5 @@
+ # projects/.*/aws-event-logging:
+ service/events:
+   type/bus:
+-    attribute/Name/default:
+-      enabled: true
+-    not/attribute/Name/default:
++    not/attribute:Name/default:
+       enabled: false

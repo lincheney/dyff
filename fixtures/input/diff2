@@ -1,0 +1,19 @@
+commit 6a0799eb867b06762fb8f07dbd9899eb7d0969b5
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sat Jan 13 16:19:55 2024 +1100
+
+    zsh: include hpre
+
+diff --git a/zsh/fzf-zsh-completion.sh b/zsh/fzf-zsh-completion.sh
+index f62a4d8..5fb06e9 100644
+--- a/zsh/fzf-zsh-completion.sh
++++ b/zsh/fzf-zsh-completion.sh
+@@ -266,7 +266,7 @@ _fzf_completion_compadd() {
+ 
+     if [ -n "${__optskv[(i)-A]}${__optskv[(i)-O]}${__optskv[(i)-D]}" ]; then
+         # handle -O -A -D
+-        builtin compadd "${__flags[@]}" "${__opts[@]}" "${__ipre[@]}" "$@"
++        builtin compadd "${__flags[@]}" "${__opts[@]}" "${__ipre[@]}" "${__hpre[@]}" "$@"
+         return "$?"
+     fi
+ 

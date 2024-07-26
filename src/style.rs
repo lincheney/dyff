@@ -1,6 +1,6 @@
 use super::types::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Style<'a> {
     pub line_numbers: bool,
     pub signs: bool,

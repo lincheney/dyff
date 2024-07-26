@@ -1,0 +1,21 @@
+@@ -60,18 +61,23 @@ function M.filter_matches(self, src, dest, refresh_from, callback)
++        prev = {}
+         dest = dest or {}
+         for i = #dest, 1, -1 do
++            prev[i] = dest[i]
+             dest[i] = nil
+         end
+-        self.refresh_from = 1
++        self.refresh_from = 1 - #prev
+         self.epoch = self.epoch + 1
+     end
+ 
+-    self:filter(self.epoch, src, dest, cursor_before_line, seen, callback)
++    self:filter(self.epoch, prev, src, dest, cursor_before_line, seen, callback)
+ end
+ 
+-function M.filter(self, epoch, src, dest, cursor_before_line, seen, callback)
++function M.filter(self, epoch, prev, src, dest, cursor_before_line, seen, callback)
+     if epoch ~= self.epoch then
+         return
+     end

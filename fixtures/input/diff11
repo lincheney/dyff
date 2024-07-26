@@ -1,0 +1,14 @@
+diff --git a/bin/custom_differ.py b/bin/custom_differ.py
+index 7173d6f7..6b4ef7c2 100755
+--- a/bin/custom_differ.py
++++ b/bin/custom_differ.py
+@@ -580,8 +580,9 @@ def print(self, merge_markers, show_both=False, format_lineno=format_lineno, sty
+ context
+ context
+-minus
++plus
+ 
+-minus2 hello world
++plus2 hello world
+ context
+ context

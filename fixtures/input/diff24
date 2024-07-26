@@ -1,0 +1,14 @@
+--- a/css/markdown.css
++++ b/css/markdown.css
+@@ -49,14 +49,17 @@ #content-area {
+     }
+     code {
+         font-size: 1.2em;
++        color: var(--code-fg);
+     }
+     code, a.interpolated {
+-        color: var(--code-fg);
+         background-color: var(--code-bg);
+         padding: 0 0.3em;
+         cursor: text;
+         text-decoration: none;

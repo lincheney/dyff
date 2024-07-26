@@ -1,0 +1,17 @@
+diff --git a/shadow/.config/nvim/lua/qianli/completion/sorter.lua b/shadow/.config/nvim/lua/qianli/completion/sorter.lua
+index ddfacd8d..feb2c1c6 100644
+@@ -117,14 +111,6 @@ function M.filter(self, epoch, src, dest, cursor_before_line, seen, callback)
+                         end
+                     end
+ 
+-                    -- get the ranges to highlight, if different
+-                    if filter_text == item.inner.label then
+-                        item.highlight_blocks = item.match_blocks
+-                    else
+-                        local _, highlight_blocks = matcher.fuzzy_match(item.inner.label)
+-                        item.highlight_blocks = highlight_blocks or {}
+-                    end
+-
+                 end
+ 
+                 if item.score then
