@@ -193,9 +193,9 @@ impl<'a> std::fmt::Debug for Part<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            "(\"{}\", \"{}\")",
-            std::str::from_utf8(&self.get(0).concat().iter().flat_map(|c| std::ascii::escape_default(*c)).collect::<Vec<_>>()).unwrap(),
-            std::str::from_utf8(&self.get(1).concat().iter().flat_map(|c| std::ascii::escape_default(*c)).collect::<Vec<_>>()).unwrap(),
+            "Part(\"{}\", \"{}\")",
+            self.parent.get_words_as_debug(0, self.slices[0].clone()),
+            self.parent.get_words_as_debug(1, self.slices[1].clone()),
         )
     }
 }

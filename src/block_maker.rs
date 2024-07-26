@@ -165,4 +165,13 @@ impl<'a> BlockMaker<'a> {
         Block{parts}
     }
 
+    pub fn get_words_as_debug(&self, side: usize, range: std::ops::Range<usize>) -> String {
+        let string = &self.words[side][range]
+            .concat()
+            .iter()
+            .flat_map(|c| std::ascii::escape_default(*c))
+            .collect::<Vec<_>>();
+        std::str::from_utf8(string).unwrap().to_string()
+    }
+
 }

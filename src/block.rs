@@ -423,7 +423,7 @@ impl<'a> Block<'a> {
                             if trailing_ws {
                                 stdout.write_all(style::DIFF_TRAILING_WS)?;
                             }
-                            stdout.write_all(&word)?;
+                            stdout.write_all(word)?;
                         }
                     }
                 }
