@@ -34,7 +34,10 @@ impl<'a> Block<'a> {
         const MAXLEN: usize = 10;
         let total: usize = self.parts.iter().map(|p| min(MAXLEN, p.word_len(0)) + min(MAXLEN, p.word_len(1))).sum();
         if total == 0 {
-            return 1f64
+            if self.is_empty(0) && self.is_empty(1) {
+                return 1f64
+            }
+            return 0.
         }
 
         let matches: usize = self.parts.iter().filter(|p| p.matches).map(|p| min(MAXLEN, p.word_len(0))).sum();
