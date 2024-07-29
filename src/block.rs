@@ -160,6 +160,23 @@ impl<'a> Block<'a> {
         merged
     }
 
+    fn merge_adjacent_parts(&mut self) {
+        let mut i = 1;
+        while i < self.parts.len() {
+            if self.parts[i-1].matches == self.parts[i].matches {
+                let part = self.parts.remove(i);
+                let prev = &mut self.parts[i - 1];
+                prev.slices = [
+                    prev.slices[0].start .. part.slices[0].end,
+                    prev.slices[1].start .. part.slices[1].end,
+                ];
+            } else {
+                i += 1;
+            }
+        }
+
+    }
+
     fn last_non_empty(&self, i: usize) -> Option<&Part> {
         self.parts.iter().rev().find(|p| !p.is_empty(i))
     }
@@ -271,6 +288,7 @@ impl<'a> Block<'a> {
         // remove empty ones
         for block in blocks.iter_mut() {
             block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+            block.merge_adjacent_parts();
         }
 
         blocks
