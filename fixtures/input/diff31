@@ -1,0 +1,34 @@
+commit 134b60b1e2eaba9567b296f3904b294daa5591db
+Author: 林千里 <lincheney@gmail.com>
+Date:   Mon Jul 29 16:59:13 2024 +1000
+
+    merge_adjacent_parts
+
+diff --git a/src/block.rs b/src/block.rs
+index 7a7d1bc..c8a10d2 100644
+--- a/src/block.rs
++++ b/src/block.rs
+@@ -160,6 +160,23 @@ fn merge_blocks_on_score(mut blocks: Vec<Block>, cutoff: f64) -> Vec<Block> {
+         merged
+     }
+ 
++    fn merge_adjacent_parts(&mut self) {
++        let mut i = 1;
++        while i < self.parts.len() {
++            if self.parts[i-1].matches == self.parts[i].matches {
++                let part = self.parts.remove(i);
++                let prev = &mut self.parts[i - 1];
++                prev.slices = [
++                    prev.slices[0].start .. part.slices[0].end,
++                    prev.slices[1].start .. part.slices[1].end,
++                ];
++            } else {
++                i += 1;
++            }
++        }
++
++    }
++
+     fn last_non_empty(&self, i: usize) -> Option<&Part> {
+         self.parts.iter().rev().find(|p| !p.is_empty(i))
+     }

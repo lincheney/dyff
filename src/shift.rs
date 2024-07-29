@@ -6,9 +6,9 @@ const NUM_SCORES: usize = 4;
 type Parts<'a> = Vec<Part<'a>>;
 
 fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> [[usize; NUM_SCORES]; 2] {
-    static PREFIXES: [(usize, Bytes); 3] = [
-        (0, b"\n"),
-        (1, b" \t"),
+    static PREFIXES: [(usize, Bytes); 1] = [
+        // (0, b"\n"),
+        // (1, b" \t"),
         // (1, b"{"),
         // (1, b",;"),
         (2, b"{[("),
