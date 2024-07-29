@@ -21,12 +21,12 @@ index b4bd3cc..d8d8d17 100644
 [0;38;5;242m60  [0;38;5;242m▏[0;38;5;242m61  [0;38;5;242m▏ [0;38;5;242m        with ignore_stack_does_not_exist():[2;7m
 [0m[0;31m[1;48;2;80;30;30m[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m62  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            # get the changes[2;7m
 [0m[0;38;5;252m[0;31m61  [0;38;5;242m▏[0;32m63  [0;38;5;242m▏ [0;38;5;252m            [0;31m[1;48;2;80;30;30mfor change in[0;32m[1;48;2;25;80;25mchanges =[0;38;5;252m self.aws.cloudformation.list_change_sets(StackName=self.name)['Summaries'][0;31m[1;48;2;80;30;30m:[0;32m[1;48;2;25;80;25m[0;38;5;252m[2;7m
-[0m[0;31m[1;48;2;80;30;30m[0;31m62  [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m                if change['ExecutionStatus'] != 'AVAILABLE':[2;7m
-[0;31m[1;48;2;80;30;30m[0;31m63  [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m                    DANGEROUS(self.aws.cloudformation.delete_change_set, ChangeSetName=change['ChangeSetId'])[2;7m
-[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m64  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            # that are unavailable[2;7m
-[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m65  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            changes = (c['ChangeSetId'] for c in changes if c['ExecutionStatus'] != 'AVAILABLE')
-[0;31m    [0;38;5;242m▏[0;32m66  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            # and delet them[2;7m
-[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m67  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            list(libsagna.executor.ThreadPool.map(lambda c: DANGEROUS(self.aws.cloudformation.delete_change_set, ChangeSetName=c), changes))[2;7m
+[0m[0;31m[1;48;2;80;30;30m[0;31m62  [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m                if change['ExecutionStatus'] != 'AVAILABLE':
+[0;31m63  [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m                    DANGEROUS(self.aws.cloudformation.delete_change_set, ChangeSetName=change['ChangeSetId'])[2;7m
+[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m64  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            # that are unavailable
+[0;31m    [0;38;5;242m▏[0;32m65  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            changes = (c['ChangeSetId'] for c in changes if c['ExecutionStatus'] != 'AVAILABLE')
+[0;31m    [0;38;5;242m▏[0;32m66  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            # and delet them
+[0;31m    [0;38;5;242m▏[0;32m67  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            list(libsagna.executor.ThreadPool.map(lambda c: DANGEROUS(self.aws.cloudformation.delete_change_set, ChangeSetName=c), changes))[2;7m
 [0m[0;38;5;242m64  [0;38;5;242m▏[0;38;5;242m68  [0;38;5;242m▏ [0;38;5;242m
 [0;38;5;242m65  [0;38;5;242m▏[0;38;5;242m69  [0;38;5;242m▏ [0;38;5;242m    def describe_stack_events(self):
 [0;38;5;242m66  [0;38;5;242m▏[0;38;5;242m70  [0;38;5;242m▏ [0;38;5;242m        with ignore_stack_does_not_exist():[2;7m
