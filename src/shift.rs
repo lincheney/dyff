@@ -13,10 +13,8 @@ fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> 
         // (1, b",;"),
         (2, b"{[("),
     ];
-    static SUFFIXES: [(usize, Bytes); 6] = [
+    static SUFFIXES: [(usize, Bytes); 4] = [
         (0, b"\n"),
-        (1, b" \t"),
-        (2, b"}"),
         (1, b" \t"),
         (2, b",;"),
         (2, b"}])"),
@@ -32,21 +30,32 @@ fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> 
 
     let mut skip = 0;
     let mut suffix_scores = [0; NUM_SCORES];
-    for &(ix, p) in SUFFIXES.iter() {
-        let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
-        skip += count;
-        suffix_scores[ix] += count;
+    let mut done = false;
+    while !done {
+        let mut total = 0;
+        for &(ix, p) in SUFFIXES.iter() {
+            let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
+            skip += count;
+            suffix_scores[ix] += count;
+            total += count;
+        }
+        done = done || total == 0;
     }
 
-
-    if words[0] != b"\n" && words.back().unwrap() != b"\n" {
-        // check if this is at start of line
+    // check if this is at start of line
+    if words[0] == b"\n" {
+        prefix_scores[0] += 1;
+    } else {
         let start = (part.slices[i].start as isize + shift) as usize;
         if start == 0 || part.parent.words[i][start-1] == b"\n" {
             prefix_scores[0] += 1;
         }
+    }
 
-        // check if this is at end of line
+    // check if this is at end of line
+    if words.back().unwrap() == b"\n" {
+        suffix_scores[0] += 1;
+    } else {
         let end = (part.slices[i].end as isize + shift) as usize;
         if end == part.parent.words[i].len() || part.parent.words[i][end] == b"\n" {
             suffix_scores[0] += 1;
