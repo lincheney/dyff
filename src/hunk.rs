@@ -48,7 +48,6 @@ impl Hunk {
 
             for block in blocks {
                 block.print(stdout, merge_markers, style, super::style::format_lineno)?;
-                stdout.write_all(super::style::RESET)?;
                 stdout.flush()?;
             }
         }

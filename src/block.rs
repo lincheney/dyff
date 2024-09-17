@@ -342,6 +342,9 @@ impl<'a> Block<'a> {
                     if trailing_ws {
                         stdout.write_all(style::DIFF_TRAILING_WS)?;
                     }
+                    if word == b"\n" {
+                        stdout.write_all(style::RESET)?;
+                    }
                     stdout.write_all(word)?;
 
                     if word == b"\n" {
@@ -433,6 +436,9 @@ impl<'a> Block<'a> {
                             if trailing_ws {
                                 stdout.write_all(style::DIFF_TRAILING_WS)?;
                             }
+                            if word == b"\n" {
+                                stdout.write_all(style::RESET)?;
+                            }
                             stdout.write_all(&word[0..1])?;
                             if trailing_ws {
                                 stdout.write_all(style::DIFF_TRAILING_WS)?;
@@ -443,6 +449,9 @@ impl<'a> Block<'a> {
                         } else {
                             if trailing_ws {
                                 stdout.write_all(style::DIFF_TRAILING_WS)?;
+                            }
+                            if word == b"\n" {
+                                stdout.write_all(style::RESET)?;
                             }
                             stdout.write_all(word)?;
                         }
