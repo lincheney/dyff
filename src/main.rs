@@ -315,11 +315,13 @@ fn _main() -> Result<ExitCode> {
 
         if args.exact && stripped.starts_with(b" ") {
             h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
-            stdout.write_all(style::format_lineno(
-                    line_numbers,
-                    Some(style::LINENO), Some(style::LINENO),
-                    None,
-            ).as_ref())?;
+            if style.line_numbers {
+                stdout.write_all(style::format_lineno(
+                        line_numbers,
+                        Some(style::LINENO), Some(style::LINENO),
+                        None,
+                ).as_ref())?;
+            }
             if style.signs {
                 stdout.write_all(style::SIGN[2])?;
             }
