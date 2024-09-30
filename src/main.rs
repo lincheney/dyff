@@ -325,7 +325,7 @@ fn _main() -> Result<ExitCode> {
             if style.signs {
                 stdout.write_all(style::SIGN[2])?;
             }
-            stdout.write_all(style::RESET)?;
+            stdout.write_all(style::DIFF_CONTEXT)?;
             stdout.write_all(&regex!(r"\s+\n".replace_all(&stripped[1..], style::DIFF_TRAILING_WS_PAT)))?;
 
             hunk = Some(Hunk::new());
