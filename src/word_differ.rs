@@ -238,13 +238,13 @@ impl<'a> WordDiffer<'a> {
         // let single_line_a = first_line_a == last_line_a;
         // let single_line_b = first_line_b == last_line_b;
 
-        let mut j2len = HashMap::<usize, usize>::new();
-        let mut newj2len = HashMap::<usize, usize>::new();
+        let mut j2len = vec![0; self.parent.words[1].len()];
+        let mut newj2len = vec![0; self.parent.words[1].len()];
 
         for i in alo..ahi {
             // look at all instances of a[i] in b; note that because
             // b2j has no junk keys, the loop is skipped if a[i] is junk
-            newj2len.clear();
+            newj2len.fill(0);
             let word = left[i];
             let lineno_a = self.parent.get_lineno(0, i);
             let expected_lineno_b = self.matched_lines.get(&(0, lineno_a));
@@ -254,11 +254,11 @@ impl<'a> WordDiffer<'a> {
 
                 for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
                     // a[i] matches b[j]
-                    let k = if j == 0 { 1 } else { j2len.get(&(j-1)).unwrap_or(&0) + 1 };
+                    let k = if j == 0 { 1 } else { j2len[j-1] + 1};
 
                     // do not allow matches to start with a newline
                     if word != b"\n" {
-                        newj2len.insert(j, k);
+                        newj2len[j] = k;
                     }
                     // don't match whitespace (but allow matching beyond it later)
                     if junk {
