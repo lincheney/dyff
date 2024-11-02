@@ -247,7 +247,7 @@ fn _main() -> Result<ExitCode> {
             continue
         }
 
-        if let Some(captures) = regex!("^(?<header>diff( -r| --recursive| --git)?) (?<filename1>[^\"\\s-][^\"\\s]+|\"(\\\\.|.)*\") (?<filename2>[^\"\\s]+|\"(\\\\.|.)*\")(?<trailer>.*)".captures(&stripped)) {
+        if let Some(captures) = regex!("^(?<header>diff( -r| --recursive| --git| --cc)?) (?<filename1>[^\"\\s-][^\"\\s]+|\"(\\\\.|.)*\") (?<filename2>[^\"\\s]+|\"(\\\\.|.)*\")(?<trailer>.*)".captures(&stripped)) {
             if let Some(mut hunk) = hunk {
                 hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
             }
