@@ -1,0 +1,11 @@
+diff --git a/README.md b/README.md
+deleted file mode 100644
+index c2ef55e..0000000
+--- a/README.md
++++ /dev/null
+@@ -1,5 +0,0 @@
+-# private-testing-stuff
+-
+-hello
+-
+-world
