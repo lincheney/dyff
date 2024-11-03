@@ -170,6 +170,7 @@ fn _main() -> Result<ExitCode> {
 
     let mut buf = Vec::<u8>::new();
     let mut diff = false;
+    let mut side = 0;
     loop {
         buf.clear();
 
@@ -298,7 +299,7 @@ fn _main() -> Result<ExitCode> {
         if unified && merge_markers.is_some() {
             if let Some(captures) = regex!(r"^(?<sign>[-+] | [-+]|[-+]{2})(?<line>.*\n)".captures(&stripped)) {
                 let sign = &captures["sign"];
-                let side = if sign.contains(&b'+') { 1 } else { 0 };
+                side = if sign.contains(&b'+') { 1 } else { 0 };
                 let lineno = line_numbers[side] + h.get(side).len();
                 h.get_mut(side).push(captures["line"].to_owned());
                 let bar = if sign[1] == b' ' {
@@ -353,21 +354,17 @@ fn _main() -> Result<ExitCode> {
         }
 
         if &*stripped == b"\\ No newline at end of file\n" || &*stripped == b"\\ No newline at end of file" {
-            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
-            if !h.left.is_empty() {
-                stdout.write_all(style::DIFF.0)?;
+            if let Some(last_line) = h.get_mut(side).last_mut() {
+                if last_line.ends_with(&[b'\n']) {
+                    last_line.pop();
+                }
             }
-            if !h.right.is_empty() {
-                stdout.write_all(style::DIFF.1)?;
-            }
-            stdout.write_all(&buf)?;
-            hunk = Some(Hunk::new());
             continue
         }
 
         if unified {
             if let Some(captures) = regex!(r"^(?<sign>[-+])(?<line>.*\n)".captures(&stripped)) {
-                let side = if &captures["sign"] == b"+" { 1 } else { 0 };
+                side = if &captures["sign"] == b"+" { 1 } else { 0 };
                 h.get_mut(side).push(captures["line"].to_owned());
                 continue
             }
@@ -385,7 +382,7 @@ fn _main() -> Result<ExitCode> {
             }
 
             if let Some(captures) = regex!(r"^(?<sign>[<>]) (?<line>.*\n)".captures(&stripped)) {
-                let side = if &captures["sign"] == b">" { 1 } else { 0 };
+                side = if &captures["sign"] == b">" { 1 } else { 0 };
                 h.get_mut(side).push(captures["line"].to_owned());
                 continue
             }

@@ -46,8 +46,9 @@ impl Hunk {
             let maker = BlockMaker::new(self, line_numbers);
             let blocks = maker.make_block().split_block();
 
-            for block in blocks {
-                block.print(stdout, merge_markers, style, super::style::format_lineno)?;
+            let len = blocks.len();
+            for (i, block) in blocks.iter().enumerate() {
+                block.print(stdout, merge_markers, style, i == len-1, super::style::format_lineno)?;
                 stdout.flush()?;
             }
         }
@@ -86,7 +87,7 @@ impl Hunk {
         let maker = BlockMaker::new(&hunk, [1, 1]);
         let blocks = maker.make_block().split_block();
         for block in blocks {
-            block.print(stdout, None, style, |num: [usize; 2], _, _, _| -> &'a str {
+            block.print(stdout, None, style, false, |num: [usize; 2], _, _, _| -> &'a str {
                 match num {
                     [_, 0] => prefix.0,
                     [0, _] => prefix.1,

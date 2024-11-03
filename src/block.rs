@@ -303,6 +303,7 @@ impl<'a> Block<'a> {
         stdout: &mut BufWriter<T>,
         merge_markers: Option<&super::hunk::MergeMarkers>,
         style: style::Style,
+        last: bool,
         format_lineno: F,
     ) -> Result<()> {
 
@@ -355,6 +356,17 @@ impl<'a> Block<'a> {
                 }
 
             }
+
+            // print the no newline message
+            if last {
+                if let Some(part) = self.parts.last() {
+                    if !part.get(0).ends_with(&[&[b'\n']]) {
+                        stdout.write_all(style::DIFF_CONTEXT)?;
+                        stdout.write_all(b"\n\\ No newline at end of file\n")?;
+                    }
+                }
+            }
+
             return Ok(())
         }
 
@@ -454,6 +466,23 @@ impl<'a> Block<'a> {
                                 stdout.write_all(style::RESET)?;
                             }
                             stdout.write_all(word)?;
+                        }
+                    }
+                }
+            }
+
+            // print the no newline message
+            if last {
+                if let Some(part) = self.parts.last() {
+                    let inner_loop = if inline && !part.matches { 0..=1 } else { i..=i };
+
+                    for i in inner_loop {
+                        if !part.get(i).ends_with(&[&[b'\n']]) {
+                            stdout.write_all(style.diff_non_matching[i])?;
+                            if !inline {
+                                stdout.write_all(b"\n")?;
+                            }
+                            stdout.write_all(b"\\ No newline at end of file\n")?;
                         }
                     }
                 }
