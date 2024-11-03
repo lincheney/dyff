@@ -1,0 +1,25 @@
+commit 68512c1e384c14ea6632089162db1266edf5e4fe
+Author: 林千里 <lincheney@gmail.com>
+Date:   Wed Oct 30 11:46:27 2024 +1100
+
+    update
+
+diff --git a/paying/credit card spend.md b/paying/credit card spend.md
+index 87b738e..09a16cb 100644
+--- a/paying/credit card spend.md	
++++ b/paying/credit card spend.md	
+@@ -1,10 +1,8 @@
+-# 2024
+-Citibank
++# 2024 Citibank
+ * normal points: `=x = cc_spend = 1149+2386+1838+3763+2718+1804+1509+2002+2250+3383+2031`
+ * spend `=x`
+ * bonus points: `=322+10755+275514+770+1169+902+294+480+2539+804+538`
+-# 2023
+-Westpac
++# 2023 Westpac
+ * normal points: `= x = 3098.63+1768.6+7049.34+4319.3+2308.89+2108.28+1980.05+1536.63+1795.61+2835.03+3698.35+2318.02`
+ * spend `=x/1.25`
+-* bonus points: `=299+33+140000+3+0+0+21+0+0+14+0+0`
+\ No newline at end of file
++* bonus points: `=299+33+140000+3+0+0+21+0+0+14+0+0`
