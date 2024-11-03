@@ -360,7 +360,7 @@ impl<'a> Block<'a> {
             // print the no newline message
             if last {
                 if let Some(part) = self.parts.last() {
-                    if !part.get(0).ends_with(&[&[b'\n']]) {
+                    if !part.get(0).is_empty() && !part.get(0).ends_with(&[&[b'\n']]) {
                         stdout.write_all(style::DIFF_CONTEXT)?;
                         stdout.write_all(b"\n\\ No newline at end of file\n")?;
                     }
@@ -477,7 +477,7 @@ impl<'a> Block<'a> {
                     let inner_loop = if inline && !part.matches { 0..=1 } else { i..=i };
 
                     for i in inner_loop {
-                        if !part.get(i).ends_with(&[&[b'\n']]) {
+                        if !part.get(i).is_empty() && !part.get(i).ends_with(&[&[b'\n']]) {
                             stdout.write_all(style.diff_non_matching[i])?;
                             if !inline {
                                 stdout.write_all(b"\n")?;
