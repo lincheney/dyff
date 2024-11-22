@@ -1,0 +1,26 @@
+commit aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Author: xxxxx
+Date:   Thu Oct 31 16:26:26 2024 +1100
+
+    hello
+
+diff --git a/xxxxx b/xxxxx
+deleted file mode 100644
+index 9c3c6ae..0000000
+--- a/xxxxx
++++ /dev/null
+@@ -1,25 +0,0 @@
+-/**
+- * comment
+- */
+-
+diff --git a/yyyyyy b/yyyyyy
+deleted file mode 100644
+index 4daf8b0..0000000
+--- a/yyyyyy
++++ /dev/null
+@@ -1,12 +0,0 @@
+-/**
+- * comment 2
+- */
+-

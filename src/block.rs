@@ -399,6 +399,7 @@ impl<'a> Block<'a> {
 
                     let words = part.get(i);
                     if words.is_empty() {
+                        stdout.write_all(style::RESET)?;
                         continue
                     }
 
