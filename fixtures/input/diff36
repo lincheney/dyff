@@ -1,0 +1,13 @@
+diff --git a/config/test.sh b/config/test.sh
+index ed932b85..c9668726 100644
+--- a/config/test.sh
++++ b/config/test.sh
+@@ -1,4 +1,5 @@
+ export NODE_ENV=test
+ export DATABASE_ENDPOINT=172.17.0.1
+ export DATABASE_PORT=3388
+-export DATABASE_NAME=test
+\ No newline at end of file
++export DATABASE_NAME=test
++export S3_BUCKET_NAME=fake-bucket
+\ No newline at end of file

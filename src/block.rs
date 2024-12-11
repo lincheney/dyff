@@ -107,7 +107,7 @@ impl<'a> Block<'a> {
         }
     }
 
-    fn is_empty(&self, i: usize) -> bool {
+    pub fn is_empty(&self, i: usize) -> bool {
         self.parts.iter().all(|p| p.is_empty(i))
     }
 
@@ -475,15 +475,19 @@ impl<'a> Block<'a> {
             // print the no newline message
             if last {
                 let inner_loop = if inline { 0..=1 } else { i..=i };
+                let newline = [0, 1].map(|i| {
+                    self.parts.iter().rfind(|p| !p.is_empty(i)).take_if(|p| p.get(i).ends_with(&[&[b'\n']])).is_some()
+                });
+
+                let mut printed_newline = false;
                 for i in inner_loop {
-                    if let Some(part) = self.parts.iter().rev().find(|p| !p.is_empty(i)) {
-                        if !part.get(i).ends_with(&[&[b'\n']]) {
-                            stdout.write_all(style.diff_non_matching[i])?;
-                            if !inline {
-                                stdout.write_all(b"\n")?;
-                            }
-                            stdout.write_all(b"\\ No newline at end of file\n")?;
+                    if !self.is_empty(i) && !newline[i] {
+                        stdout.write_all(style.diff_non_matching[i])?;
+                        if !newline[1-i] && !printed_newline {
+                            stdout.write_all(b"\n")?;
+                            printed_newline = true;
                         }
+                        stdout.write_all(b"\\ No newline at end of file\n")?;
                     }
                 }
             }

@@ -47,8 +47,12 @@ impl Hunk {
             let blocks = maker.make_block().split_block();
 
             let len = blocks.len();
+            let last = [0, 1].map(|i| {
+                blocks.iter().enumerate().rfind(|(_i, b)| !b.is_empty(i)).map(|(i, _b)| i).unwrap_or(len)
+            });
+
             for (i, block) in blocks.iter().enumerate() {
-                block.print(stdout, merge_markers, style, i == len-1, super::style::format_lineno)?;
+                block.print(stdout, merge_markers, style, i == last[0] || i == last[1], super::style::format_lineno)?;
                 stdout.flush()?;
             }
         }
