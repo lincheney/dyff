@@ -483,7 +483,7 @@ impl<'a> Block<'a> {
                 for i in inner_loop {
                     if !self.is_empty(i) && !newline[i] {
                         stdout.write_all(style.diff_non_matching[i])?;
-                        if !newline[1-i] && !printed_newline {
+                        if (!inline || !newline[1-i]) && !printed_newline {
                             stdout.write_all(b"\n")?;
                             printed_newline = true;
                         }
