@@ -343,7 +343,7 @@ fn _main() -> Result<ExitCode> {
 
 
         if h.is_empty() {
-            if let Some(captures) = regex!(r"^rename (?<sign>to|from) (?<filename>.*\n)".captures(&stripped)) {
+            if let Some(captures) = regex!(r"^rename (?<sign>to|from)[ \t](?<filename>.*\n)".captures(&stripped)) {
                 if &captures["sign"] == b"from" {
                     filename = Some(captures["filename"].to_owned());
                 } else {
