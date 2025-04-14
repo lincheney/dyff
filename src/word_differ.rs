@@ -243,10 +243,11 @@ impl<'a> WordDiffer<'a> {
         let mut j2len = vec![0; self.parent.words[1].len()];
         let mut newj2len = vec![0; self.parent.words[1].len()];
 
-        for (i, &tok) in left[alo..ahi].iter().enumerate() {
+        for i in alo..ahi {
             // look at all instances of a[i] in b; note that because
             // b2j has no junk keys, the loop is skipped if a[i] is junk
             newj2len.fill(0);
+            let tok = left[i];
             let lineno_a = self.parent.get_lineno(0, i);
             let expected_lineno_b = self.matched_lines.get(&(0, lineno_a));
 
