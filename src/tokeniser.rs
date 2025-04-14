@@ -12,6 +12,7 @@ impl Token {
     pub const CARRIAGE_RETURN: Self = Self(4);
 
     pub fn is_ascii_whitespace(self) -> bool {
+        // but NOT newline
         matches!(self, Self::TAB | Self::SPACE | Self::FORM_FEED | Self::CARRIAGE_RETURN)
     }
 }

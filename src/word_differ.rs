@@ -5,7 +5,7 @@ use super::part::Part;
 use super::tokeniser::Token;
 
 fn isjunk(tok: Token) -> bool {
-    tok != Token::NEWLINE && tok.is_ascii_whitespace()
+    tok.is_ascii_whitespace()
 }
 
 pub struct WordDiffer<'a> {
@@ -42,7 +42,7 @@ impl<'a> WordDiffer<'a> {
         let mut line_start = true;
         for (i, &tok) in parent.tokens[1].iter().enumerate() {
             // whitespace at start is 'junk' as it is usually just indentation
-            if !(line_start && tok != Token::NEWLINE && tok.is_ascii_whitespace()) {
+            if !(line_start && tok.is_ascii_whitespace()) {
                 b2j[tok.0].push(i);
                 line_start = tok == Token::NEWLINE
             }
