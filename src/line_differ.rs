@@ -5,42 +5,22 @@ use super::block_maker::BlockMaker;
 pub struct LineDiffer<'a> {
     parent: &'a BlockMaker<'a>,
 
-    left: Vec<usize>,
-    right: Vec<usize>,
     // line_index: HashMap<&'a [u8], usize>,
-    b2j: HashMap<usize, Vec<usize>>,
+    b2j: Vec<Vec<usize>>,
 }
 
 impl<'a> LineDiffer<'a> {
     pub fn new(parent: &'a BlockMaker<'a>) -> Self {
-        let mut b2j = HashMap::new();
-        let mut line_index = HashMap::new();
-        let mut sides = [vec![], vec![]];
+        let mut b2j = vec![];
+        b2j.resize_with(parent.tokeniser.max_token().0, Vec::new);
 
-        for i in 0..=1 {
-            for (lineno, bounds) in parent.line_to_word[i].windows(2).enumerate() {
-                let key = line_index.len();
-                let start = bounds[0];
-                let end = bounds[1];
-
-                let words = &parent.words[i][start..end];
-                let line = words.concat();
-
-                let key = *line_index.entry(line).or_insert(key);
-                sides[i].push(key);
-
-                if i == 1 {
-                    b2j.entry(key).or_insert_with(Vec::new).push(lineno);
-                }
-            }
+        for (lineno, tok) in parent.line_tokens[1].iter().enumerate() {
+            b2j[tok.0].push(lineno);
         }
 
-        let [left, right] = sides;
         Self{
             parent,
             b2j,
-            left,
-            right,
         }
     }
 
@@ -63,20 +43,19 @@ impl<'a> LineDiffer<'a> {
             // look at all instances of a[i] in b; note that because
             // b2j has no junk keys, the loop is skipped if a[i] is junk
             newj2len.clear();
-            let value = self.left[i];
+            let value = self.parent.line_tokens[0][i];
 
-            if let Some(j) = self.b2j.get(&value) {
-                for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
-                    // a[i] matches b[j]
-                    let k = if j == 0 { 1 } else { j2len.get(&(j-1)).unwrap_or(&0) + 1 };
+            let j = &self.b2j[value.0];
+            for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
+                // a[i] matches b[j]
+                let k = if j == 0 { 1 } else { j2len.get(&(j-1)).unwrap_or(&0) + 1 };
 
-                    newj2len.insert(j, k);
+                newj2len.insert(j, k);
 
-                    if k > bestsize {
-                        besti = i + 1 - k;
-                        bestj = j + 1 - k;
-                        bestsize = k;
-                    }
+                if k > bestsize {
+                    besti = i + 1 - k;
+                    bestj = j + 1 - k;
+                    bestsize = k;
                 }
             }
 
@@ -91,7 +70,7 @@ impl<'a> LineDiffer<'a> {
     }
 
     pub fn get_matching_blocks(&mut self) -> Vec<(Range<usize>, Range<usize>)> {
-        let mut queue = vec![(0, self.left.len(), 0, self.right.len())];
+        let mut queue = vec![(0, self.parent.line_tokens[0].len(), 0, self.parent.line_tokens[1].len())];
 
         let mut matching_blocks = vec![];
         while let Some((alo, ahi, blo, bhi)) = queue.pop() {

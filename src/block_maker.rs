@@ -13,6 +13,7 @@ pub struct BlockMaker<'a> {
 
     pub words: [Vec<Bytes<'a>>; 2],
     pub tokens: [Vec<Token>; 2],
+    pub line_tokens: [Vec<Token>; 2],
     pub tokeniser: &'a Tokeniser,
 
     word_to_line: [Vec<usize>; 2],
@@ -24,6 +25,7 @@ impl<'a> BlockMaker<'a> {
         // make a mapping from word number to line number
         let mut words = [vec![], vec![]];
         let mut tokens = [vec![], vec![]];
+        let mut line_tokens = [vec![], vec![]];
         let mut word_to_line = [vec![], vec![]];
         let mut line_to_word = [vec![], vec![]];
 
@@ -52,14 +54,17 @@ impl<'a> BlockMaker<'a> {
                 for _ in oldlen..w.len() {
                     word_to_line[i].push(lineno);
                 }
+                line_tokens[i].push(tokeniser.map(line));
             }
             word_to_line[i].push(line_to_word[i].len());
             line_to_word[i].push(w.len());
+
         }
 
         Self{
             words,
             tokens,
+            line_tokens,
             tokeniser,
             line_numbers,
             word_to_line,
