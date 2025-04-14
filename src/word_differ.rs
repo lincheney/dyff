@@ -11,7 +11,7 @@ fn isjunk(tok: Token) -> bool {
 pub struct WordDiffer<'a> {
     parent: &'a BlockMaker<'a>,
 
-    b2j: HashMap<Token, Vec<usize>>,
+    b2j: Vec<Vec<usize>>,
 
     matched_lines: HashMap<(usize, usize), usize>,
 }
@@ -35,14 +35,15 @@ impl DiffMatch {
 
 impl<'a> WordDiffer<'a> {
     pub fn new(parent: &'a BlockMaker<'a>) -> Self {
-        let mut b2j = HashMap::new();
+        let mut b2j = vec![];
+        b2j.resize_with(parent.tokeniser.max_token().0, Vec::new);
         let matched_lines = HashMap::new();
 
         let mut line_start = true;
         for (i, &tok) in parent.tokens[1].iter().enumerate() {
             // whitespace at start is 'junk' as it is usually just indentation
             if !(line_start && tok != Token::NEWLINE && tok.is_ascii_whitespace()) {
-                b2j.entry(tok).or_insert_with(Vec::new).push(i);
+                b2j[tok.0].push(i);
                 line_start = tok == Token::NEWLINE
             }
         }
@@ -250,62 +251,61 @@ impl<'a> WordDiffer<'a> {
             let lineno_a = self.parent.get_lineno(0, i);
             let expected_lineno_b = self.matched_lines.get(&(0, lineno_a));
 
-            if let Some(j) = self.b2j.get(&tok) {
-                let junk = isjunk(tok);
+            let j = &self.b2j[tok.0];
+            let junk = isjunk(tok);
 
-                for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
-                    // a[i] matches b[j]
-                    let k = if j == 0 { 1 } else { j2len[j-1] + 1};
+            for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
+                // a[i] matches b[j]
+                let k = if j == 0 { 1 } else { j2len[j-1] + 1};
 
-                    // do not allow matches to start with a newline
-                    if tok != Token::NEWLINE {
-                        newj2len[j] = k;
-                    }
-                    // don't match whitespace (but allow matching beyond it later)
-                    if junk {
-                        continue
-                    }
-
-                    let i = i + 1 - k;
-                    let j = j + 1 - k;
-                    let leading_ws = right[j..j+k].iter().take_while(|m| isjunk(**m)).count();
-                    let trailing_ws = right[j..j+k].iter().rev().take_while(|m| isjunk(**m)).count();
-                    let trailing_ws = min(k - leading_ws, trailing_ws);
-                    let non_ws_length = k - leading_ws - trailing_ws;
-
-                    // prioritise more words, then longer words, then words on the expected line
-                    let cmp = non_ws_length.cmp(&best_non_ws);
-                    if cmp.is_lt() {
-                        continue
-                    }
-
-                    // aggregate based on num non whitespace words
-                    if cmp.is_gt() {
-                        matches.clear();
-                    }
-
-                    let lineno_b = self.parent.get_lineno(1, j);
-                    // compare the expected line b or a depending on which one has previously been matched
-                    let (lineno_dist, lineno_dist_strong) = if let Some(expected_lineno_b) = expected_lineno_b {
-                        (expected_lineno_b.abs_diff(lineno_b), true)
-                    } else if let Some(expected_lineno_a) = self.matched_lines.get(&(1, lineno_b)) {
-                        (expected_lineno_a.abs_diff(lineno_a), true)
-                    } else {
-                        (lineno_a.abs_diff(lineno_b + first_line_a - first_line_b), false)
-                    };
-
-                    best_non_ws = non_ws_length;
-                    matches.push(DiffMatch{
-                        // parent: self,
-                        left: i,
-                        right: j,
-                        length: k,
-                        lineno_dist,
-                        lineno_dist_strong,
-                        non_ws_length,
-                        char_length: left_words[i+leading_ws .. i+k-trailing_ws].iter().map(|w| w.len()).sum(),
-                    });
+                // do not allow matches to start with a newline
+                if tok != Token::NEWLINE {
+                    newj2len[j] = k;
                 }
+                // don't match whitespace (but allow matching beyond it later)
+                if junk {
+                    continue
+                }
+
+                let i = i + 1 - k;
+                let j = j + 1 - k;
+                let leading_ws = right[j..j+k].iter().take_while(|m| isjunk(**m)).count();
+                let trailing_ws = right[j..j+k].iter().rev().take_while(|m| isjunk(**m)).count();
+                let trailing_ws = min(k - leading_ws, trailing_ws);
+                let non_ws_length = k - leading_ws - trailing_ws;
+
+                // prioritise more words, then longer words, then words on the expected line
+                let cmp = non_ws_length.cmp(&best_non_ws);
+                if cmp.is_lt() {
+                    continue
+                }
+
+                // aggregate based on num non whitespace words
+                if cmp.is_gt() {
+                    matches.clear();
+                }
+
+                let lineno_b = self.parent.get_lineno(1, j);
+                // compare the expected line b or a depending on which one has previously been matched
+                let (lineno_dist, lineno_dist_strong) = if let Some(expected_lineno_b) = expected_lineno_b {
+                    (expected_lineno_b.abs_diff(lineno_b), true)
+                } else if let Some(expected_lineno_a) = self.matched_lines.get(&(1, lineno_b)) {
+                    (expected_lineno_a.abs_diff(lineno_a), true)
+                } else {
+                    (lineno_a.abs_diff(lineno_b + first_line_a - first_line_b), false)
+                };
+
+                best_non_ws = non_ws_length;
+                matches.push(DiffMatch{
+                    // parent: self,
+                    left: i,
+                    right: j,
+                    length: k,
+                    lineno_dist,
+                    lineno_dist_strong,
+                    non_ws_length,
+                    char_length: left_words[i+leading_ws .. i+k-trailing_ws].iter().map(|w| w.len()).sum(),
+                });
             }
 
             std::mem::swap(&mut j2len, &mut newj2len);

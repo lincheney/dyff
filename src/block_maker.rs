@@ -13,6 +13,7 @@ pub struct BlockMaker<'a> {
 
     pub words: [Vec<Bytes<'a>>; 2],
     pub tokens: [Vec<Token>; 2],
+    pub tokeniser: &'a Tokeniser,
 
     word_to_line: [Vec<usize>; 2],
     pub line_to_word: [Vec<usize>; 2],
@@ -59,6 +60,7 @@ impl<'a> BlockMaker<'a> {
         Self{
             words,
             tokens,
+            tokeniser,
             line_numbers,
             word_to_line,
             line_to_word,
