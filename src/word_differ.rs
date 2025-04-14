@@ -2,17 +2,16 @@ use std::collections::HashMap;
 use std::cmp::min;
 use super::block_maker::BlockMaker;
 use super::part::Part;
-use super::whitespace::CheckAllWhitespace;
-use super::types::*;
+use super::tokeniser::Token;
 
-fn isjunk(b: Bytes) -> bool {
-    b != b"\n" && b.is_ascii_whitespace()
+fn isjunk(tok: Token) -> bool {
+    tok != Token::NEWLINE && tok.is_ascii_whitespace()
 }
 
 pub struct WordDiffer<'a> {
     parent: &'a BlockMaker<'a>,
 
-    b2j: HashMap<Bytes<'a>, Vec<usize>>,
+    b2j: HashMap<Token, Vec<usize>>,
 
     matched_lines: HashMap<(usize, usize), usize>,
 }
@@ -40,11 +39,11 @@ impl<'a> WordDiffer<'a> {
         let matched_lines = HashMap::new();
 
         let mut line_start = true;
-        for (i, &word) in parent.words[1].iter().enumerate() {
+        for (i, &tok) in parent.tokens[1].iter().enumerate() {
             // whitespace at start is 'junk' as it is usually just indentation
-            if !(line_start && word != b"\n" && word.is_ascii_whitespace()) {
-                b2j.entry(word).or_insert_with(Vec::new).push(i);
-                line_start = word == b"\n"
+            if !(line_start && tok != Token::NEWLINE && tok.is_ascii_whitespace()) {
+                b2j.entry(tok).or_insert_with(Vec::new).push(i);
+                line_start = tok == Token::NEWLINE
             }
         }
 
@@ -63,8 +62,8 @@ impl<'a> WordDiffer<'a> {
         blo: usize,
         bhi: usize,
     ) -> (usize, usize, usize) {
-        let left = &self.parent.words[0];
-        let right = &self.parent.words[1];
+        let left = &self.parent.tokens[0];
+        let right = &self.parent.tokens[1];
 
         // match leading whitespace, up to start of line
         while
@@ -72,11 +71,11 @@ impl<'a> WordDiffer<'a> {
             && j > blo
             && left[i-1] == right[j-1]
             && (isjunk(left[i-1]) || (
-                   left[i-1] == b"\n"
+                   left[i-1] == Token::NEWLINE
                 && i >= 2
-                && left[i-2] == b"\n"
+                && left[i-2] == Token::NEWLINE
                 && j >= 2
-                && right[j-2] == b"\n"
+                && right[j-2] == Token::NEWLINE
             ))
         {
             i -= 1;
@@ -90,9 +89,9 @@ impl<'a> WordDiffer<'a> {
             && j+k < bhi
             && left[i+k] == right[j+k]
             && (
-                left[i+k] == b"\n"
+                left[i+k] == Token::NEWLINE
                 || (
-                       left[i+k-1] != b"\n"
+                       left[i+k-1] != Token::NEWLINE
                     && isjunk(left[i+k])
                 )
             )
@@ -222,8 +221,10 @@ impl<'a> WordDiffer<'a> {
         write: bool,
     ) -> Option<DiffMatch> {
 
-        let left = &self.parent.words[0];
-        let right = &self.parent.words[1];
+        let left = &self.parent.tokens[0];
+        let right = &self.parent.tokens[1];
+        let left_words = &self.parent.words[0];
+        // let right_words = &self.parent.words[1];
 
         let mut best_non_ws = 0;
 
@@ -245,19 +246,19 @@ impl<'a> WordDiffer<'a> {
             // look at all instances of a[i] in b; note that because
             // b2j has no junk keys, the loop is skipped if a[i] is junk
             newj2len.fill(0);
-            let word = left[i];
+            let tok = left[i];
             let lineno_a = self.parent.get_lineno(0, i);
             let expected_lineno_b = self.matched_lines.get(&(0, lineno_a));
 
-            if let Some(j) = self.b2j.get(word) {
-                let junk = isjunk(word);
+            if let Some(j) = self.b2j.get(&tok) {
+                let junk = isjunk(tok);
 
                 for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
                     // a[i] matches b[j]
                     let k = if j == 0 { 1 } else { j2len[j-1] + 1};
 
                     // do not allow matches to start with a newline
-                    if word != b"\n" {
+                    if tok != Token::NEWLINE {
                         newj2len[j] = k;
                     }
                     // don't match whitespace (but allow matching beyond it later)
@@ -267,8 +268,8 @@ impl<'a> WordDiffer<'a> {
 
                     let i = i + 1 - k;
                     let j = j + 1 - k;
-                    let leading_ws = right[j..j+k].iter().take_while(|m| isjunk(m)).count();
-                    let trailing_ws = right[j..j+k].iter().rev().take_while(|m| isjunk(m)).count();
+                    let leading_ws = right[j..j+k].iter().take_while(|m| isjunk(**m)).count();
+                    let trailing_ws = right[j..j+k].iter().rev().take_while(|m| isjunk(**m)).count();
                     let trailing_ws = min(k - leading_ws, trailing_ws);
                     let non_ws_length = k - leading_ws - trailing_ws;
 
@@ -302,7 +303,7 @@ impl<'a> WordDiffer<'a> {
                         lineno_dist,
                         lineno_dist_strong,
                         non_ws_length,
-                        char_length: left[i+leading_ws .. i+k-trailing_ws].iter().map(|w| w.len()).sum(),
+                        char_length: left_words[i+leading_ws .. i+k-trailing_ws].iter().map(|w| w.len()).sum(),
                     });
                 }
             }

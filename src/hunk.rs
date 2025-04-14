@@ -36,6 +36,7 @@ impl Hunk {
     pub fn print<T: std::io::Write>(
         &mut self,
         stdout: &mut BufWriter<T>,
+        tokeniser: &mut super::tokeniser::Tokeniser,
         line_numbers: [usize; 2],
         merge_markers: Option<&MergeMarkers>,
         style: Style,
@@ -43,7 +44,7 @@ impl Hunk {
 
         if !self.is_empty() {
 
-            let maker = BlockMaker::new(self, line_numbers);
+            let maker = BlockMaker::new(self, line_numbers, tokeniser);
             let blocks = maker.make_block().split_block();
 
             let len = blocks.len();
@@ -61,6 +62,7 @@ impl Hunk {
 
     pub fn print_filename<'a, T: std::io::Write>(
         stdout: &mut BufWriter<T>,
+        tokeniser: &mut super::tokeniser::Tokeniser,
         left: Option<Bytes>,
         right: Option<Bytes>,
         prefix: (&'a str, &'a str, &'a str),
@@ -88,7 +90,7 @@ impl Hunk {
             diff_non_matching: FILENAME_NON_MATCHING,
             ..style
         };
-        let maker = BlockMaker::new(&hunk, [1, 1]);
+        let maker = BlockMaker::new(&hunk, [1, 1], tokeniser);
         let blocks = maker.make_block().split_block();
         for block in blocks {
             block.print(stdout, None, style, false, |num: [usize; 2], _, _, _| -> &'a str {

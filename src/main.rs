@@ -14,6 +14,7 @@ mod block;
 mod types;
 mod whitespace;
 mod shift;
+mod tokeniser;
 #[macro_use]
 mod regexes;
 use hunk::Hunk;
@@ -162,6 +163,7 @@ fn _main() -> Result<ExitCode> {
     let mut stdin = std::io::stdin().lock();
 
     let mut hunk: Option<Hunk> = None;
+    let mut tokeniser = tokeniser::Tokeniser::new();
     let mut line_numbers = [0, 0];
     let mut unified = false;
     let mut merge_markers: Option<hunk::MergeMarkers> = None;
@@ -191,7 +193,7 @@ fn _main() -> Result<ExitCode> {
             unified = true;
             merge_markers = None;
             if let Some(mut hunk) = hunk {
-                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+                hunk.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style)?;
             }
             stdout.write_all(style::HEADER)?;
             stdout.write_all(&captures["header"])?;
@@ -214,7 +216,7 @@ fn _main() -> Result<ExitCode> {
             unified = true;
             merge_markers = Some(HashMap::new());
             if let Some(mut hunk) = hunk {
-                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+                hunk.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style)?;
             }
             stdout.write_all(style::HEADER)?;
             stdout.write_all(&captures["header"])?;
@@ -235,7 +237,7 @@ fn _main() -> Result<ExitCode> {
             unified = false;
             merge_markers = None;
             if let Some(mut hunk) = hunk {
-                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+                hunk.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style)?;
             }
             stdout.write_all(style::HEADER)?;
             stdout.write_all(&buf)?;
@@ -256,7 +258,7 @@ fn _main() -> Result<ExitCode> {
             )
         {
             if let Some(mut hunk) = hunk {
-                hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+                hunk.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style)?;
             }
             stdout.write_all(style::DIFF_HEADER.as_bytes())?;
             stdout.write_all(&captures["header"])?;
@@ -281,6 +283,7 @@ fn _main() -> Result<ExitCode> {
                 } else {
                     Hunk::print_filename(
                         &mut stdout,
+                        &mut tokeniser,
                         filename.as_ref().map(|f| f.as_ref()),
                         Some(&captures["filename"]),
                         style::FILENAME_SIGN,
@@ -321,7 +324,7 @@ fn _main() -> Result<ExitCode> {
         }
 
         if args.exact && stripped.starts_with(b" ") {
-            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+            h.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style)?;
             if style.line_numbers {
                 stdout.write_all(style::format_lineno(
                         line_numbers,
@@ -349,6 +352,7 @@ fn _main() -> Result<ExitCode> {
                 } else {
                     Hunk::print_filename(
                         &mut stdout,
+                        &mut tokeniser,
                         filename.as_ref().map(|f| f.as_ref()),
                         Some(&captures["filename"]),
                         ("rename from\t", "rename to\t", "rename from/to\t"),
@@ -395,12 +399,12 @@ fn _main() -> Result<ExitCode> {
         }
 
         if &buf == b"\n" {
-            h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+            h.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style)?;
             hunk = None;
             continue
         }
 
-        h.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+        h.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style)?;
         if regex!("^index ".is_match(&stripped)) {
             stdout.write_all(&strip_style(&buf, format!("$0{}", style::DIFF_HEADER).as_bytes()))?;
             hunk = None;
@@ -412,7 +416,7 @@ fn _main() -> Result<ExitCode> {
     }
 
     if let Some(mut hunk) = hunk {
-        hunk.print(&mut stdout, line_numbers, merge_markers.as_ref(), style)?;
+        hunk.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style)?;
     }
 
     if let Some(mut diff_proc) = diff_proc {

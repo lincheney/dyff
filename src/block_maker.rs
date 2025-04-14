@@ -5,21 +5,24 @@ use super::part::Part;
 use super::block::Block;
 use super::whitespace::CheckAllWhitespace;
 use super::types::*;
+use super::tokeniser::{Token, Tokeniser};
 
 #[derive(Debug)]
 pub struct BlockMaker<'a> {
     line_numbers: [usize; 2],
 
     pub words: [Vec<Bytes<'a>>; 2],
+    pub tokens: [Vec<Token>; 2],
 
     word_to_line: [Vec<usize>; 2],
     pub line_to_word: [Vec<usize>; 2],
 }
 
 impl<'a> BlockMaker<'a> {
-    pub fn new(hunk: &'a Hunk, line_numbers: [usize; 2]) -> Self {
+    pub fn new(hunk: &'a Hunk, line_numbers: [usize; 2], tokeniser: &'a mut Tokeniser) -> Self {
         // make a mapping from word number to line number
         let mut words = [vec![], vec![]];
+        let mut tokens = [vec![], vec![]];
         let mut word_to_line = [vec![], vec![]];
         let mut line_to_word = [vec![], vec![]];
 
@@ -44,6 +47,7 @@ impl<'a> BlockMaker<'a> {
                     "|\n",
                     |r| { w.extend(r.find_iter(line).map(|m| m.as_bytes())) }
                 );
+                tokens[i].extend(w[oldlen..].iter().map(|x| tokeniser.map(x)));
                 for _ in oldlen..w.len() {
                     word_to_line[i].push(lineno);
                 }
@@ -54,6 +58,7 @@ impl<'a> BlockMaker<'a> {
 
         Self{
             words,
+            tokens,
             line_numbers,
             word_to_line,
             line_to_word,
