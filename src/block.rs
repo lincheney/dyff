@@ -20,7 +20,7 @@ pub struct Block<'a> {
     pub parts: Vec<Part<'a>>,
 }
 
-impl<'a> Block<'a> {
+impl Block<'_> {
     const CUTOFF: f64 = 0.6;
     const _MIN_SIZE_EOL: usize = 2;
     const MIN_SIZE: usize = 7;
@@ -50,7 +50,7 @@ impl<'a> Block<'a> {
         let mut parts = Vec::<Part>::new();
         let mut join = false;
 
-        for (_i, part) in self.parts.iter().enumerate() {
+        for part in self.parts.iter() {
             if part.matches {
 
                 let total_length = part.slices[0].len();
@@ -360,7 +360,7 @@ impl<'a> Block<'a> {
             // print the no newline message
             if last {
                 if let Some(part) = self.parts.iter().rev().find(|p| !p.is_empty(0)) {
-                    if !part.get(0).ends_with(&[&[b'\n']]) {
+                    if !part.get(0).ends_with(&[b"\n"]) {
                         stdout.write_all(style::DIFF_CONTEXT)?;
                         stdout.write_all(b"\\ No newline at end of file\n")?;
                     }
@@ -476,7 +476,7 @@ impl<'a> Block<'a> {
             if last {
                 let inner_loop = if inline { 0..=1 } else { i..=i };
                 let newline = [0, 1].map(|i| {
-                    self.parts.iter().rfind(|p| !p.is_empty(i)).take_if(|p| p.get(i).ends_with(&[&[b'\n']])).is_some()
+                    self.parts.iter().rfind(|p| !p.is_empty(i)).take_if(|p| p.get(i).ends_with(&[b"\n"])).is_some()
                 });
 
                 let mut printed_newline = false;

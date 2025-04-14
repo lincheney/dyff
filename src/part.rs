@@ -14,7 +14,7 @@ pub struct Part<'a> {
     pub slices: [std::ops::Range<usize>; 2],
 }
 
-impl<'a> Part<'a> {
+impl Part<'_> {
 
     pub fn get(&self, i: usize) -> &[Bytes] {
         &self.parent.words[i][self.slices[i].clone()]
@@ -189,7 +189,7 @@ impl<'a> Part<'a> {
     }
 }
 
-impl<'a> std::fmt::Debug for Part<'a> {
+impl std::fmt::Debug for Part<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,

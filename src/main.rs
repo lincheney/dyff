@@ -365,7 +365,7 @@ fn _main() -> Result<ExitCode> {
 
         if &*stripped == b"\\ No newline at end of file\n" || &*stripped == b"\\ No newline at end of file" {
             if let Some(last_line) = h.get_mut(side).last_mut() {
-                if last_line.ends_with(&[b'\n']) {
+                if last_line.ends_with(b"\n") {
                     last_line.pop();
                 }
             }

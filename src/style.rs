@@ -12,7 +12,7 @@ pub struct Style<'a> {
     pub diff_non_matching: [Bytes<'a>; 2],
 }
 
-impl<'a> std::default::Default for Style<'a> {
+impl std::default::Default for Style<'_> {
     fn default() -> Self {
         Self{
             line_numbers: true,
