@@ -46,8 +46,9 @@ fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> 
     if words[0] == b"\n" {
         prefix_scores[0] += 1;
     } else {
+        static EXT_PREFIXES: [Bytes; 4] = [b"\n", b"(", b"{", b"["];
         let start = (part.slices[i].start as isize + shift) as usize;
-        if start == 0 || part.parent.words[i][start-1] == b"\n" {
+        if start == 0 || EXT_PREFIXES.contains(&part.parent.words[i][start-1]) {
             prefix_scores[0] += 1;
         }
     }
@@ -56,8 +57,9 @@ fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> 
     if words.back().unwrap() == b"\n" {
         suffix_scores[0] += 1;
     } else {
+        static EXT_SUFFIXES: [Bytes; 5] = [b"\n", b":", b")", b"}", b"]"];
         let end = (part.slices[i].end as isize + shift) as usize;
-        if end == part.parent.words[i].len() || part.parent.words[i][end] == b"\n" {
+        if end == part.parent.words[i].len() || EXT_SUFFIXES.contains(&part.parent.words[i][end]) {
             suffix_scores[0] += 1;
         }
     }
