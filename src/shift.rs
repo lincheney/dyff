@@ -2,41 +2,48 @@ use super::part::Part;
 use std::collections::VecDeque;
 use super::types::*;
 
-const NUM_SCORES: usize = 4;
+const NEWLINE: usize = 0;
+const GOOD_SUFFIX: usize = 1;
+// const GOOD_PREFIX: usize = 2;
+const WHITESPACE_SUFFIX: usize = 3;
+const WHITESPACE_PREFIX: usize = 4;
+const OTHER_SUFFIX: usize = 5;
+const OTHER_PREFIX: usize = 6;
+const NUM_SCORES: usize = 7;
 type Parts<'a> = Vec<Part<'a>>;
 
-fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> [[usize; NUM_SCORES]; 2] {
+fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> [usize; NUM_SCORES] {
+
     static PREFIXES: [(usize, Bytes); 1] = [
-        // (0, b"\n"),
-        // (1, b" \t"),
-        // (1, b"{"),
-        // (1, b",;"),
-        (2, b"{[("),
+        // (NEWLINE, b"\n"),
+        // (WHITESPACE_PREFIX, b" \t"),
+        // (OTHER_PREFIX, b"{"),
+        // (GOOD_PREFIX, b",;"),
+        (OTHER_PREFIX, b"{[("),
     ];
     static SUFFIXES: [(usize, Bytes); 4] = [
-        (0, b"\n"),
-        (1, b" \t"),
-        (2, b",;"),
-        (2, b"}])"),
+        (NEWLINE, b"\n"),
+        (WHITESPACE_SUFFIX, b" \t"),
+        (GOOD_SUFFIX, b",;"),
+        (OTHER_SUFFIX, b"}])"),
     ];
 
     let mut skip = 0;
-    let mut prefix_scores = [0; NUM_SCORES];
+    let mut scores = [0; NUM_SCORES];
     for &(ix, p) in PREFIXES.iter() {
         let count = words.iter().skip(skip).take_while(|w| p.contains(&w[0])).count();
         skip += count;
-        prefix_scores[ix] += count;
+        scores[ix] += count * 2;
     }
 
     let mut skip = 0;
-    let mut suffix_scores = [0; NUM_SCORES];
     let mut done = false;
     while !done {
         let mut total = 0;
         for &(ix, p) in SUFFIXES.iter() {
             let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
             skip += count;
-            suffix_scores[ix] += count;
+            scores[ix] += count * 2;
             total += count;
         }
         done = done || total == 0;
@@ -44,31 +51,66 @@ fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> 
 
     // check if this is at start of line
     if words[0] == b"\n" {
-        prefix_scores[0] += 1;
+        scores[NEWLINE] += 1;
+        // prefix_scores[0] += 1;
     } else {
-        static EXT_PREFIXES: [Bytes; 4] = [b"\n", b"(", b"{", b"["];
+        static EXT_PREFIXES: [(usize, Bytes); 4] = [
+            // (NEWLINE, b"\n"),
+            (WHITESPACE_PREFIX, b" "),
+            (OTHER_PREFIX, b"("),
+            (OTHER_PREFIX, b"{"),
+            (OTHER_PREFIX, b"["),
+        ];
         let start = (part.slices[i].start as isize + shift) as usize;
-        if start == 0 || EXT_PREFIXES.contains(&part.parent.words[i][start-1]) {
-            prefix_scores[0] += 1;
+        if start == 0 {
+            scores[NEWLINE] += 1;
+            // prefix_scores[0] += 1;
+        } else {
+            let ext = part.parent.words[i][start-1];
+            if ext == b"\n" {
+                scores[NEWLINE] += 1;
+                // prefix_scores[0] += 1;
+            } else {
+                for &(ix, p) in EXT_PREFIXES.iter() {
+                    if p == ext {
+                        scores[ix] += 1;
+                        break;
+                    }
+                }
+            }
         }
     }
 
     // check if this is at end of line
     if words.back().unwrap() == b"\n" {
-        suffix_scores[0] += 1;
+        scores[NEWLINE] += 1;
     } else {
-        static EXT_SUFFIXES: [Bytes; 5] = [b"\n", b":", b")", b"}", b"]"];
+        static EXT_SUFFIXES: [(usize, Bytes); 6] = [
+            (NEWLINE, b"\n"),
+            (WHITESPACE_SUFFIX, b" "),
+            (GOOD_SUFFIX, b":"),
+            (OTHER_SUFFIX, b")"),
+            (OTHER_SUFFIX, b"}"),
+            (OTHER_SUFFIX, b"]"),
+        ];
         let end = (part.slices[i].end as isize + shift) as usize;
-        if end == part.parent.words[i].len() || EXT_SUFFIXES.contains(&part.parent.words[i][end]) {
-            suffix_scores[0] += 1;
+        if end == part.parent.words[i].len() {
+            scores[0] += 1;
+        } else {
+            let ext = part.parent.words[i][end];
+            for &(ix, s) in EXT_SUFFIXES.iter() {
+                if s == ext {
+                    scores[ix] += 1;
+                    break;
+                }
+            }
         }
     }
 
-    // prefer suffix scores
-    [suffix_scores, prefix_scores]
+    scores
 }
 
-fn score_part_shift(parts: &Parts, parti: usize, i: usize) -> Vec<([[usize; NUM_SCORES]; 2], isize)> {
+fn score_part_shift(parts: &Parts, parti: usize, i: usize) -> Vec<([usize; NUM_SCORES], isize)> {
     let part = &parts[parti];
     let mut scores = vec![];
 

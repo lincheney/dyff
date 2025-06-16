@@ -1,0 +1,17 @@
+[1;48;5;24mcommit 8b965c90dde5afebaeff6eb59703d6ae86983c9c
+[0mAuthor: 林千里 <lincheney@gmail.com>
+Date:   Tue Jun 10 18:34:40 2025 +1000
+
+    azure_ad.py: check for arrFidoAllowList as well?
+
+[1mdiff --git [0m[0;31m[1m[48;5;238ma/lib/aws-login/azure_ad.py [0;32m[1m[48;5;238mb/lib/aws-login/azure_ad.py[0m
+index bc7db21..0a444fb 100755
+[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mlib/aws-login/azure_ad.py[2;7m[0m
+[0;36m@@ -357,7 +357,7 @@ [0;1;33;48;5;236mdef login_state_machine(username, login_method, auth_method, entrypoint, respons[0m
+[0;38;5;242m357 [0;38;5;242m▏[0;38;5;242m357 [0;38;5;242m▏ [0;38;5;242m[0m
+[0;38;5;242m358 [0;38;5;242m▏[0;38;5;242m358 [0;38;5;242m▏ [0;38;5;242m            # we are in the middle of the fido flow and got the challenge[0m
+[0;38;5;242m359 [0;38;5;242m▏[0;38;5;242m359 [0;38;5;242m▏ [0;38;5;242m            # assume we are in fido/get URL[2;7m[0m
+[0;38;5;252m[0;31m360 [0;38;5;242m▏[0;32m360 [0;38;5;242m▏ [0;38;5;252m            if 'sFidoChallenge' in config[0;31m[1;48;2;80;30;30m[0m[0;32m[1;48;2;25;80;25m and 'arrFidoAllowList' in config[0;38;5;252m:[2;7m[0m
+[0;38;5;242m361 [0;38;5;242m▏[0;38;5;242m361 [0;38;5;242m▏ [0;38;5;242m                logging.debug('Received Fido challenge')[0m
+[0;38;5;242m362 [0;38;5;242m▏[0;38;5;242m362 [0;38;5;242m▏ [0;38;5;242m                assertion = json.loads(subprocess.check_output([[0m
+[0;38;5;242m363 [0;38;5;242m▏[0;38;5;242m363 [0;38;5;242m▏ [0;38;5;242m                    'bob',[2;7m[0m

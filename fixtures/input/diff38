@@ -1,0 +1,19 @@
+commit 8b965c90dde5afebaeff6eb59703d6ae86983c9c
+Author: 林千里 <lincheney@gmail.com>
+Date:   Tue Jun 10 18:34:40 2025 +1000
+
+    azure_ad.py: check for arrFidoAllowList as well?
+
+diff --git a/lib/aws-login/azure_ad.py b/lib/aws-login/azure_ad.py
+index bc7db21..0a444fb 100755
+--- a/lib/aws-login/azure_ad.py
++++ b/lib/aws-login/azure_ad.py
+@@ -357,7 +357,7 @@ def login_state_machine(username, login_method, auth_method, entrypoint, respons
+ 
+             # we are in the middle of the fido flow and got the challenge
+             # assume we are in fido/get URL
+-            if 'sFidoChallenge' in config:
++            if 'sFidoChallenge' in config and 'arrFidoAllowList' in config:
+                 logging.debug('Received Fido challenge')
+                 assertion = json.loads(subprocess.check_output([
+                     'bob',
