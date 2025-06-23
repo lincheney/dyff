@@ -68,9 +68,11 @@ macro_rules! concat_str {
 }
 
 pub const RESET: Bytes      = b"\x1b[0m";
+pub const PAINT_RIGHT: &str = "\x1b[K";
 pub const BOLD: &str        = "\x1b[1m";
 pub const HEADER: &str      = "\x1b[0;36m";
 pub const COMMIT: &str      = "\x1b[1;48;5;24m";
+pub const BACKGROUND: &str  = "";
 pub const CONTEXT: &str     = "\x1b[0;1;33;48;5;236m";
 pub const DIFF_HEADER: &str = BOLD;
 pub const SIGN: [Bytes; 3]  = [
@@ -97,9 +99,9 @@ pub const FILENAME_HEADER: (&str, &str, &str) = (
     "",
 );
 pub const FILENAME_SIGN: (&str, &str, &str)   = (
-    concat_str!(DIFF.0, FILENAME_BG, "\x1b[7m---\x1b[27m "),
-    concat_str!(DIFF.1, FILENAME_BG, "\x1b[7m+++\x1b[27m "),
-    concat_str!(        FILENAME_BG, "\x1b[7m###\x1b[27m "),
+    concat_str!(DIFF.0,     FILENAME_BG, "\x1b[7m---\x1b[27m "),
+    concat_str!(DIFF.1,     FILENAME_BG, "\x1b[7m+++\x1b[27m "),
+    concat_str!("\x1b[0;m", FILENAME_BG, "\x1b[7m###\x1b[27m "),
 );
 pub const FILENAME_NON_MATCHING: [&str; 2] = [
     concat_str!(DIFF_NON_MATCHING[0], FILENAME_BG, "\x1b[1m"),

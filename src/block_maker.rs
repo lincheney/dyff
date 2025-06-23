@@ -34,7 +34,7 @@ impl<'a> BlockMaker<'a> {
             for (lineno, line) in hunk.get(i).iter().enumerate() {
                 let oldlen = w.len();
                 line_to_word[i].push(oldlen);
-                super::regexes::regex!(
+                super::regexes::byte_regex!(
                     r"[A-Z][A-Z_]*[A-Z]\d*"
                     r"|[A-Z][a-z0-9]*[a-z]"
                     r"|[a-z0-9]+[a-z]"

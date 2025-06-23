@@ -330,7 +330,7 @@ impl Block<'_> {
                             stdout.write_all(format_lineno(
                                 line_numbers,
                                 Some(&style_opts.lineno), Some(&style_opts.lineno),
-                                None,
+                                Some(&style_opts.lineno_bar),
                             ).as_ref().as_bytes())?;
                         }
                         if style.signs {
@@ -418,10 +418,10 @@ impl Block<'_> {
                                     lineno_args[1-i] = 0;
                                 }
 
-                                let bar_style = merge_markers.and_then(|m| m.get(&(i, line_numbers[i])).map(|x| x.as_ref()));
+                                let bar_style = merge_markers.and_then(|m| m.get(&(i, line_numbers[i])).map(|x| x.as_ref())).or(Some(&*style_opts.lineno_bar));
                                 stdout.write_all(format_lineno(
                                     lineno_args,
-                                    None, None,
+                                    Some(&style_opts.lineno_left), Some(&style_opts.lineno_right),
                                     bar_style,
                                 ).as_ref().as_bytes())?;
                             }

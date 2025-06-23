@@ -1,17 +1,37 @@
 macro_rules! regex {
-    ($($regex:literal)+ . $method:ident($($arg:expr),*) ) => {{
+    ($path:path, $($regex:literal)+ . $method:ident($($arg:expr),*) ) => {{
+        use $path as Regex;
         thread_local! {
-            static RE: ::regex::bytes::Regex = ::regex::bytes::Regex::new(concat!($($regex),*)).unwrap();
+            static RE: Regex = Regex::new(concat!($($regex),*)).unwrap();
         }
         RE.with(|r| r.$method($($arg),*))
     }};
 
-    ($($regex:literal)+, |$name:ident| $body:tt ) => {{
+    ($path:path, $($regex:literal)+, |$name:ident| $body:tt ) => {{
+        use $path as Regex;
         thread_local! {
-            static RE: ::regex::bytes::Regex = ::regex::bytes::Regex::new(concat!($($regex),*)).unwrap();
+            static RE: Regex = Regex::new(concat!($($regex),*)).unwrap();
         }
         RE.with(|$name| $body)
     }};
+
+    ($($regex:literal)+ . $method:ident($($arg:expr),*) ) => {{
+        crate::regexes::regex!(::regex::Regex, $($regex)+ . $method($($arg),*) )
+    }};
+
+    ($($regex:literal)+, |$name:ident| $body:tt ) => {{
+        crate::regexes::regex!(::regex::Regex, $($regex)+, |$name| $body )
+    }};
 }
 
-pub(crate) use regex;
+macro_rules! byte_regex {
+    ($($regex:literal)+ . $method:ident($($arg:expr),*) ) => {{
+        crate::regexes::regex!(::regex::bytes::Regex, $($regex)+ . $method($($arg),*) )
+    }};
+
+    ($($regex:literal)+, |$name:ident| $body:tt ) => {{
+        crate::regexes::regex!(::regex::bytes::Regex, $($regex)+, |$name| $body )
+    }};
+}
+
+pub(crate) use {byte_regex, regex};
