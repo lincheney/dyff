@@ -303,6 +303,7 @@ impl Block<'_> {
         stdout: &mut BufWriter<T>,
         merge_markers: Option<&super::hunk::MergeMarkers>,
         style: style::Style,
+        style_opts: &super::StyleOpts,
         last: bool,
         format_lineno: F,
     ) -> Result<()> {
@@ -328,20 +329,20 @@ impl Block<'_> {
                         if style.line_numbers {
                             stdout.write_all(format_lineno(
                                 line_numbers,
-                                Some(style::LINENO), Some(style::LINENO),
+                                Some(&style_opts.lineno), Some(&style_opts.lineno),
                                 None,
                             ).as_ref().as_bytes())?;
                         }
                         if style.signs {
                             stdout.write_all(style::SIGN[2])?;
                         }
-                        stdout.write_all(style::DIFF_CONTEXT)?;
+                        stdout.write_all(style_opts.diff_context.as_bytes())?;
                         newline = false;
                     }
 
                     let trailing_ws = words[last] == b"\n" && words[j..last].iter().all(|&w| w.is_ascii_whitespace());
                     if trailing_ws {
-                        stdout.write_all(style::DIFF_TRAILING_WS)?;
+                        stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                     }
                     if word == b"\n" {
                         stdout.write_all(style::RESET)?;
@@ -361,7 +362,7 @@ impl Block<'_> {
             if last {
                 if let Some(part) = self.parts.iter().rev().find(|p| !p.is_empty(0)) {
                     if !part.get(0).ends_with(&[b"\n"]) {
-                        stdout.write_all(style::DIFF_CONTEXT)?;
+                        stdout.write_all(style_opts.diff_context.as_bytes())?;
                         stdout.write_all(b"\\ No newline at end of file\n")?;
                     }
                 }
@@ -445,23 +446,23 @@ impl Block<'_> {
                         if insert {
                             // add an insertion marker
                             // write only one char
-                            stdout.write_all(style::DIFF_INSERT[i])?;
+                            stdout.write_all(if i == 0 { &style_opts.diff_insert_left } else { &style_opts.diff_matching_right }.as_bytes())?;
                             if trailing_ws {
-                                stdout.write_all(style::DIFF_TRAILING_WS)?;
+                                stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                             }
                             if word == b"\n" {
                                 stdout.write_all(style::RESET)?;
                             }
                             stdout.write_all(&word[0..1])?;
                             if trailing_ws {
-                                stdout.write_all(style::DIFF_TRAILING_WS)?;
+                                stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                             }
                             stdout.write_all(highlight[i])?;
                             stdout.write_all(&word[1..])?;
                             insert = false;
                         } else {
                             if trailing_ws {
-                                stdout.write_all(style::DIFF_TRAILING_WS)?;
+                                stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                             }
                             if word == b"\n" {
                                 stdout.write_all(style::RESET)?;

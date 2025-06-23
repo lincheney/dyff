@@ -19,9 +19,9 @@ impl std::default::Default for Style<'_> {
             signs: false,
             show_both: false,
             inline: false,
-            diff_matching: DIFF_MATCHING,
-            diff_matching_inline: DIFF_MATCHING_INLINE,
-            diff_non_matching: DIFF_NON_MATCHING,
+            diff_matching: [DIFF_MATCHING[0].as_bytes(), DIFF_MATCHING[1].as_bytes()],
+            diff_matching_inline: DIFF_MATCHING_INLINE.as_bytes(),
+            diff_non_matching: [DIFF_NON_MATCHING[0].as_bytes(), DIFF_NON_MATCHING[1].as_bytes()],
         }
     }
 }
@@ -68,61 +68,59 @@ macro_rules! concat_str {
 }
 
 pub const RESET: Bytes      = b"\x1b[0m";
-pub const BOLD: &str        =  "\x1b[1m";
-pub const HEADER: Bytes     = b"\x1b[0;36m";
-pub const COMMIT: &str      =  "\x1b[1;48;5;24m";
-pub const CONTEXT: Bytes    = b"\x1b[0;1;33;48;5;236m";
+pub const BOLD: &str        = "\x1b[1m";
+pub const HEADER: &str      = "\x1b[0;36m";
+pub const COMMIT: &str      = "\x1b[1;48;5;24m";
+pub const CONTEXT: &str     = "\x1b[0;1;33;48;5;236m";
 pub const DIFF_HEADER: &str = BOLD;
 pub const SIGN: [Bytes; 3]  = [
-    concat_bytes!(RESET, DIFF.0, b"-"),
-    concat_bytes!(RESET, DIFF.1, b"+"),
+    concat_bytes!(RESET, DIFF.0.as_bytes(), b"-"),
+    concat_bytes!(RESET, DIFF.1.as_bytes(), b"+"),
     concat_bytes!(RESET, b" "),
 ];
 
-const DIFF_STR: (&str, &str)   = ("\x1b[0;31m", "\x1b[0;32m");
-pub const DIFF: (Bytes, Bytes) = (DIFF_STR.0.as_bytes(), DIFF_STR.1.as_bytes());
+pub const DIFF: (&str, &str)   = ("\x1b[0;31m", "\x1b[0;32m");
 
 pub const LINENO: &str              = "\x1b[0;38;5;242m";
 pub const LINENO_BAR: &str          = concat_str!(LINENO, "▏");
 pub const LINENO_OUR_BAR: &str      = "\x1b[0;38;5;187m(";
 pub const LINENO_THEIR_BAR: &str    = "\x1b[0;38;5;117m)";
 pub const LINENO_MERGE_BAR: &str    = "\x1b[0;38;5;13;1m|";
-pub const LINENO_DIFF: (&str, &str) = DIFF_STR;
+pub const LINENO_DIFF: (&str, &str) = DIFF;
 
-pub const FILENAME: (Bytes, Bytes, Bytes)        = (DIFF.0, DIFF.1, b"");
-const FILENAME_BG: Bytes                         = b"\x1b[48;5;238m";
-pub const FILENAME_RENAME: Bytes                 = concat_bytes!(b"\x1b[0m", b"\x1b[48;5;238m");
-pub const FILENAME_HEADER: (Bytes, Bytes, Bytes) = (
-    concat_bytes!(FILENAME.0, BOLD.as_bytes(), FILENAME_BG),
-    concat_bytes!(FILENAME.1, BOLD.as_bytes(), FILENAME_BG),
-    b"",
+pub const FILENAME: (&str, &str, &str)        = (DIFF.0, DIFF.1, "");
+const FILENAME_BG: &str                       = "\x1b[48;5;238m";
+pub const FILENAME_RENAME: &str               = concat_str!("\x1b[0m", "\x1b[48;5;238m");
+pub const FILENAME_HEADER: (&str, &str, &str) = (
+    concat_str!(FILENAME.0, BOLD, FILENAME_BG),
+    concat_str!(FILENAME.1, BOLD, FILENAME_BG),
+    "",
 );
 pub const FILENAME_SIGN: (&str, &str, &str)   = (
-    concat_str!(DIFF_STR.0, bytes_to_str(FILENAME_BG), "\x1b[7m---\x1b[27m "),
-    concat_str!(DIFF_STR.1, bytes_to_str(FILENAME_BG), "\x1b[7m+++\x1b[27m "),
-    concat_str!(            bytes_to_str(FILENAME_BG), "\x1b[7m###\x1b[27m "),
+    concat_str!(DIFF.0, FILENAME_BG, "\x1b[7m---\x1b[27m "),
+    concat_str!(DIFF.1, FILENAME_BG, "\x1b[7m+++\x1b[27m "),
+    concat_str!(        FILENAME_BG, "\x1b[7m###\x1b[27m "),
 );
-pub const FILENAME_NON_MATCHING: [Bytes; 2] = [
-    concat_bytes!(DIFF_NON_MATCHING[0], FILENAME_BG, b"\x1b[1m"),
-    concat_bytes!(DIFF_NON_MATCHING[1], FILENAME_BG, b"\x1b[1m"),
+pub const FILENAME_NON_MATCHING: [&str; 2] = [
+    concat_str!(DIFF_NON_MATCHING[0], FILENAME_BG, "\x1b[1m"),
+    concat_str!(DIFF_NON_MATCHING[1], FILENAME_BG, "\x1b[1m"),
 ];
 
-pub const DIFF_MATCHING: [Bytes; 2] = [
-    b"\x1b[0;38;2;220;190;210;48;2;35;20;20m",
-    b"\x1b[0;38;2;190;220;210;48;2;20;35;20m",
+pub const DIFF_MATCHING: [&str; 2] = [
+    "\x1b[0;38;2;220;190;210;48;2;35;20;20m",
+    "\x1b[0;38;2;190;220;210;48;2;20;35;20m",
 ];
-pub const DIFF_NON_MATCHING: [Bytes; 2] = [
-    concat_bytes!(DIFF.0, b"\x1b[1;48;2;80;30;30m"),
-    concat_bytes!(DIFF.1, b"\x1b[1;48;2;25;80;25m"),
+pub const DIFF_NON_MATCHING: [&str; 2] = [
+    concat_str!(DIFF.0, "\x1b[1;48;2;80;30;30m"),
+    concat_str!(DIFF.1, "\x1b[1;48;2;25;80;25m"),
 ];
-pub const DIFF_INSERT: [Bytes; 2] = [
-    b"\x1b[4:3:58:5:10m",
-    b"\x1b[4:3;58;5;9m",
+pub const DIFF_INSERT: [&str; 2] = [
+    "\x1b[4:3:58:5:10m",
+    "\x1b[4:3;58;5;9m",
 ];
-pub const DIFF_MATCHING_INLINE: Bytes = b"\x1b[0;38;5;252m";
-pub const DIFF_CONTEXT: Bytes = LINENO.as_bytes();
-pub const DIFF_TRAILING_WS: Bytes = b"\x1b[2;7m";
-pub const DIFF_TRAILING_WS_PAT: Bytes = concat_bytes!(DIFF_TRAILING_WS, b"$0");
+pub const DIFF_MATCHING_INLINE: &str = "\x1b[0;38;5;252m";
+pub const DIFF_CONTEXT: &str = LINENO;
+pub const DIFF_TRAILING_WS: &str = "\x1b[2;7m";
 
 pub fn format_lineno(
     [num1, num2]: [usize; 2],

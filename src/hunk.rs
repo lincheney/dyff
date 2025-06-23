@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{BufWriter, Write};
 use anyhow::{Result};
-use super::style::{Style, FILENAME_HEADER, FILENAME_NON_MATCHING};
+use super::style::Style;
 use super::types::*;
 use super::block_maker::BlockMaker;
 
@@ -40,6 +40,7 @@ impl Hunk {
         line_numbers: [usize; 2],
         merge_markers: Option<&MergeMarkers>,
         style: Style,
+        style_opts: &super::StyleOpts,
     ) -> Result<()> {
 
         if !self.is_empty() {
@@ -53,7 +54,7 @@ impl Hunk {
             });
 
             for (i, block) in blocks.iter().enumerate() {
-                block.print(stdout, merge_markers, style, i == last[0] || i == last[1], super::style::format_lineno)?;
+                block.print(stdout, merge_markers, style, style_opts, i == last[0] || i == last[1], super::style::format_lineno)?;
                 stdout.flush()?;
             }
         }
@@ -68,6 +69,7 @@ impl Hunk {
         prefix: (&'a str, &'a str, &'a str),
         // suffix: (&'a str, &'a str),
         style: Style,
+        style_opts: &super::StyleOpts,
     ) -> Result<()> {
 
         let mut hunk = Self::new();
@@ -85,15 +87,15 @@ impl Hunk {
             line_numbers: true,
             show_both: true,
             // inline: false,
-            diff_matching: [FILENAME_HEADER.0, FILENAME_HEADER.1],
-            diff_matching_inline: super::style::FILENAME_RENAME,
-            diff_non_matching: FILENAME_NON_MATCHING,
+            diff_matching: [style_opts.filename_header_left.as_bytes(), style_opts.filename_header_right.as_bytes()],
+            diff_matching_inline: style_opts.filename_rename.as_bytes(),
+            diff_non_matching: [style_opts.filename_non_matching_left.as_bytes(), style_opts.filename_non_matching_right.as_bytes()],
             ..style
         };
         let maker = BlockMaker::new(&hunk, [1, 1], tokeniser);
         let blocks = maker.make_block().split_block();
         for block in blocks {
-            block.print(stdout, None, style, false, |num: [usize; 2], _, _, _| -> &'a str {
+            block.print(stdout, None, style, style_opts, false, |num: [usize; 2], _, _, _| -> &'a str {
                 match num {
                     [_, 0] => prefix.0,
                     [0, _] => prefix.1,
