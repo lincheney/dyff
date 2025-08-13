@@ -458,22 +458,21 @@ fn _main() -> Result<ExitCode> {
 
         let h = hunk.as_mut().unwrap();
 
-        if unified && merge_markers.is_some() {
-            if let Some(captures) = byte_regex!(r"^(?<sign>[-+] | [-+]|[-+]{2})(?<line>.*\n)".captures(&stripped)) {
-                let sign = &captures["sign"];
-                side = if sign.contains(&b'+') { 1 } else { 0 };
-                let lineno = line_numbers[side] + h.get(side).len();
-                h.get_mut(side).push(captures["line"].to_owned());
-                let bar = if sign[1] == b' ' {
-                    &args.style.lineno_our_bar
-                } else if sign[0] == b' ' {
-                    &args.style.lineno_their_bar
-                } else {
-                    &args.style.lineno_merge_bar
-                };
-                merge_markers.as_mut().unwrap().insert((side, lineno), bar.to_string());
-                continue
-            }
+        if unified && let Some(merge_markers) = &mut merge_markers
+        && let Some(captures) = byte_regex!(r"^(?<sign>[-+] | [-+]|[-+]{2})(?<line>.*\n)".captures(&stripped)) {
+            let sign = &captures["sign"];
+            side = if sign.contains(&b'+') { 1 } else { 0 };
+            let lineno = line_numbers[side] + h.get(side).len();
+            h.get_mut(side).push(captures["line"].to_owned());
+            let bar = if sign[1] == b' ' {
+                &args.style.lineno_our_bar
+            } else if sign[0] == b' ' {
+                &args.style.lineno_their_bar
+            } else {
+                &args.style.lineno_merge_bar
+            };
+            merge_markers.insert((side, lineno), bar.to_string());
+            continue
         }
 
         if args.exact && stripped.starts_with(b" ") {
@@ -499,44 +498,33 @@ fn _main() -> Result<ExitCode> {
         }
 
 
-        if h.is_empty() {
-            if let Some(captures) = byte_regex!(r"^rename (?<sign>to|from)[ \t](?<filename>.*\n)".captures(&stripped)) {
-                if &captures["sign"] == b"from" {
-                    filename = Some(captures["filename"].to_owned());
-                } else {
-                    Hunk::print_filename(
-                        &mut stdout,
-                        &mut tokeniser,
-                        filename.as_ref().map(|f| f.as_ref()),
-                        Some(&captures["filename"]),
-                        ("rename from\t", "rename to\t", "rename from/to\t"),
-                        style,
-                        &args.style,
-                    )?;
-                }
-                continue
+        if h.is_empty()
+        && let Some(captures) = byte_regex!(r"^rename (?<sign>to|from)[ \t](?<filename>.*\n)".captures(&stripped)) {
+            if &captures["sign"] == b"from" {
+                filename = Some(captures["filename"].to_owned());
+            } else {
+                Hunk::print_filename(
+                    &mut stdout,
+                    &mut tokeniser,
+                    filename.as_ref().map(|f| f.as_ref()),
+                    Some(&captures["filename"]),
+                    ("rename from\t", "rename to\t", "rename from/to\t"),
+                    style,
+                    &args.style,
+                )?;
             }
+            continue
         }
 
         if &*stripped == b"\\ No newline at end of file\n" || &*stripped == b"\\ No newline at end of file" {
-            if let Some(last_line) = h.get_mut(side).last_mut() {
-                if last_line.ends_with(b"\n") {
-                    last_line.pop();
-                }
+            if let Some(last_line) = h.get_mut(side).last_mut()
+            && last_line.ends_with(b"\n") {
+                last_line.pop();
             }
             continue
         }
 
-        if unified {
-            if let Some(captures) = byte_regex!(r"^(?<sign>[-+])(?<line>.*\n)".captures(&stripped)) {
-                side = if &captures["sign"] == b"+" { 1 } else { 0 };
-                h.get_mut(side).push(captures["line"].to_owned());
-                continue
-            }
-            continue
-        }
-
-        if unified && let Some(captures) = regex!(r"^(?<sign>[-+])(?<line>.*\n)".captures(&stripped)) {
+        if unified && let Some(captures) = byte_regex!(r"^(?<sign>[-+])(?<line>.*\n)".captures(&stripped)) {
             side = if &captures["sign"] == b"+" { 1 } else { 0 };
             h.get_mut(side).push(captures["line"].to_owned());
             continue
@@ -601,8 +589,8 @@ fn main() -> Result<ExitCode> {
     let result = _main();
 
     if let Err(e) = &result
-        && let Some(e) = e.downcast_ref::<std::io::Error>()
-        && e.kind() == std::io::ErrorKind::BrokenPipe {
+    && let Some(e) = e.downcast_ref::<std::io::Error>()
+    && e.kind() == std::io::ErrorKind::BrokenPipe {
         return Ok(ExitCode::from(141))
     }
     result

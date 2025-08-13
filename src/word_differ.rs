@@ -178,11 +178,10 @@ impl<'a> WordDiffer<'a> {
                     }
 
                     if let Some(m) = self.find_longest_match(alo, ahi, blo, bhi, false)
-                        && ((m.left < maxi && m.right < maxj) || (m.left > mini && m.right > minj)) {
-                        // we didn't just match a newline
-                        if !(m.length == 1 && left[m.left] == b"\n") {
-                            new_matches.push(m);
-                        }
+                    && ((m.left < maxi && m.right < maxj) || (m.left > mini && m.right > minj))
+                    // we didn't just match a newline
+                    && !(m.length == 1 && left[m.left] == b"\n") {
+                        new_matches.push(m);
                     }
                 }
             }
@@ -373,7 +372,7 @@ impl<'a> WordDiffer<'a> {
             );
 
             if let Some(next) = matching_blocks.get_mut(i+1)
-                && block.0 + block.2 == next.0 && block.1 + block.2 == next.1 {
+            && block.0 + block.2 == next.0 && block.1 + block.2 == next.1 {
                 block.2 += next.2;
                 next.0 += next.2;
                 next.1 += next.2;

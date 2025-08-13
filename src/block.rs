@@ -359,13 +359,11 @@ impl Block<'_> {
             }
 
             // print the no newline message
-            if last {
-                if let Some(part) = self.parts.iter().rev().find(|p| !p.is_empty(0)) {
-                    if !part.get(0).ends_with(&[b"\n"]) {
-                        stdout.write_all(style_opts.diff_context.as_bytes())?;
-                        stdout.write_all(b"\\ No newline at end of file\n")?;
-                    }
-                }
+            if last
+            && let Some(part) = self.parts.iter().rev().find(|p| !p.is_empty(0))
+            && !part.get(0).ends_with(&[b"\n"]) {
+                stdout.write_all(style_opts.diff_context.as_bytes())?;
+                stdout.write_all(b"\\ No newline at end of file\n")?;
             }
 
             return Ok(())
