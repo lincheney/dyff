@@ -533,6 +533,13 @@ fn _main() -> Result<ExitCode> {
                 h.get_mut(side).push(captures["line"].to_owned());
                 continue
             }
+            continue
+        }
+
+        if unified && let Some(captures) = regex!(r"^(?<sign>[-+])(?<line>.*\n)".captures(&stripped)) {
+            side = if &captures["sign"] == b"+" { 1 } else { 0 };
+            h.get_mut(side).push(captures["line"].to_owned());
+            continue
         }
 
         if !args.exact && unified && stripped.starts_with(b" ") {
@@ -575,13 +582,11 @@ fn _main() -> Result<ExitCode> {
         hunk.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style, &args.style)?;
     }
 
-    if let Some(mut diff_proc) = diff_proc {
-        if let Some(code) = diff_proc.try_wait()?.and_then(|x| x.code()) {
-            return if code <= u8::MAX as _ {
-                Ok(ExitCode::from(code as u8))
-            } else {
-                Ok(ExitCode::FAILURE)
-            }
+    if let Some(mut diff_proc) = diff_proc && let Some(code) = diff_proc.try_wait()?.and_then(|x| x.code()) {
+        return if code <= u8::MAX as _ {
+            Ok(ExitCode::from(code as u8))
+        } else {
+            Ok(ExitCode::FAILURE)
         }
     }
 
@@ -595,12 +600,10 @@ fn _main() -> Result<ExitCode> {
 fn main() -> Result<ExitCode> {
     let result = _main();
 
-    if let Err(e) = &result {
-        if let Some(e) = e.downcast_ref::<std::io::Error>() {
-            if e.kind() == std::io::ErrorKind::BrokenPipe {
-                return Ok(ExitCode::from(141))
-            }
-        }
+    if let Err(e) = &result
+        && let Some(e) = e.downcast_ref::<std::io::Error>()
+        && e.kind() == std::io::ErrorKind::BrokenPipe {
+        return Ok(ExitCode::from(141))
     }
     result
 }

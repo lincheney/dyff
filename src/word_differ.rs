@@ -177,12 +177,11 @@ impl<'a> WordDiffer<'a> {
                         continue
                     }
 
-                    if let Some(m) = self.find_longest_match(alo, ahi, blo, bhi, false) {
-                        if (m.left < maxi && m.right < maxj) || (m.left > mini && m.right > minj) {
-                            // we didn't just match a newline
-                            if !(m.length == 1 && left[m.left] == b"\n") {
-                                new_matches.push(m);
-                            }
+                    if let Some(m) = self.find_longest_match(alo, ahi, blo, bhi, false)
+                        && ((m.left < maxi && m.right < maxj) || (m.left > mini && m.right > minj)) {
+                        // we didn't just match a newline
+                        if !(m.length == 1 && left[m.left] == b"\n") {
+                            new_matches.push(m);
                         }
                     }
                 }
@@ -243,11 +242,10 @@ impl<'a> WordDiffer<'a> {
         let mut j2len = vec![0; self.parent.words[1].len()];
         let mut newj2len = vec![0; self.parent.words[1].len()];
 
-        for i in alo..ahi {
+        for (i, &tok) in left[alo..ahi].iter().enumerate() {
             // look at all instances of a[i] in b; note that because
             // b2j has no junk keys, the loop is skipped if a[i] is junk
             newj2len.fill(0);
-            let tok = left[i];
             let lineno_a = self.parent.get_lineno(0, i);
             let expected_lineno_b = self.matched_lines.get(&(0, lineno_a));
 
@@ -374,13 +372,12 @@ impl<'a> WordDiffer<'a> {
                 prev.1 + prev.2, next.1,
             );
 
-            if let Some(next) = matching_blocks.get_mut(i+1) {
-                if block.0 + block.2 == next.0 && block.1 + block.2 == next.1 {
-                    block.2 += next.2;
-                    next.0 += next.2;
-                    next.1 += next.2;
-                    next.2 = 0;
-                }
+            if let Some(next) = matching_blocks.get_mut(i+1)
+                && block.0 + block.2 == next.0 && block.1 + block.2 == next.1 {
+                block.2 += next.2;
+                next.0 += next.2;
+                next.1 += next.2;
+                next.2 = 0;
             }
 
             parts.push(self.parent.make_part(true, block.0..block.0+block.2, block.1..block.1+block.2));

@@ -16,11 +16,11 @@ pub struct Part<'a> {
 
 impl Part<'_> {
 
-    pub fn get(&self, i: usize) -> &[Bytes] {
+    pub fn get(&self, i: usize) -> &[Bytes<'_>] {
         &self.parent.words[i][self.slices[i].clone()]
     }
 
-    fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=Bytes> {
+    fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=Bytes<'_>> {
         self.get(i).iter().copied().filter(|word| !word.is_ascii_whitespace())
     }
 

@@ -133,17 +133,15 @@ fn score_part_shift(parts: &Parts, parti: usize, i: usize) -> Vec<([usize; NUM_S
 
     let mut words: VecDeque<_> = part.get(i).iter().copied().collect();
     // try shift right ie move stuff at front to back
-    if let Some(next_words) = parts.get(parti+1) {
-        if next_words.matches {
-            let next_words = next_words.get(i);
-            for (shift, &word) in next_words.iter().enumerate() {
-                if word != words[0] {
-                    break
-                }
-                words.rotate_left(1);
-                let shift = 1 + shift as isize;
-                scores.push((score_words(part, &words, i, shift), shift));
+    if let Some(next_words) = parts.get(parti+1) && next_words.matches {
+        let next_words = next_words.get(i);
+        for (shift, &word) in next_words.iter().enumerate() {
+            if word != words[0] {
+                break
             }
+            words.rotate_left(1);
+            let shift = 1 + shift as isize;
+            scores.push((score_words(part, &words, i, shift), shift));
         }
     }
 

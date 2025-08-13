@@ -80,15 +80,15 @@ impl<'a> BlockMaker<'a> {
         self.line_to_word[i][lineno - self.line_numbers[i]]
     }
 
-    fn get_line(&self, i: usize, lineno: usize) -> &[Bytes] {
+    fn get_line(&self, i: usize, lineno: usize) -> &[Bytes<'_>] {
         &self.words[i][self.get_wordno(i, lineno) .. self.get_wordno(i, lineno+1)]
     }
 
-    pub fn make_part(&self, matches: bool, left: std::ops::Range<usize>, right: std::ops::Range<usize>) -> Part {
+    pub fn make_part(&self, matches: bool, left: std::ops::Range<usize>, right: std::ops::Range<usize>) -> Part<'_> {
         Part{parent: self, matches, slices: [left, right]}
     }
 
-    pub fn make_block(&self) -> Block {
+    pub fn make_block(&self) -> Block<'_> {
         // diff by line first
         let mut ranges = vec![];
         let mut previ = 0;

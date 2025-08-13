@@ -177,7 +177,7 @@ impl Block<'_> {
 
     }
 
-    fn last_non_empty(&self, i: usize) -> Option<&Part> {
+    fn last_non_empty(&self, i: usize) -> Option<&Part<'_>> {
         self.parts.iter().rev().find(|p| !p.is_empty(i))
     }
 
