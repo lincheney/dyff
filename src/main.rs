@@ -21,8 +21,11 @@ mod regexes;
 use hunk::Hunk;
 use types::*;
 
-fn strip_style<'a>(string: Bytes<'a>, replace: &[u8]) -> std::borrow::Cow<'a, [u8]> {
-    byte_regex!(r"\x1b\[[\d;]*m".replace_all(string, replace))
+fn strip_style<'a>(string: Bytes<'a>, replace: &[u8]) -> Cow<'a, bstr::BStr> {
+    match byte_regex!(r"\x1b\[[\d;]*m".replace_all(string, replace)) {
+        Cow::Borrowed(x) => Cow::Borrowed(x.into()),
+        Cow::Owned(x) => Cow::Owned(x.into()),
+    }
 }
 
 fn shell_quote<S: AsRef<str>>(val: S) -> String {
@@ -311,7 +314,7 @@ fn _main() -> Result<ExitCode> {
     let mut line_numbers = [0, 0];
     let mut unified = false;
     let mut merge_markers: Option<hunk::MergeMarkers> = None;
-    let mut filename: Option<Vec<u8>> = None;
+    let mut filename: Option<bstr::BString> = None;
     let mut stdout = BufWriter::new(stdout);
 
     let mut diff_trailing_ws_pat = regex::escape(&args.style.diff_trailing_ws).into_bytes();
@@ -430,12 +433,12 @@ fn _main() -> Result<ExitCode> {
         if hunk.is_none() {
             if let Some(captures) = byte_regex!(r"^(?<sign>---|\+\+\+) ([ab]/)?(?<filename>[^\t]*)(?<trailer>\t.*)?".captures(&stripped)) {
                 if &captures["sign"] == b"---" {
-                    filename = Some(captures["filename"].to_owned());
+                    filename = Some(captures["filename"].to_owned().into());
                 } else {
                     Hunk::print_filename(
                         &mut stdout,
                         &mut tokeniser,
-                        filename.as_ref().map(bstr::BStr::new),
+                        filename.as_ref().map(|f| f.as_ref()),
                         Some(bstr::BStr::new(&captures["filename"])),
                         (&args.style.filename_sign_left, &args.style.filename_sign_right, &args.style.filename_sign),
                         style,
@@ -501,12 +504,12 @@ fn _main() -> Result<ExitCode> {
         if h.is_empty()
         && let Some(captures) = byte_regex!(r"^rename (?<sign>to|from)[ \t](?<filename>.*\n)".captures(&stripped)) {
             if &captures["sign"] == b"from" {
-                filename = Some(captures["filename"].to_owned());
+                filename = Some(captures["filename"].to_owned().into());
             } else {
                 Hunk::print_filename(
                     &mut stdout,
                     &mut tokeniser,
-                    filename.as_ref().map(bstr::BStr::new),
+                    filename.as_ref().map(|f| f.as_ref()),
                     Some(bstr::BStr::new(&captures["filename"])),
                     ("rename from\t", "rename to\t", "rename from/to\t"),
                     style,
@@ -516,7 +519,7 @@ fn _main() -> Result<ExitCode> {
             continue
         }
 
-        if &*stripped == b"\\ No newline at end of file\n" || &*stripped == b"\\ No newline at end of file" {
+        if *stripped == b"\\ No newline at end of file\n" || *stripped == b"\\ No newline at end of file" {
             if let Some(last_line) = h.get_mut(side).last_mut()
             && last_line.ends_with(b"\n") {
                 last_line.pop();
@@ -531,13 +534,13 @@ fn _main() -> Result<ExitCode> {
         }
 
         if !args.exact && unified && stripped.starts_with(b" ") {
-            h.left.push(stripped[1..].to_owned().into());
-            h.right.push(stripped[1..].to_owned().into());
+            h.left.push(stripped[1..].to_owned());
+            h.right.push(stripped[1..].to_owned());
             continue
         }
 
         if !unified {
-            if *stripped == *b"---\n" {
+            if *stripped == b"---\n" {
                 continue
             }
 

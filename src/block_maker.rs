@@ -54,7 +54,7 @@ impl<'a> BlockMaker<'a> {
                 for _ in oldlen..w.len() {
                     word_to_line[i].push(lineno);
                 }
-                line_tokens[i].push(tokeniser.map(line));
+                line_tokens[i].push(tokeniser.map(line.as_ref()));
             }
             word_to_line[i].push(line_to_word[i].len());
             line_to_word[i].push(w.len());

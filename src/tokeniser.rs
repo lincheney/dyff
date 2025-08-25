@@ -39,7 +39,7 @@ impl Tokeniser {
         Token(self.mapping.len())
     }
 
-    pub fn map(&mut self, word: &[u8]) -> Token {
+    pub fn map(&mut self, word: &bstr::BStr) -> Token {
         if let Some(t) = self.mapping.get(word) {
             *t
         } else {
