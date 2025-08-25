@@ -19,9 +19,9 @@ impl std::default::Default for Style<'_> {
             signs: false,
             show_both: false,
             inline: false,
-            diff_matching: [DIFF_MATCHING[0].as_bytes(), DIFF_MATCHING[1].as_bytes()],
-            diff_matching_inline: DIFF_MATCHING_INLINE.as_bytes(),
-            diff_non_matching: [DIFF_NON_MATCHING[0].as_bytes(), DIFF_NON_MATCHING[1].as_bytes()],
+            diff_matching: [DIFF_MATCHING[0].into(), DIFF_MATCHING[1].into()],
+            diff_matching_inline: DIFF_MATCHING_INLINE.into(),
+            diff_non_matching: [DIFF_NON_MATCHING[0].into(), DIFF_NON_MATCHING[1].into()],
         }
     }
 }
@@ -67,7 +67,7 @@ macro_rules! concat_str {
     }};
 }
 
-pub const RESET: Bytes      = b"\x1b[0m";
+pub const RESET: &[u8]      = b"\x1b[0m";
 pub const PAINT_RIGHT: &str = "\x1b[K";
 pub const BOLD: &str        = "\x1b[1m";
 pub const HEADER: &str      = "\x1b[0;36m";
@@ -75,7 +75,7 @@ pub const COMMIT: &str      = "\x1b[1;48;5;24m";
 pub const BACKGROUND: &str  = "";
 pub const CONTEXT: &str     = "\x1b[0;1;33;48;5;236m";
 pub const DIFF_HEADER: &str = BOLD;
-pub const SIGN: [Bytes; 3]  = [
+pub const SIGN: [&[u8]; 3]  = [
     concat_bytes!(RESET, DIFF.0.as_bytes(), b"-"),
     concat_bytes!(RESET, DIFF.1.as_bytes(), b"+"),
     concat_bytes!(RESET, b" "),

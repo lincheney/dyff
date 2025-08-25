@@ -20,7 +20,7 @@ impl Part<'_> {
         &self.parent.words[i][self.slices[i].clone()]
     }
 
-    fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=Bytes<'_>> {
+    fn get_non_whitespace<'a>(&'a self, i: usize) -> impl Iterator<Item=Bytes<'a>> {
         self.get(i).iter().copied().filter(|word| !word.is_ascii_whitespace())
     }
 
@@ -194,8 +194,8 @@ impl std::fmt::Debug for Part<'_> {
         write!(
             f,
             "Part(\"{}\", \"{}\")",
-            self.parent.get_words_as_debug(0, self.slices[0].clone()),
-            self.parent.get_words_as_debug(1, self.slices[1].clone()),
+            bstr::BString::new(bstr::concat(&self.parent.words[0][self.slices[0].clone()])),
+            bstr::BString::new(bstr::concat(&self.parent.words[1][self.slices[1].clone()])),
         )
     }
 }

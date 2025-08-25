@@ -21,7 +21,7 @@ mod regexes;
 use hunk::Hunk;
 use types::*;
 
-fn strip_style<'a>(string: Bytes<'a>, replace: Bytes) -> std::borrow::Cow<'a, [u8]> {
+fn strip_style<'a>(string: Bytes<'a>, replace: &[u8]) -> std::borrow::Cow<'a, [u8]> {
     byte_regex!(r"\x1b\[[\d;]*m".replace_all(string, replace))
 }
 
@@ -254,9 +254,9 @@ fn _main() -> Result<ExitCode> {
         signs: args.signs,
         inline: args.inline != AutoChoices::Never && !args.exact,
 
-        diff_matching: [args.style.diff_matching_left.as_bytes(), args.style.diff_matching_right.as_bytes()],
-        diff_matching_inline: args.style.diff_matching_inline.as_bytes(),
-        diff_non_matching: [args.style.diff_non_matching_left.as_bytes(), args.style.diff_non_matching_right.as_bytes()],
+        diff_matching: [(*args.style.diff_matching_left).into(), (*args.style.diff_matching_right).into()],
+        diff_matching_inline: (*args.style.diff_matching_inline).into(),
+        diff_non_matching: [(*args.style.diff_non_matching_left).into(), (*args.style.diff_non_matching_right).into()],
         ..style::Style::default()
     };
 
@@ -317,7 +317,7 @@ fn _main() -> Result<ExitCode> {
     let mut diff_trailing_ws_pat = regex::escape(&args.style.diff_trailing_ws).into_bytes();
     diff_trailing_ws_pat.extend(b"$0");
 
-    let mut buf = Vec::<u8>::new();
+    let mut buf = bstr::BString::default();
     let mut diff = false;
     let mut side = 0;
     loop {
@@ -334,7 +334,7 @@ fn _main() -> Result<ExitCode> {
             continue
         }
 
-        let stripped = strip_style(&buf, b"");
+        let stripped = strip_style(buf.as_ref(), b"");
 
         if let Some(captures) = byte_regex!(r"^((?<header>@@ -(?<line_minus>\d+)(,\d+)? \+(?<line_plus>\d+)(,\d+)? @@)\s*)(?<context>.*)".captures(&stripped)) {
             unified = true;
@@ -435,8 +435,8 @@ fn _main() -> Result<ExitCode> {
                     Hunk::print_filename(
                         &mut stdout,
                         &mut tokeniser,
-                        filename.as_ref().map(|f| f.as_ref()),
-                        Some(&captures["filename"]),
+                        filename.as_ref().map(|f| bstr::BStr::new(f)),
+                        Some(bstr::BStr::new(&captures["filename"])),
                         (&args.style.filename_sign_left, &args.style.filename_sign_right, &args.style.filename_sign),
                         style,
                         &args.style,
@@ -448,7 +448,7 @@ fn _main() -> Result<ExitCode> {
             args.style.print_background(&mut stdout)?;
             if byte_regex!(r"^commit [0-9a-f]+".is_match(&stripped)) {
                 stdout.write_all(args.style.commit.as_bytes())?;
-                stdout.write_all(&strip_style(&buf, format!("$0{}", args.style.commit).as_bytes()))?;
+                stdout.write_all(&strip_style(buf.as_ref(), format!("$0{}", args.style.commit).as_bytes()))?;
                 stdout.write_all(style::RESET)?;
             } else {
                 stdout.write_all(&buf)?;
@@ -463,7 +463,7 @@ fn _main() -> Result<ExitCode> {
             let sign = &captures["sign"];
             side = if sign.contains(&b'+') { 1 } else { 0 };
             let lineno = line_numbers[side] + h.get(side).len();
-            h.get_mut(side).push(captures["line"].to_owned());
+            h.get_mut(side).push(captures["line"].to_owned().into());
             let bar = if sign[1] == b' ' {
                 &args.style.lineno_our_bar
             } else if sign[0] == b' ' {
@@ -506,8 +506,8 @@ fn _main() -> Result<ExitCode> {
                 Hunk::print_filename(
                     &mut stdout,
                     &mut tokeniser,
-                    filename.as_ref().map(|f| f.as_ref()),
-                    Some(&captures["filename"]),
+                    filename.as_ref().map(|f| bstr::BStr::new(f)),
+                    Some(bstr::BStr::new(&captures["filename"])),
                     ("rename from\t", "rename to\t", "rename from/to\t"),
                     style,
                     &args.style,
@@ -526,13 +526,13 @@ fn _main() -> Result<ExitCode> {
 
         if unified && let Some(captures) = byte_regex!(r"^(?<sign>[-+])(?<line>.*\n)".captures(&stripped)) {
             side = if &captures["sign"] == b"+" { 1 } else { 0 };
-            h.get_mut(side).push(captures["line"].to_owned());
+            h.get_mut(side).push(captures["line"].to_owned().into());
             continue
         }
 
         if !args.exact && unified && stripped.starts_with(b" ") {
-            h.left.push(stripped[1..].to_owned());
-            h.right.push(stripped[1..].to_owned());
+            h.left.push(stripped[1..].to_owned().into());
+            h.right.push(stripped[1..].to_owned().into());
             continue
         }
 
@@ -543,7 +543,7 @@ fn _main() -> Result<ExitCode> {
 
             if let Some(captures) = byte_regex!(r"^(?<sign>[<>]) (?<line>.*\n)".captures(&stripped)) {
                 side = if &captures["sign"] == b">" { 1 } else { 0 };
-                h.get_mut(side).push(captures["line"].to_owned());
+                h.get_mut(side).push(captures["line"].to_owned().into());
                 continue
             }
         }
@@ -557,7 +557,7 @@ fn _main() -> Result<ExitCode> {
         h.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style, &args.style)?;
         if byte_regex!("^index ".is_match(&stripped)) {
             args.style.print_background(&mut stdout)?;
-            stdout.write_all(&strip_style(&buf, format!("$0{}", style::DIFF_HEADER).as_bytes()))?;
+            stdout.write_all(&strip_style(buf.as_ref(), format!("$0{}", style::DIFF_HEADER).as_bytes()))?;
             hunk = None;
             continue
         }

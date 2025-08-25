@@ -75,7 +75,7 @@ impl Hunk {
         let mut hunk = Self::new();
 
         for (i, filename) in [left, right].iter().enumerate() {
-            let mut filename = filename.unwrap_or(b"").to_owned();
+            let mut filename = filename.unwrap_or(b"".into()).to_owned();
             if !filename.ends_with(b"\n") {
                 filename.push(b'\n');
             }
@@ -87,9 +87,9 @@ impl Hunk {
             line_numbers: true,
             show_both: true,
             // inline: false,
-            diff_matching: [style_opts.filename_header_left.as_bytes(), style_opts.filename_header_right.as_bytes()],
-            diff_matching_inline: style_opts.filename_rename.as_bytes(),
-            diff_non_matching: [style_opts.filename_non_matching_left.as_bytes(), style_opts.filename_non_matching_right.as_bytes()],
+            diff_matching: [(*style_opts.filename_header_left).into(), (*style_opts.filename_header_right).into()],
+            diff_matching_inline: (*style_opts.filename_rename).into(),
+            diff_non_matching: [(*style_opts.filename_non_matching_left).into(), (*style_opts.filename_non_matching_right).into()],
             ..style
         };
         let maker = BlockMaker::new(&hunk, [1, 1], tokeniser);

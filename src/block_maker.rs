@@ -48,7 +48,7 @@ impl<'a> BlockMaker<'a> {
                     r")+"
                     "|."
                     "|\n",
-                    |r| { w.extend(r.find_iter(line).map(|m| m.as_bytes())) }
+                    |r| { w.extend(r.find_iter(line).map(|m| Bytes::from(m.as_bytes()))) }
                 );
                 tokens[i].extend(w[oldlen..].iter().map(|x| tokeniser.map(x)));
                 for _ in oldlen..w.len() {
@@ -175,15 +175,6 @@ impl<'a> BlockMaker<'a> {
 
         parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
         Block{parts}
-    }
-
-    pub fn get_words_as_debug(&self, side: usize, range: std::ops::Range<usize>) -> String {
-        let string = &self.words[side][range]
-            .concat()
-            .iter()
-            .flat_map(|c| std::ascii::escape_default(*c))
-            .collect::<Vec<_>>();
-        std::str::from_utf8(string).unwrap().to_string()
     }
 
 }

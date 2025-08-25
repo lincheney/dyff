@@ -1,3 +1,3 @@
-pub type Bytes<'a> = &'a [u8];
-pub type Word = Vec<u8>;
+pub type Bytes<'a> = &'a bstr::BStr;
+pub type Word = bstr::BString;
 pub type Line = Vec<Word>;

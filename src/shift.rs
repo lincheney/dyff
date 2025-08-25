@@ -14,14 +14,14 @@ type Parts<'a> = Vec<Part<'a>>;
 
 fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> [usize; NUM_SCORES] {
 
-    static PREFIXES: [(usize, Bytes); 1] = [
+    static PREFIXES: [(usize, &[u8]); 1] = [
         // (NEWLINE, b"\n"),
         // (WHITESPACE_PREFIX, b" \t"),
         // (OTHER_PREFIX, b"{"),
         // (GOOD_PREFIX, b",;"),
         (OTHER_PREFIX, b"{[("),
     ];
-    static SUFFIXES: [(usize, Bytes); 4] = [
+    static SUFFIXES: [(usize, &[u8]); 4] = [
         (NEWLINE, b"\n"),
         (WHITESPACE_SUFFIX, b" \t"),
         (GOOD_SUFFIX, b",;"),
@@ -54,7 +54,7 @@ fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> 
         scores[NEWLINE] += 1;
         // prefix_scores[0] += 1;
     } else {
-        static EXT_PREFIXES: [(usize, Bytes); 4] = [
+        static EXT_PREFIXES: [(usize, &[u8]); 4] = [
             // (NEWLINE, b"\n"),
             (WHITESPACE_PREFIX, b" "),
             (OTHER_PREFIX, b"("),
@@ -82,10 +82,10 @@ fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> 
     }
 
     // check if this is at end of line
-    if words.back().unwrap() == b"\n" {
+    if *words.back().unwrap() == b"\n" {
         scores[NEWLINE] += 1;
     } else {
-        static EXT_SUFFIXES: [(usize, Bytes); 6] = [
+        static EXT_SUFFIXES: [(usize, &[u8]); 6] = [
             (NEWLINE, b"\n"),
             (WHITESPACE_SUFFIX, b" "),
             (GOOD_SUFFIX, b":"),

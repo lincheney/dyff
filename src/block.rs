@@ -58,8 +58,8 @@ impl Block<'_> {
                 // strip newlines
                 let length: usize = part.get(0)
                     .iter()
-                    .skip_while(|&w| w == b"\n")
-                    .take_while(|&w| w != b"\n")
+                    .skip_while(|&w| *w == b"\n")
+                    .take_while(|&w| *w != b"\n")
                     .map(|w| w.len())
                     .sum();
 
@@ -344,12 +344,12 @@ impl Block<'_> {
                     if trailing_ws {
                         stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                     }
-                    if word == b"\n" {
+                    if *word == b"\n" {
                         stdout.write_all(style::RESET)?;
                     }
                     stdout.write_all(word)?;
 
-                    if word == b"\n" {
+                    if *word == b"\n" {
                         line_numbers[0] += 1;
                         line_numbers[1] += 1;
                         newline = true;
@@ -361,7 +361,7 @@ impl Block<'_> {
             // print the no newline message
             if last
             && let Some(part) = self.parts.iter().rev().find(|p| !p.is_empty(0))
-            && !part.get(0).ends_with(&[b"\n"]) {
+            && !part.get(0).ends_with(&[b"\n".into()]) {
                 stdout.write_all(style_opts.diff_context.as_bytes())?;
                 stdout.write_all(b"\\ No newline at end of file\n")?;
             }
@@ -431,7 +431,7 @@ impl Block<'_> {
                             newline = false;
                         }
 
-                        if word == b"\n" {
+                        if *word == b"\n" {
                             line_numbers[i] += 1;
                             if inline && part.matches {
                                 line_numbers[1-i] += 1;
@@ -448,7 +448,7 @@ impl Block<'_> {
                             if trailing_ws {
                                 stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                             }
-                            if word == b"\n" {
+                            if *word == b"\n" {
                                 stdout.write_all(style::RESET)?;
                             }
                             stdout.write_all(&word[0..1])?;
@@ -462,7 +462,7 @@ impl Block<'_> {
                             if trailing_ws {
                                 stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                             }
-                            if word == b"\n" {
+                            if *word == b"\n" {
                                 stdout.write_all(style::RESET)?;
                             }
                             stdout.write_all(word)?;
@@ -475,7 +475,7 @@ impl Block<'_> {
             if last {
                 let inner_loop = if inline { 0..=1 } else { i..=i };
                 let newline = [0, 1].map(|i| {
-                    self.parts.iter().rfind(|p| !p.is_empty(i)).take_if(|p| p.get(i).ends_with(&[b"\n"])).is_some()
+                    self.parts.iter().rfind(|p| !p.is_empty(i)).take_if(|p| p.get(i).ends_with(&[b"\n".into()])).is_some()
                 });
 
                 let mut printed_newline = false;
