@@ -435,7 +435,7 @@ fn _main() -> Result<ExitCode> {
                     Hunk::print_filename(
                         &mut stdout,
                         &mut tokeniser,
-                        filename.as_ref().map(|f| bstr::BStr::new(f)),
+                        filename.as_ref().map(bstr::BStr::new),
                         Some(bstr::BStr::new(&captures["filename"])),
                         (&args.style.filename_sign_left, &args.style.filename_sign_right, &args.style.filename_sign),
                         style,
@@ -506,7 +506,7 @@ fn _main() -> Result<ExitCode> {
                 Hunk::print_filename(
                     &mut stdout,
                     &mut tokeniser,
-                    filename.as_ref().map(|f| bstr::BStr::new(f)),
+                    filename.as_ref().map(bstr::BStr::new),
                     Some(bstr::BStr::new(&captures["filename"])),
                     ("rename from\t", "rename to\t", "rename from/to\t"),
                     style,
