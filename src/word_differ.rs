@@ -16,7 +16,7 @@ pub struct WordDiffer<'a> {
     matched_lines: HashMap<(usize, usize), usize>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 struct DiffMatch {
     left: usize,
     right: usize,
@@ -242,6 +242,7 @@ impl<'a> WordDiffer<'a> {
         let mut newj2len = vec![0; self.parent.words[1].len()];
 
         for (i, &tok) in left[alo..ahi].iter().enumerate() {
+            let i = i + alo;
             // look at all instances of a[i] in b; note that because
             // b2j has no junk keys, the loop is skipped if a[i] is junk
             newj2len.fill(0);
