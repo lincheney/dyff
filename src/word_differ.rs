@@ -200,7 +200,7 @@ impl<'a> WordDiffer<'a> {
             if alo >= ahi || blo >= bhi {
                 continue
             }
-            if let Some(m) = self.find_longest_match(alo, mini, blo, minj, write) {
+            if let Some(m) = self.find_longest_match(alo, ahi, blo, bhi, write) {
                 // we didn't just match a newline
                 if !(m.length == 1 && left[m.left] == b"\n") {
                     return Some(m)
