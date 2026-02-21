@@ -554,6 +554,8 @@ fn _main() -> Result<ExitCode> {
         if &buf == b"\n" {
             h.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style, &args.style)?;
             hunk = None;
+            args.style.print_background(&mut stdout)?;
+            stdout.write_all(b"\n")?;
             continue
         }
 
