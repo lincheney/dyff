@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/shadow/.config/nvim/lua/qianli/completion/matcher.lua [0;32m[1m[48;5;238mb/shadow/.config/nvim/lua/qianli/completion/matcher.lua[0m
 index 8faa58ff..72511886 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/completion/matcher.lua[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/completion/matcher.lua[2;7m[0m
 [0;36m@@ -2,43 +2,29 @@ [0;1;33;48;5;236mlocal M = {}[0m
 [0;38;5;242m2   [0;38;5;242m▏[0;38;5;242m2   [0;38;5;242m▏ [0;38;5;242m[0m
 [0;38;5;242m3   [0;38;5;242m▏[0;38;5;242m3   [0;38;5;242m▏ [0;38;5;242m-- this is taken from python's difflib[2;7m[0m

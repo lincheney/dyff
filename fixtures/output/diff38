@@ -6,7 +6,7 @@ Date:   Tue Jun 10 18:34:40 2025 +1000
 
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/lib/aws-login/azure_ad.py [0;32m[1m[48;5;238mb/lib/aws-login/azure_ad.py[0m
 index bc7db21..0a444fb 100755
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mlib/aws-login/azure_ad.py[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mlib/aws-login/azure_ad.py[2;7m[0m
 [0;36m@@ -357,7 +357,7 @@ [0;1;33;48;5;236mdef login_state_machine(username, login_method, auth_method, entrypoint, respons[0m
 [0;38;5;242m357 [0;38;5;242m▏[0;38;5;242m357 [0;38;5;242m▏ [0;38;5;242m[0m
 [0;38;5;242m358 [0;38;5;242m▏[0;38;5;242m358 [0;38;5;242m▏ [0;38;5;242m            # we are in the middle of the fido flow and got the challenge[0m

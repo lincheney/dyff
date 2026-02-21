@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/libsagna/aws/__init__.py [0;32m[1m[48;5;238mb/libsagna/aws/__init__.py[0m
 index 068e074..5fe20ef 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mlibsagna/aws/__init__.py[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mlibsagna/aws/__init__.py[2;7m[0m
 [0;36m@@ -177,6 +177,31 @@ [0;1;33;48;5;236masync def _async_paginator(self, pages, sentinel=object()):[0m
 [0;38;5;242m177 [0;38;5;242m▏[0;38;5;242m177 [0;38;5;242m▏ [0;38;5;242m                break[0m
 [0;38;5;242m178 [0;38;5;242m▏[0;38;5;242m178 [0;38;5;242m▏ [0;38;5;242m            yield item[2;7m[0m

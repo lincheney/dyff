@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/shadow/.config/nvim/lua/qianli/copypaste.lua [0;32m[1m[48;5;238mb/shadow/.config/nvim/lua/qianli/copypaste.lua[0m
 index fa6e08b4..a9044af0 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/copypaste.lua[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/copypaste.lua[2;7m[0m
 [0;36m@@ -14,9 +14,9 @@ [0;1;33;48;5;236mmap.i.silent['<a-p>'] = function()[0m
 [0;38;5;242m14  [0;38;5;242m▏[0;38;5;242m14  [0;38;5;242m▏ [0;38;5;242m            menu_format = '[%s] ',[0m
 [0;38;5;242m15  [0;38;5;242m▏[0;38;5;242m15  [0;38;5;242m▏ [0;38;5;242m            menu_hl_group = 'CmpItemMenuRegister',[0m

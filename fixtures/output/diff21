@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/bin/custom_differ.py [0;32m[1m[48;5;238mb/bin/custom_differ.py[0m
 index ba2a8fac..28c4066c 100755
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mbin/custom_differ.py[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mbin/custom_differ.py[2;7m[0m
 [0;36m@@ -192,8 +192,19 @@ [0;1;33;48;5;236mdef isjunk(b):[0m
 [0;38;5;242m192 [0;38;5;242m▏[0;38;5;242m192 [0;38;5;242m▏ [0;38;5;242m[0m
 [0;38;5;242m193 [0;38;5;242m▏[0;38;5;242m193 [0;38;5;242m▏ [0;38;5;242m                # don't match whitespace (but allow matching beyond it later)[0m

@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua [0;32m[1m[48;5;238mb/shadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua[0m
 index 6a9804c0..75d25868 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/completion/nvim-cmp/luasnip.lua[2;7m[0m
 [0;36m@@ -47,33 +47,32 @@ [0;1;33;48;5;236mPlugins.on_load('LuaSnip', function()[0m
 [0;38;5;242m47  [0;38;5;242m▏[0;38;5;242m47  [0;38;5;242m▏ [0;38;5;242m            -- skip all[0m
 [0;38;5;242m48  [0;38;5;242m▏[0;38;5;242m48  [0;38;5;242m▏ [0;38;5;242m            if k ~= 'all' then[0m

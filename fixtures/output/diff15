@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/projects/telstra/dfir/main.py [0;32m[1m[48;5;238mb/projects/telstra/dfir/main.py[0m
 index 1840cd4..cd4f7b7 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mprojects/telstra/dfir/main.py[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mprojects/telstra/dfir/main.py[2;7m[0m
 [0;36m@@ -10,7 +10,12 @@[0m
 [0;38;5;242m10  [0;38;5;242m▏[0;38;5;242m10  [0;38;5;242m▏ [0;38;5;242mfrom libsagna.config.aws import AWSFilter[2;7m[0m
 [0;38;5;242m11  [0;38;5;242m▏[0;38;5;242m11  [0;38;5;242m▏ [0;38;5;242m[2;7m[0m

@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/libsagna/config/__init__.py [0;32m[1m[48;5;238mb/libsagna/config/__init__.py[0m
 index 2e656dc..3aa7c6c 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mlibsagna/config/__init__.py[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mlibsagna/config/__init__.py[2;7m[0m
 [0;36m@@ -22,7 +22,7 @@ [0;1;33;48;5;236mdef __init__(self, data: dict|str, *args: str):[0m
 [0;38;5;242m22  [0;38;5;242m▏[0;38;5;242m22  [0;38;5;242m▏ [0;38;5;242m[0m
 [0;38;5;242m23  [0;38;5;242m▏[0;38;5;242m23  [0;38;5;242m▏ [0;38;5;242m    def set_attributes(self, value, parent='', sep=':'):[0m
@@ -11,7 +11,7 @@ index 2e656dc..3aa7c6c 100644
 [0;38;5;242m28  [0;38;5;242m▏[0;38;5;242m28  [0;38;5;242m▏ [0;38;5;242m            for k, v in value.items():[2;7m[0m
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/modules/aws/aws-event-logging/config.yaml [0;32m[1m[48;5;238mb/modules/aws/aws-event-logging/config.yaml[0m
 index 0488a54..3aa4b09 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mmodules/aws/aws-event-logging/config.yaml[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mmodules/aws/aws-event-logging/config.yaml[2;7m[0m
 [0;36m@@ -1,7 +1,5 @@[0m
 [0;38;5;242m1   [0;38;5;242m▏[0;38;5;242m1   [0;38;5;242m▏ [0;38;5;242m# projects/.*/aws-event-logging:[0m
 [0;38;5;242m2   [0;38;5;242m▏[0;38;5;242m2   [0;38;5;242m▏ [0;38;5;242mservice/events:[0m

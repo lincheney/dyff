@@ -6,7 +6,7 @@ Date:   Sat Jun 15 13:44:25 2024 +1000
 
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/shadow/.config/nvim/lua/qianli/buffers/init.lua [0;32m[1m[48;5;238mb/shadow/.config/nvim/lua/qianli/buffers/init.lua[0m
 index 098e903d..31fe63d1 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/buffers/init.lua[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/buffers/init.lua[2;7m[0m
 [0;36m@@ -44,9 +44,15 @@ [0;1;33;48;5;236mmap.n.nore.silent['<leader>c'] = function()[0m
 [0;38;5;242m44  [0;38;5;242m▏[0;38;5;242m44  [0;38;5;242m▏ [0;38;5;242m    end[0m
 [0;38;5;242m45  [0;38;5;242m▏[0;38;5;242m45  [0;38;5;242m▏ [0;38;5;242mend[0m

@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/src/block_maker.rs [0;32m[1m[48;5;238mb/src/block_maker.rs[0m
 index 0df59d4..73fd0dd 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238msrc/block_maker.rs[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238msrc/block_maker.rs[2;7m[0m
 [0;36m@@ -67,6 +67,10 @@ [0;1;33;48;5;236mpub fn get_wordno(&self, i: usize, lineno: usize) -> usize {[0m
 [0;38;5;242m67  [0;38;5;242m▏[0;38;5;242m67  [0;38;5;242m▏ [0;38;5;242m        self.line_to_word[i][lineno - self.line_numbers[i]][0m
 [0;38;5;242m68  [0;38;5;242m▏[0;38;5;242m68  [0;38;5;242m▏ [0;38;5;242m    }[2;7m[0m

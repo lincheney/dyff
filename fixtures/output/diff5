@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/shadow/.config/nvim/lua/qianli/git.lua [0;32m[1m[48;5;238mb/shadow/.config/nvim/lua/qianli/git.lua[0m
 index 331212e5..70b45e9a 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/git.lua[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/git.lua[2;7m[0m
 [0;36m@@ -52,12 +52,10 @@ [0;1;33;48;5;236mfunction M.gitdir(fast, bufnr, quiet, cwd)[0m
 [0;38;5;242m52  [0;38;5;242m▏[0;38;5;242m52  [0;38;5;242m▏ [0;38;5;242m    if not fast and not gitdir then[2;7m[0m
 [0;38;5;252m[0;31m53  [0;38;5;242m▏[0;32m53  [0;38;5;242m▏ [0;38;5;252m        -- what[0;31m[1;48;2;80;30;30m[0m[0;32m[1;48;2;25;80;25m the[0;38;5;252m[2;7m[0m

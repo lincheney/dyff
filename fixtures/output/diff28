@@ -6,7 +6,7 @@ Date:   Mon Jul 22 11:15:50 2024 +1000
 
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/rust/src/folder.rs [0;32m[1m[48;5;238mb/rust/src/folder.rs[0m
 index 397b766..00c264f 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mrust/src/folder.rs[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mrust/src/folder.rs[2;7m[0m
 [0;36m@@ -60,75 +60,81 @@ [0;1;33;48;5;236mfn run()-> Result<(), std::io::Error> {[0m
 [0;38;5;242m60  [0;38;5;242m▏[0;38;5;242m60  [0;38;5;242m▏ [0;38;5;242m    let mut parser = parser::Parser::new(args.width, 3);[0m
 [0;38;5;242m61  [0;38;5;242m▏[0;38;5;242m61  [0;38;5;242m▏ [0;38;5;242m    parser.resize_scrollback(None);[0m

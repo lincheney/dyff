@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/bin/custom_differ.py [0;32m[1m[48;5;238mb/bin/custom_differ.py[0m
 index 7173d6f7..6b4ef7c2 100755
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mbin/custom_differ.py[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mbin/custom_differ.py[2;7m[0m
 [0;36m@@ -580,8 +580,9 @@ [0;1;33;48;5;236mdef print(self, merge_markers, show_both=False, format_lineno=format_lineno, sty[0m
 [0;38;5;242m580 [0;38;5;242m▏[0;38;5;242m580 [0;38;5;242m▏ [0;38;5;242m                    new_lineno = [part.first_line(0) + i, part.first_line(1) + i][0m
 [0;38;5;242m581 [0;38;5;242m▏[0;38;5;242m581 [0;38;5;242m▏ [0;38;5;242m                    if lineno_args != new_lineno:[0m

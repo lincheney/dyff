@@ -101,7 +101,7 @@ pub const FILENAME_HEADER: (&str, &str, &str) = (
 pub const FILENAME_SIGN: (&str, &str, &str)   = (
     concat_str!(DIFF.0,     FILENAME_BG, "\x1b[7m---\x1b[27m "),
     concat_str!(DIFF.1,     FILENAME_BG, "\x1b[7m+++\x1b[27m "),
-    concat_str!("\x1b[0;m", FILENAME_BG, "\x1b[7m###\x1b[27m "),
+    concat_str!("\x1b[0m",  FILENAME_BG, "\x1b[7m###\x1b[27m "),
 );
 pub const FILENAME_NON_MATCHING: [&str; 2] = [
     concat_str!(DIFF_NON_MATCHING[0], FILENAME_BG, "\x1b[1m"),

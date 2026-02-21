@@ -1,6 +1,6 @@
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/shadow/.config/nvim/lua/qianli/git.lua [0;32m[1m[48;5;238mb/shadow/.config/nvim/lua/qianli/git.lua[0m
 index 331212e5..84cb8937 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/git.lua[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/qianli/git.lua[2;7m[0m
 [0;36m@@ -84,35 +84,46 @@ [0;1;33;48;5;236mlocal function do_git(args)[0m
 [0;38;5;242m84  [0;38;5;242m▏[0;38;5;242m84  [0;38;5;242m▏ [0;38;5;242m    local title = ' ' .. table.concat({'git', unpack(args)}, ' ') .. ' '[0m
 [0;38;5;242m85  [0;38;5;242m▏[0;38;5;242m85  [0;38;5;242m▏ [0;38;5;242m    local gitdir = M.gitdir()[2;7m[0m

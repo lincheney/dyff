@@ -6,7 +6,7 @@ Date:   Sat Jan 13 16:19:55 2024 +1100
 
 [1mdiff --git [0m[0;31m[1m[48;5;238ma/zsh/fzf-zsh-completion.sh [0;32m[1m[48;5;238mb/zsh/fzf-zsh-completion.sh[0m
 index f62a4d8..5fb06e9 100644
-[0m[48;5;238m[48;5;238m[7m###[27m [0m[48;5;238mzsh/fzf-zsh-completion.sh[2;7m[0m
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mzsh/fzf-zsh-completion.sh[2;7m[0m
 [0;36m@@ -266,7 +266,7 @@ [0;1;33;48;5;236m_fzf_completion_compadd() {[0m
 [0;38;5;242m266 [0;38;5;242m▏[0;38;5;242m266 [0;38;5;242m▏ [0;38;5;242m[0m
 [0;38;5;242m267 [0;38;5;242m▏[0;38;5;242m267 [0;38;5;242m▏ [0;38;5;242m    if [ -n "${__optskv[(i)-A]}${__optskv[(i)-O]}${__optskv[(i)-D]}" ]; then[0m
