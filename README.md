@@ -31,6 +31,7 @@ or clone this repo and run `cargo build --release`
 ### Using with git
 
 `dyff` can work with git fine most of the time, but needs to have inlining turned off for interactive use (e.g. `git add -p`).
+So set in your `~/.gitconfig`:
 ```
 [interactive]
 	diffFilter = dyff --color=always --exact || true
