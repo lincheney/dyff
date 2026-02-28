@@ -2,17 +2,29 @@ use super::part::Part;
 use std::collections::VecDeque;
 use super::types::*;
 
-const NEWLINE: usize = 0;
-const GOOD_SUFFIX: usize = 1;
-// const GOOD_PREFIX: usize = 2;
-const WHITESPACE_SUFFIX: usize = 3;
-const WHITESPACE_PREFIX: usize = 4;
-const OTHER_SUFFIX: usize = 5;
-const OTHER_PREFIX: usize = 6;
-const NUM_SCORES: usize = 7;
+const WORD_BREAK: usize = 0;
+const NEWLINE: usize = 1;
+const GOOD_SUFFIX: usize = 2;
+// const GOOD_PREFIX: usize = 3;
+const WHITESPACE_SUFFIX: usize = 4;
+const WHITESPACE_PREFIX: usize = 5;
+const OTHER_SUFFIX: usize = 6;
+const OTHER_PREFIX: usize = 7;
+const NUM_SCORES: usize = 8;
 type Parts<'a> = Vec<Part<'a>>;
 
-fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> [usize; NUM_SCORES] {
+fn is_word(x: u8) -> bool {
+    x == b'_' || (!x.is_ascii_control() && !x.is_ascii_punctuation() && !x.is_ascii_whitespace())
+}
+
+fn score_words(
+    part: &Part,
+    prev: Option<Bytes>,
+    words: &VecDeque<Bytes>,
+    next: Option<Bytes>,
+    i: usize,
+    shift: isize,
+) -> [usize; NUM_SCORES] {
 
     static PREFIXES: [(usize, &[u8]); 1] = [
         // (NEWLINE, b"\n"),
@@ -107,6 +119,14 @@ fn score_words(part: &Part, words: &VecDeque<Bytes>, i: usize, shift: isize) -> 
         }
     }
 
+    // boost scores where they do not break a word
+    if !(is_word(words[0][0]) && prev.is_some_and(|p| is_word(*p.last().unwrap()))) {
+        scores[WORD_BREAK] += 1;
+    }
+    if !(is_word(*words.back().unwrap().last().unwrap()) && next.is_some_and(|n| is_word(n[0]))) {
+        scores[WORD_BREAK] += 1;
+    }
+
     scores
 }
 
@@ -115,33 +135,43 @@ fn score_part_shift(parts: &Parts, parti: usize, i: usize) -> Vec<([usize; NUM_S
     let mut scores = vec![];
 
     let mut words: VecDeque<_> = part.get(i).iter().copied().collect();
+    let prev = if parti > 0 { Some(&parts[parti-1]) } else { None };
+    let prev_words = prev.map(|p| p.get(i)).into_iter().flatten().rev();
+    let next = parts.get(parti+1);
+    let next_words = next.map(|n| n.get(i)).into_iter().flatten();
+
     // no shift; more score if it is start or end of line
-    scores.push((score_words(part, &words, i, 0), 0));
+    let p = prev_words.clone().nth(0).copied();
+    let n = next_words.clone().nth(0).copied();
+    scores.push((score_words(part, p, &words, n, i, 0), 0));
 
     // try shift left ie move stuff at back to front
-    if parti > 0 && parts[parti-1].matches {
-        let prev_words = parts[parti-1].get(i);
-        for (shift, word) in prev_words.iter().rev().enumerate() {
+    if let Some(prev) = prev && prev.matches {
+        for (shift, word) in prev_words.clone().enumerate() {
             if word != words.back().unwrap() {
                 break
             }
             words.rotate_right(1);
+            let p = prev_words.clone().nth(shift+1).copied();
+            let n = prev_words.clone().nth(shift).copied();
             let shift = -(1 + shift as isize);
-            scores.push((score_words(part, &words, i, shift), shift));
+            scores.push((score_words(part, p, &words, n, i, shift), shift));
         }
     }
 
     let mut words: VecDeque<_> = part.get(i).iter().copied().collect();
     // try shift right ie move stuff at front to back
-    if let Some(next_words) = parts.get(parti+1) && next_words.matches {
-        let next_words = next_words.get(i);
-        for (shift, &word) in next_words.iter().enumerate() {
+    if let Some(next) = next && next.matches {
+        // let next_words = next_words.get(i);
+        for (shift, &word) in next_words.clone().enumerate() {
             if word != words[0] {
                 break
             }
             words.rotate_left(1);
+            let p = next_words.clone().nth(shift).copied();
+            let n = next_words.clone().nth(shift+1).copied();
             let shift = 1 + shift as isize;
-            scores.push((score_words(part, &words, i, shift), shift));
+            scores.push((score_words(part, p, &words, n, i, shift), shift));
         }
     }
 

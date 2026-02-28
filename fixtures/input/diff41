@@ -1,0 +1,13 @@
+diff --git a/src/shell/externs.rs b/src/shell/externs.rs
+index 1041773..d5d85cd 100644
+--- a/src/shell/externs.rs
++++ b/src/shell/externs.rs
+@@ -9,7 +9,7 @@
+ use std::sync::atomic::{AtomicBool, Ordering};
+ use anyhow::Result;
+ use crate::shell::{Shell, ShellMsg, zsh, MetaString, MetaArray};
+-use crate::fork_lock::{RawForkLock, ForkLock};
++use crate::fork_lock::{RawForkLock};
+ 
+ static FORK_LOCK: RawForkLock = RawForkLock::new();
+ 
