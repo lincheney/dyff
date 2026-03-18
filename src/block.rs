@@ -297,7 +297,7 @@ impl Block<'_> {
     pub fn print<
         T: Write,
         S: AsRef<str>,
-        F: Fn([usize; 2], Option<&str>, Option<&str>, Option<&str>)->S
+        F: Fn([usize; 2], Option<usize>, Option<&str>, Option<&str>, Option<&str>)->S
     >(
         &self,
         stdout: &mut BufWriter<T>,
@@ -312,6 +312,8 @@ impl Block<'_> {
             return Ok(())
         }
         let mut line_numbers = [self.parts[0].first_lineno(0), self.parts[0].first_lineno(1)];
+        let max_lineno = self.parts.iter().flat_map(|p| [p.last_lineno(0), p.last_lineno(0)]).max().unwrap_or(0);
+        let max_lineno_width = max_lineno.checked_ilog10().unwrap_or(0) as usize + 1;
 
         if !style.show_both && self.parts.iter().all(|p| p.matches || (p.is_empty(0) && p.is_empty(1))) {
             // this is entirely matching
@@ -329,6 +331,7 @@ impl Block<'_> {
                         if style.line_numbers {
                             stdout.write_all(format_lineno(
                                 line_numbers,
+                                Some(max_lineno_width),
                                 Some(&style_opts.lineno), Some(&style_opts.lineno),
                                 Some(&style_opts.lineno_bar),
                             ).as_ref().as_bytes())?;
@@ -419,6 +422,7 @@ impl Block<'_> {
                                 let bar_style = merge_markers.and_then(|m| m.get(&(i, line_numbers[i])).map(|x| x.as_ref())).or(Some(&*style_opts.lineno_bar));
                                 stdout.write_all(format_lineno(
                                     lineno_args,
+                                    Some(max_lineno_width),
                                     Some(&style_opts.lineno_left), Some(&style_opts.lineno_right),
                                     bar_style,
                                 ).as_ref().as_bytes())?;

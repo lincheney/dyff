@@ -141,8 +141,8 @@ fn score_part_shift(parts: &Parts, parti: usize, i: usize) -> Vec<([usize; NUM_S
     let next_words = next.map(|n| n.get(i)).into_iter().flatten();
 
     // no shift; more score if it is start or end of line
-    let p = prev_words.clone().nth(0).copied();
-    let n = next_words.clone().nth(0).copied();
+    let p = prev_words.clone().next().copied();
+    let n = next_words.clone().next().copied();
     scores.push((score_words(part, p, &words, n, i, 0), 0));
 
     // try shift left ie move stuff at back to front

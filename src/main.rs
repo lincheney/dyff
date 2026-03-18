@@ -484,6 +484,7 @@ fn _main() -> Result<ExitCode> {
             if style.line_numbers {
                 stdout.write_all(style::format_lineno(
                         line_numbers,
+                        None,
                         Some(&args.style.lineno), Some(&args.style.lineno),
                         None,
                 ).as_ref())?;

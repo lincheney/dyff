@@ -95,7 +95,7 @@ impl Hunk {
         let maker = BlockMaker::new(&hunk, [1, 1], tokeniser);
         let blocks = maker.make_block().split_block();
         for block in blocks {
-            block.print(stdout, None, style, style_opts, false, |num: [usize; 2], _, _, _| -> &'a str {
+            block.print(stdout, None, style, style_opts, false, |num: [usize; 2], _, _, _, _| -> &'a str {
                 match num {
                     [_, 0] => prefix.0,
                     [0, _] => prefix.1,

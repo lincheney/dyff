@@ -126,15 +126,20 @@ pub const DIFF_TRAILING_WS: &str = "\x1b[2;7m";
 
 pub fn format_lineno(
     [num1, num2]: [usize; 2],
+    lineno_width: Option<usize>,
     left_style: Option<&str>,
     right_style: Option<&str>,
     bar_style: Option<&str>,
 ) -> String {
     let num1 = if num1 != 0 { Some(num1.to_string()) } else { None };
     let num2 = if num2 != 0 { Some(num2.to_string()) } else { None };
+    let lineno_width = 1 + lineno_width.unwrap_or(0)
+        .max(3)
+        .max(num1.as_ref().map_or(0, |x| x.len()))
+        .max(num2.as_ref().map_or(0, |x| x.len()));
 
     format!(
-        "{}{:<4}{}{}{:<4}{} ",
+        "{}{:<lineno_width$}{}{}{:<lineno_width$}{} ",
         left_style.unwrap_or(LINENO_DIFF.0),
         num1.as_ref().map(|n| n.as_ref()).unwrap_or(""),
         bar_style.unwrap_or(LINENO_BAR),
