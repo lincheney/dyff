@@ -248,6 +248,7 @@ impl<'a> WordDiffer<'a> {
         // we keep a generation counter that increments every loop
         let mut j2len = vec![J2Len::default(); bhi - blo];
         let mut newj2len = vec![J2Len::default(); bhi - blo];
+        let mut jcache = HashMap::new();
 
         for (generation, &tok) in left[alo..ahi].iter().enumerate() {
             let i = generation + alo;
@@ -256,10 +257,16 @@ impl<'a> WordDiffer<'a> {
             let lineno_a = self.parent.get_lineno(0, i);
             let expected_lineno_b = self.matched_lines.get(&(0, lineno_a));
 
-            let j = &self.b2j[tok.0];
             let junk = isjunk(tok);
 
-            for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
+            let j = jcache.entry(tok.0).or_insert_with(|| {
+                let j = &self.b2j[tok.0];
+                let start = j.partition_point(|&j| j < blo);
+                let end = j.partition_point(|&j| j < bhi);
+                &j[start..end]
+            });
+
+            for &j in j.iter() {
                 // a[i] matches b[j]
                 let k = if j > blo && let j = j2len[j-1-blo] && j.generation == generation {
                     j.len + 1
