@@ -230,6 +230,12 @@ impl Block<'_> {
 
         // if score is too low, make the whole thing non matching
         for block in &mut blocks {
+            // if this block only additions or only removals, then don't worry about the score
+            let mut nonmatches = block.parts.iter().filter(|p| !p.matches);
+            if nonmatches.all(|p| p.is_empty(0)) || nonmatches.all(|p| p.is_empty(1)) {
+                continue
+            }
+
             let score = block.score();
             if 0. < score && score < Block::CUTOFF {
                 let first = &block.parts[0];
