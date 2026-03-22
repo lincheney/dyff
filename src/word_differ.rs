@@ -1,8 +1,13 @@
 use std::collections::HashMap;
-use std::cmp::min;
 use super::block_maker::BlockMaker;
 use super::part::Part;
 use super::tokeniser::Token;
+
+#[derive(Default, Clone, Copy)]
+struct J2Len {
+    len: usize,
+    generation: usize,
+}
 
 fn isjunk(tok: Token) -> bool {
     tok.is_ascii_whitespace()
@@ -44,7 +49,7 @@ impl<'a> WordDiffer<'a> {
             // whitespace at start is 'junk' as it is usually just indentation
             if !(line_start && tok.is_ascii_whitespace()) {
                 b2j[tok.0].push(i);
-                line_start = tok == Token::NEWLINE
+                line_start = tok == Token::NEWLINE;
             }
         }
 
@@ -238,14 +243,16 @@ impl<'a> WordDiffer<'a> {
         // let single_line_a = first_line_a == last_line_a;
         // let single_line_b = first_line_b == last_line_b;
 
-        let mut j2len = vec![0; self.parent.words[1].len()];
-        let mut newj2len = vec![0; self.parent.words[1].len()];
+        // j2len is mostly sparse
+        // so instead of clearing it every loop which is slow
+        // we keep a generation counter that increments every loop
+        let mut j2len = vec![J2Len::default(); bhi - blo];
+        let mut newj2len = vec![J2Len::default(); bhi - blo];
 
-        for (i, &tok) in left[alo..ahi].iter().enumerate() {
-            let i = i + alo;
+        for (generation, &tok) in left[alo..ahi].iter().enumerate() {
+            let i = generation + alo;
             // look at all instances of a[i] in b; note that because
             // b2j has no junk keys, the loop is skipped if a[i] is junk
-            newj2len.fill(0);
             let lineno_a = self.parent.get_lineno(0, i);
             let expected_lineno_b = self.matched_lines.get(&(0, lineno_a));
 
@@ -254,11 +261,15 @@ impl<'a> WordDiffer<'a> {
 
             for &j in j.iter().skip_while(|&&j| j < blo).take_while(|&&j| j < bhi) {
                 // a[i] matches b[j]
-                let k = if j == 0 { 1 } else { j2len[j-1] + 1};
+                let k = if j > blo && let j = j2len[j-1-blo] && j.generation == generation {
+                    j.len + 1
+                } else {
+                    1
+                };
 
                 // do not allow matches to start with a newline
                 if tok != Token::NEWLINE {
-                    newj2len[j] = k;
+                    newj2len[j - blo] = J2Len{ len: k, generation: generation + 1 };
                 }
                 // don't match whitespace (but allow matching beyond it later)
                 if junk {
@@ -267,10 +278,15 @@ impl<'a> WordDiffer<'a> {
 
                 let i = i + 1 - k;
                 let j = j + 1 - k;
-                let leading_ws = right[j..j+k].iter().take_while(|m| isjunk(**m)).count();
-                let trailing_ws = right[j..j+k].iter().rev().take_while(|m| isjunk(**m)).count();
-                let trailing_ws = min(k - leading_ws, trailing_ws);
-                let non_ws_length = k - leading_ws - trailing_ws;
+                let leading_ws = if k == 1 {
+                    // cannot be any leading_ws if this is the first char
+                    0
+                } else {
+                    right[j..j+k].iter().take_while(|m| isjunk(**m)).count()
+                };
+                // trailing_ws is ALWAYS 0, because we continue on junk from above,
+                // therefore the last trailing char is never junk
+                let non_ws_length = k - leading_ws;
 
                 // prioritise more words, then longer words, then words on the expected line
                 let cmp = non_ws_length.cmp(&best_non_ws);
@@ -302,7 +318,7 @@ impl<'a> WordDiffer<'a> {
                     lineno_dist,
                     lineno_dist_strong,
                     non_ws_length,
-                    char_length: left_words[i+leading_ws .. i+k-trailing_ws].iter().map(|w| w.len()).sum(),
+                    char_length: left_words[i+leading_ws .. i+k].iter().map(|w| w.len()).sum(),
                 });
             }
 
