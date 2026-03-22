@@ -19,7 +19,7 @@ mod tokeniser;
 #[macro_use]
 mod regexes;
 use hunk::Hunk;
-use types::*;
+use types::Bytes;
 
 fn strip_style<'a>(string: Bytes<'a>, replace: &[u8]) -> Cow<'a, bstr::BStr> {
     match byte_regex!(r"\x1b\[[\d;]*m".replace_all(string, replace)) {
@@ -215,7 +215,7 @@ impl StyleOpts {
 }
 
 
-fn _main() -> Result<ExitCode> {
+fn main_internal() -> Result<ExitCode> {
     let mut args = Cli::parse();
 
     {
@@ -223,11 +223,11 @@ fn _main() -> Result<ExitCode> {
             !x.as_ref().starts_with('-')
         }
 
-        if args.file2.as_ref().map(not_flag) == Some(false) {
+        if args.file2.as_ref().is_some_and(|x| !not_flag(x)) {
             args.extras.insert(0, args.file2.take().unwrap());
         }
 
-        if args.file1.as_ref().map(not_flag) == Some(false) {
+        if args.file1.as_ref().is_some_and(|x| !not_flag(x)) {
             args.extras.insert(0, args.file1.take().unwrap());
             args.file1 = args.file2.take();
         }
@@ -269,10 +269,10 @@ fn _main() -> Result<ExitCode> {
 
         if let Some(filter) = args.filter {
             if args.label.is_empty() {
-                args.label.push(format!("{} | {}", file1, filter));
+                args.label.push(format!("{file1} | {filter}"));
             }
             if args.label.len() < 2 {
-                args.label.push(format!("{} | {}", file2, filter));
+                args.label.push(format!("{file2} | {filter}"));
             }
 
             // shell quote
@@ -287,7 +287,7 @@ fn _main() -> Result<ExitCode> {
 
         } else {
             for l in args.label {
-                args.extras.push(format!("--label={}", l))
+                args.extras.push(format!("--label={l}"));
             }
             diff_args = vec!["diff"];
             diff_args.extend(args.extras.iter().map(|x| x.as_str()));
@@ -592,7 +592,7 @@ fn _main() -> Result<ExitCode> {
 }
 
 fn main() -> Result<ExitCode> {
-    let result = _main();
+    let result = main_internal();
 
     if let Err(e) = &result
     && let Some(e) = e.downcast_ref::<std::io::Error>()

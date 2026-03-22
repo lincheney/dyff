@@ -1,4 +1,4 @@
-use super::types::*;
+use super::types::Bytes;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Style<'a> {
@@ -141,10 +141,10 @@ pub fn format_lineno(
     format!(
         "{}{:<lineno_width$}{}{}{:<lineno_width$}{} ",
         left_style.unwrap_or(LINENO_DIFF.0),
-        num1.as_ref().map(|n| n.as_ref()).unwrap_or(""),
+        num1.as_ref().map_or("", |n| n.as_ref()),
         bar_style.unwrap_or(LINENO_BAR),
         right_style.unwrap_or(LINENO_DIFF.1),
-        num2.as_ref().map(|n| n.as_ref()).unwrap_or(""),
+        num2.as_ref().map_or("", |n| n.as_ref()),
         bar_style.unwrap_or(LINENO_BAR),
     )
 }

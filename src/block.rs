@@ -3,7 +3,7 @@ use std::cmp::{min};
 use anyhow::{Result};
 use super::part::Part;
 use super::style;
-use super::types::*;
+use super::types::Bytes;
 use super::whitespace::CheckAllWhitespace;
 
 fn find_common_prefix_length(a: &[Bytes], b: &[Bytes]) -> usize {
@@ -50,7 +50,7 @@ impl Block<'_> {
         let mut parts = Vec::<Part>::new();
         let mut join = false;
 
-        for part in self.parts.iter() {
+        for part in &self.parts {
             if part.matches {
 
                 let total_length = part.slices[0].len();
@@ -149,7 +149,7 @@ impl Block<'_> {
             }
 
             if merge {
-                prev.parts.extend(block.parts)
+                prev.parts.extend(block.parts);
             } else {
                 merged.push(prev);
                 prev = block;
@@ -207,7 +207,7 @@ impl Block<'_> {
 
         // match leading whitespace in each block
         // since it got treated as junk during the diff
-        for block in blocks.iter_mut() {
+        for block in &mut blocks {
             let first = &block.parts[0];
             if !first.matches {
                 // find common prefix
@@ -223,13 +223,13 @@ impl Block<'_> {
 
         let mut blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
 
-        for block in blocks.iter_mut() {
+        for block in &mut blocks {
             super::shift::shift_parts(&mut block.parts);
             block.squeeze_parts();
         }
 
         // if score is too low, make the whole thing non matching
-        for block in blocks.iter_mut() {
+        for block in &mut blocks {
             let score = block.score();
             if 0. < score && score < Block::CUTOFF {
                 let first = &block.parts[0];
@@ -250,7 +250,7 @@ impl Block<'_> {
         // merge again
         let mut blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
 
-        for block in blocks.iter_mut() {
+        for block in &mut blocks {
             // try to do a very simple diff for low scoring blocks
 
             if block.parts.len() == 1 && block.score() == 0. {
@@ -286,7 +286,7 @@ impl Block<'_> {
         }
 
         // remove empty ones
-        for block in blocks.iter_mut() {
+        for block in &mut blocks {
             block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
             block.merge_adjacent_parts();
         }
@@ -319,7 +319,7 @@ impl Block<'_> {
             // this is entirely matching
 
             let mut newline = true;
-            for part in self.parts.iter() {
+            for part in &self.parts {
                 if !part.matches {
                     continue
                 }
@@ -381,7 +381,7 @@ impl Block<'_> {
             let mut newline = true;
             let mut insert = false;
 
-            for part in self.parts.iter() {
+            for part in &self.parts {
                 if !inline && part.is_empty(i) {
                     insert = score > 0.;
                     continue

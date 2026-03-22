@@ -1,6 +1,6 @@
 use super::part::Part;
 use std::collections::VecDeque;
-use super::types::*;
+use super::types::Bytes;
 
 const WORD_BREAK: usize = 0;
 const NEWLINE: usize = 1;
@@ -42,7 +42,7 @@ fn score_words(
 
     let mut skip = 0;
     let mut scores = [0; NUM_SCORES];
-    for &(ix, p) in PREFIXES.iter() {
+    for &(ix, p) in &PREFIXES {
         let count = words.iter().skip(skip).take_while(|w| p.contains(&w[0])).count();
         skip += count;
         scores[ix] += count * 2;
@@ -52,7 +52,7 @@ fn score_words(
     let mut done = false;
     while !done {
         let mut total = 0;
-        for &(ix, p) in SUFFIXES.iter() {
+        for &(ix, p) in &SUFFIXES {
             let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
             skip += count;
             scores[ix] += count * 2;
@@ -83,7 +83,7 @@ fn score_words(
                 scores[NEWLINE] += 1;
                 // prefix_scores[0] += 1;
             } else {
-                for &(ix, p) in EXT_PREFIXES.iter() {
+                for &(ix, p) in &EXT_PREFIXES {
                     if p == ext {
                         scores[ix] += 1;
                         break;
@@ -110,7 +110,7 @@ fn score_words(
             scores[0] += 1;
         } else {
             let ext = part.parent.words[i][end];
-            for &(ix, s) in EXT_SUFFIXES.iter() {
+            for &(ix, s) in &EXT_SUFFIXES {
                 if s == ext {
                     scores[ix] += 1;
                     break;

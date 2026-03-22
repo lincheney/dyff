@@ -4,7 +4,7 @@ use super::line_differ::LineDiffer;
 use super::part::Part;
 use super::block::Block;
 use super::whitespace::CheckAllWhitespace;
-use super::types::*;
+use super::types::Bytes;
 use super::tokeniser::{Token, Tokeniser};
 
 #[derive(Debug)]
@@ -62,11 +62,11 @@ impl<'a> BlockMaker<'a> {
         }
 
         Self{
+            line_numbers,
             words,
             tokens,
             line_tokens,
             tokeniser,
-            line_numbers,
             word_to_line,
             line_to_word,
         }
@@ -126,7 +126,7 @@ impl<'a> BlockMaker<'a> {
                         // diff for indentation instead
                         continue
                     }
-                };
+                }
             }
 
             if previ < left.start || prevj < right.start {

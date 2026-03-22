@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::io::{BufWriter, Write};
 use anyhow::{Result};
 use super::style::Style;
-use super::types::*;
+use super::types::{Line, Bytes};
 use super::block_maker::BlockMaker;
 
 pub type MergeMarkers = HashMap<(usize, usize), String>;
@@ -50,7 +50,7 @@ impl Hunk {
 
             let len = blocks.len();
             let last = [0, 1].map(|i| {
-                blocks.iter().enumerate().rfind(|(_i, b)| !b.is_empty(i)).map(|(i, _b)| i).unwrap_or(len)
+                blocks.iter().enumerate().rfind(|(_i, b)| !b.is_empty(i)).map_or(len, |(i, _b)| i)
             });
 
             for (i, block) in blocks.iter().enumerate() {
