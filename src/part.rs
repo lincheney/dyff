@@ -20,6 +20,14 @@ impl Part<'_> {
         &self.parent.words[i][self.slices[i].clone()]
     }
 
+    pub fn tokens(&self, i: usize) -> &[crate::tokeniser::Token] {
+        &self.parent.tokens[i][self.slices[i].clone()]
+    }
+
+    pub fn is_ascii_whitespace(&self, i: usize) -> bool {
+        self.get(i).iter().all(|p| p.is_ascii_whitespace())
+    }
+
     fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=Bytes<'_>> {
         self.get(i).iter().copied().filter(|word| !word.is_ascii_whitespace())
     }

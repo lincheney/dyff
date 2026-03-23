@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::{BufWriter, Write};
 use std::cmp::{min};
 use anyhow::{Result};
@@ -6,7 +7,7 @@ use super::style;
 use super::types::Bytes;
 use super::whitespace::CheckAllWhitespace;
 
-fn find_common_prefix_length(a: &[Bytes], b: &[Bytes]) -> usize {
+fn find_common_prefix_length<T: PartialEq>(a: &[T], b: &[T]) -> usize {
     a.iter().zip(b).take_while(|(a, b)| a == b).count()
 }
 
@@ -205,18 +206,82 @@ impl Block<'_> {
             blocks.last_mut().unwrap().parts.push(part);
         }
 
+        // calculate indents
+        let mut indents = HashMap::new();
+        for block in &blocks {
+            if !block.is_empty(0) && !block.is_empty(1) {
+                for part in &block.parts {
+                    if !part.matches && part.starts_line(0) && part.starts_line(1) {
+                        let left_ws = part.tokens(0).iter().take_while(|t| t.is_ascii_whitespace()).count();
+                        let right_ws = part.tokens(1).iter().take_while(|t| t.is_ascii_whitespace()).count();
+                        if left_ws != right_ws {
+                            indents.insert(part.first_lineno(0), right_ws as isize - left_ws as isize);
+                        }
+                    }
+                }
+            }
+        }
+
         // match leading whitespace in each block
         // since it got treated as junk during the diff
         for block in &mut blocks {
             let first = &block.parts[0];
             if !first.matches {
                 // find common prefix
-                let prefix = find_common_prefix_length(first.get(0), first.get(1));
+                let prefix = find_common_prefix_length(first.tokens(0), first.tokens(1));
                 if prefix != 0 {
-                    let (mut first, second) = first.partition_from_start(prefix, prefix, false);
+                    let lineno = first.first_lineno(0);
+                    let (mut first, mut second) = first.partition_from_start(prefix, prefix, false);
+                    // first part is matching
                     first.matches = true;
                     block.parts[0] = first;
-                    block.parts.insert(1, second);
+
+                    // check changed indentation
+                    let mut indent = indents.get(&lineno).copied().unwrap_or(0);
+                    // check prev line
+                    let expected_indent = if lineno > 0 { indents.get(&(lineno-1)) } else { None };
+                    // check next line
+                    let expected_indent = expected_indent.or_else(|| indents.get(&(lineno+1)) );
+                    // check prev prev line
+                    let expected_indent = expected_indent.or_else(|| if lineno > 1 { indents.get(&(lineno-2)) } else { None } );
+                    // check next next line
+                    let expected_indent = expected_indent.or_else(|| indents.get(&(lineno+2)) );
+
+                    if let Some(expected_indent) = expected_indent.copied() && indent * expected_indent > 0 {
+                        // indent is wrong but is in the right direction at least
+
+                        if indent.abs() > expected_indent.abs() {
+                            // too much indentation! give some back
+                            indent = expected_indent;
+                            indents.insert(lineno, indent);
+
+                        } else if indent.abs() < expected_indent.abs() {
+                            // not enough indentation! can we take some from the next part?
+                            let missing = (expected_indent.abs() - indent.abs()) as usize;
+                            if let Some(next_part) = block.parts.get_mut(1)
+                                && next_part.matches
+                                && next_part.tokens(0)[..missing].iter().all(|t| t.is_ascii_whitespace())
+                            {
+                                next_part.slices = next_part.shift_slice(missing as _, 0);
+                                second.slices = second.shift_slice(0, missing as _);
+                                indent = expected_indent;
+                                indents.insert(lineno, indent);
+                            }
+                        }
+                    }
+
+                    // check for indentation and split it out
+                    // so it can be shifted to the start
+                    // do indentation splitting only if there is more than one
+                    if indent.abs() > 1 {
+                        let (ws, non_ws) = second.partition_from_start(0.max(-indent) as usize, 0.max(indent) as usize, false);
+                        let (ws, mut empty) = ws.partition_from_end(0, 0, false);
+                        empty.matches = true;
+                        block.parts.splice(1..1, [ws, empty, non_ws]);
+                    } else {
+                        block.parts.insert(1, second);
+                    }
+
                 }
             }
         }
