@@ -48,15 +48,27 @@ impl Hunk {
             let maker = BlockMaker::new(self, line_numbers, tokeniser);
             let blocks = maker.make_block().split_block();
 
-            let len = blocks.len();
-            let last = [0, 1].map(|i| {
-                blocks.iter().enumerate().rfind(|(_i, b)| !b.is_empty(i)).map_or(len, |(i, _b)| i)
-            });
-
-            for (i, block) in blocks.iter().enumerate() {
-                block.print(stdout, merge_markers, style, style_opts, i == last[0] || i == last[1], super::style::format_lineno)?;
+            for block in &blocks {
+                block.print(stdout, merge_markers, style, style_opts, super::style::format_lineno)?;
                 stdout.flush()?;
             }
+
+            let has_newline = [0, 1].map(|i| {
+                blocks.iter().flat_map(|b| &b.parts).rfind(|p| !p.is_empty(i)).is_none_or(|p| p.get(i).ends_with(&[b"\n".into()]))
+            });
+            // print the no newline message
+            match has_newline {
+                [true, true] => (),
+                [false, false] => {
+                    stdout.write_all(style_opts.diff_context.as_bytes())?;
+                    stdout.write_all(b"\n\\ No newline at end of file\n")?;
+                },
+                _ => {
+                    stdout.write_all(style.diff_non_matching[if has_newline[1] { 0 } else { 1 }])?;
+                    stdout.write_all(b"\\ No newline at end of file\n")?;
+                },
+            }
+
         }
         Ok(())
     }
@@ -95,7 +107,7 @@ impl Hunk {
         let maker = BlockMaker::new(&hunk, [1, 1], tokeniser);
         let blocks = maker.make_block().split_block();
         for block in blocks {
-            block.print(stdout, None, style, style_opts, false, |num: [usize; 2], _, _, _, _| -> &'a str {
+            block.print(stdout, None, style, style_opts, |num: [usize; 2], _, _, _, _| -> &'a str {
                 match num {
                     [_, 0] => prefix.0,
                     [0, _] => prefix.1,

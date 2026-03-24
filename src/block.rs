@@ -375,7 +375,6 @@ impl Block<'_> {
         merge_markers: Option<&super::hunk::MergeMarkers>,
         style: style::Style,
         style_opts: &super::StyleOpts,
-        last: bool,
         format_lineno: F,
     ) -> Result<()> {
 
@@ -432,14 +431,6 @@ impl Block<'_> {
 
             }
 
-            // print the no newline message
-            if last
-            && let Some(part) = self.parts.iter().rev().find(|p| !p.is_empty(0))
-            && !part.get(0).ends_with(&[b"\n".into()]) {
-                stdout.write_all(style_opts.diff_context.as_bytes())?;
-                stdout.write_all(b"\\ No newline at end of file\n")?;
-            }
-
             return Ok(())
         }
 
@@ -471,8 +462,15 @@ impl Block<'_> {
                     style.diff_matching
                 };
 
-                let inner_loop = if inline && !part.matches { 0..=1 } else { i..=i };
-                for i in inner_loop {
+                let inner_loop: &[usize] = if !inline || part.matches {
+                    &[i]
+                } else if !part.get(0).is_empty() && !part.get(1).is_empty() && !part.is_ascii_whitespace(0) && part.is_ascii_whitespace(1) {
+                    &[1, 0]
+                } else {
+                    &[0, 1]
+                };
+
+                for &i in inner_loop {
 
                     let words = part.get(i);
                     if words.is_empty() {
@@ -547,26 +545,6 @@ impl Block<'_> {
                             }
                             stdout.write_all(word)?;
                         }
-                    }
-                }
-            }
-
-            // print the no newline message
-            if last {
-                let inner_loop = if inline { 0..=1 } else { i..=i };
-                let newline = [0, 1].map(|i| {
-                    self.parts.iter().rfind(|p| !p.is_empty(i)).take_if(|p| p.get(i).ends_with(&[b"\n".into()])).is_some()
-                });
-
-                let mut printed_newline = false;
-                for i in inner_loop {
-                    if !self.is_empty(i) && !newline[i] {
-                        stdout.write_all(style.diff_non_matching[i])?;
-                        if (!inline || !newline[1-i]) && !printed_newline {
-                            stdout.write_all(b"\n")?;
-                            printed_newline = true;
-                        }
-                        stdout.write_all(b"\\ No newline at end of file\n")?;
                     }
                 }
             }
