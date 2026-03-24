@@ -5,6 +5,8 @@ use super::style::Style;
 use super::types::{Line, Bytes};
 use super::block_maker::BlockMaker;
 
+const NO_NEWLINE: &[u8] = b"\\ No newline at end of file\n";
+
 pub type MergeMarkers = HashMap<(usize, usize), String>;
 
 #[derive(Debug)]
@@ -54,18 +56,25 @@ impl Hunk {
             }
 
             let has_newline = [0, 1].map(|i| {
-                blocks.iter().flat_map(|b| &b.parts).rfind(|p| !p.is_empty(i)).is_none_or(|p| p.get(i).ends_with(&[b"\n".into()]))
+                blocks.iter().flat_map(|b| &b.parts).rfind(|p| !p.is_empty(i)).is_none_or(|p| p.ends_with_newline(i))
             });
             // print the no newline message
             match has_newline {
                 [true, true] => (),
                 [false, false] => {
-                    stdout.write_all(style_opts.diff_context.as_bytes())?;
-                    stdout.write_all(b"\n\\ No newline at end of file\n")?;
+                    if style.inline {
+                        stdout.write_all(style_opts.diff_context.as_bytes())?;
+                        stdout.write_all(NO_NEWLINE)?;
+                    } else {
+                        stdout.write_all(style.diff_matching[0])?;
+                        stdout.write_all(NO_NEWLINE)?;
+                        stdout.write_all(style.diff_matching[1])?;
+                        stdout.write_all(NO_NEWLINE)?;
+                    }
                 },
                 _ => {
                     stdout.write_all(style.diff_non_matching[if has_newline[1] { 0 } else { 1 }])?;
-                    stdout.write_all(b"\\ No newline at end of file\n")?;
+                    stdout.write_all(NO_NEWLINE)?;
                 },
             }
 

@@ -431,6 +431,10 @@ impl Block<'_> {
 
             }
 
+            if !newline {
+                stdout.write_all(b"\n")?;
+            }
+
             return Ok(())
         }
 
@@ -547,6 +551,10 @@ impl Block<'_> {
                         }
                     }
                 }
+            }
+
+            if !newline {
+                stdout.write_all(b"\n")?;
             }
 
         }

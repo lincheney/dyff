@@ -67,6 +67,10 @@ impl Part<'_> {
         self.get_non_whitespace(i).count()
     }
 
+    pub fn ends_with_newline(&self, i: usize) -> bool {
+        self.get(i).ends_with(&[b"\n".into()])
+    }
+
     pub fn inlineable(&self) -> bool {
         self.matches
         || self.is_empty(0)
