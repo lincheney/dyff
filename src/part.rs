@@ -68,7 +68,7 @@ impl Part<'_> {
     }
 
     pub fn inlineable(&self) -> bool {
-        (self.matches && self.get(0) != [b"\n"])
+        self.matches
         || self.is_empty(0)
         || self.is_empty(1)
         || (

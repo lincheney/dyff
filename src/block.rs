@@ -444,8 +444,13 @@ impl Block<'_> {
         }
 
         let score = self.score();
-        let inline = style.inline && (score > Block::CUTOFF || self.parts.iter().all(|p| p.inlineable()));
-        // let inline = style.inline && self.parts.iter().all(|p| p.inlineable());
+        let inline = style.inline && (
+            score > Block::CUTOFF || (
+                self.parts.iter().all(|p| p.inlineable())
+                // there must be some non whitespace matching part
+                && self.parts.iter().any(|p| p.matches && (!p.is_ascii_whitespace(0) || !p.is_ascii_whitespace(1)))
+            )
+        );
 
         let outer_loop = if inline { 0..=0 } else { 0..=1 };
         for i in outer_loop {
