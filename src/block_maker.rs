@@ -1,3 +1,4 @@
+use bstr::ByteSlice;
 use super::hunk::{Hunk};
 use super::word_differ::WordDiffer;
 use super::line_differ::LineDiffer;
@@ -6,6 +7,8 @@ use super::block::Block;
 use super::whitespace::CheckAllWhitespace;
 use super::types::Bytes;
 use super::tokeniser::{Token, Tokeniser};
+
+const MAX_WORD_LEN: usize = 4;
 
 #[derive(Debug)]
 pub struct BlockMaker<'a> {
@@ -48,7 +51,22 @@ impl<'a> BlockMaker<'a> {
                     r")+"
                     "|."
                     "|\n",
-                    |r| { w.extend(r.find_iter(line).map(|m| Bytes::from(m.as_bytes()))) }
+                    |r| {
+                        for m in r.find_iter(line) {
+                            let word = Bytes::from(m.as_bytes());
+                            if word.len() > MAX_WORD_LEN && matches!(word[0], b'a'..=b'z' | b'A'..=b'Z') {
+                                w.extend(
+                                    word.split_str(b"_")
+                                        .flat_map(|w| w.chunks(MAX_WORD_LEN).chain(std::iter::once(b"_" as _)))
+                                        .map(Bytes::from)
+                                );
+                                // remove the extra _ at the end
+                                w.pop();
+                            } else {
+                                w.push(word);
+                            }
+                        }
+                    }
                 );
                 tokens[i].extend(w[oldlen..].iter().map(|x| tokeniser.map(x)));
                 for _ in oldlen..w.len() {
