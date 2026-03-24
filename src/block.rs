@@ -230,15 +230,14 @@ impl Block<'_> {
                 // find common prefix
                 let prefix = find_common_prefix_length(first.tokens(0), first.tokens(1));
                 if prefix != 0 {
-                    let has_other_matches = block.parts.iter().skip(1).any(|p| p.matches && p.get(0) != [b"\n"]);
-
+                    let score = block.score();
                     let lineno = first.first_lineno(0);
                     let (mut first, mut second) = first.partition_from_start(prefix, prefix, false);
                     // first part is matching
                     first.matches = true;
                     block.parts[0] = first;
 
-                    if !has_other_matches {
+                    if score < Block::CUTOFF {
                         block.parts.insert(1, second);
                         continue
                     }
