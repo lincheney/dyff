@@ -468,7 +468,6 @@ impl Block<'_> {
 
                 let inner_loop = if inline && !part.matches { 0..=1 } else { i..=i };
                 for i in inner_loop {
-                    stdout.write_all(highlight[i])?;
 
                     let words = part.get(i);
                     if words.is_empty() {
@@ -476,6 +475,7 @@ impl Block<'_> {
                         continue
                     }
 
+                    stdout.write_all(highlight[i])?;
                     let last = words.len() - 1;
                     for (j, word) in words.iter().enumerate() {
 
