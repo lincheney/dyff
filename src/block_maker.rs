@@ -54,7 +54,7 @@ impl<'a> BlockMaker<'a> {
                     |r| {
                         for m in r.find_iter(line) {
                             let word = Bytes::from(m.as_bytes());
-                            if word.len() > MAX_WORD_LEN && matches!(word[0], b'a'..=b'z' | b'A'..=b'Z') {
+                            if word.len() > MAX_WORD_LEN && word[0].is_ascii_alphabetic() {
                                 w.extend(
                                     word.split_str(b"_")
                                         .flat_map(|w| w.chunks(MAX_WORD_LEN).chain(std::iter::once(b"_" as _)))

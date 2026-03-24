@@ -1,0 +1,39 @@
+commit 3ad8a401bccd4369cae1015fd21acebacb1b118f
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sat Feb 28 13:51:04 2026 +1100
+
+    prevent deadlock by taking lua lock before fork lock
+
+diff --git a/src/shell/externs/fork.rs b/src/shell/externs/fork.rs
+index 3066f53..fc2770d 100644
+--- a/src/shell/externs/fork.rs
++++ b/src/shell/externs/fork.rs
+@@ -42,21 +42,27 @@ fn new() -> Option<Self> {
+             // i can take a lock on lua by acquiring a ref to the app data
+             // then i just have to hold on to it as the ref holds the lock guard
+-            state.ui.lua.set_app_data(());
+-            // ui.lua.gc_stop();
+-            let app_data = state.ui.lua.app_data_ref().unwrap();
+-            let lua = Some((
+-                unsafe {
+-                    UnsafeSend::new(transmute::<mlua::AppDataRef<'_, ()>, mlua::AppDataRef<'static, ()>>(app_data))
+-                },
+-                state.ui.lua.clone(),
+-            ));
++            let lua = {
++                let state = state.read();
++                state.ui.lua.set_app_data(());
++                // ui.lua.gc_stop();
++                let app_data = state.ui.lua.app_data_ref().unwrap();
++                Some((
++                    unsafe {
++                        UnsafeSend::new(transmute::<mlua::AppDataRef<'_, ()>, mlua::AppDataRef<'static, ()>>(app_data))
++                    },
++                    state.ui.lua.clone(),
++                ))
++            };
++
++            let fork_lock = super::FORK_LOCK.write();
+ 
+             Some(Self {
+                 pid: std::process::id(),

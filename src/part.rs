@@ -105,6 +105,15 @@ impl Part<'_> {
         self.slices[i].is_empty()
     }
 
+    pub fn shiftable_side(&self) -> Option<usize> {
+        // must be one empty and one non empty
+        match (self.is_empty(0), self.is_empty(1)) {
+            (true, false) if !self.matches => Some(1),
+            (false, true) if !self.matches => Some(0),
+            _ => None,
+        }
+    }
+
     pub fn shift_slice(&self, a: isize, b: isize) -> [std::ops::Range<usize>; 2] {
         [
             (self.slices[0].start as isize + a) as usize .. (self.slices[0].end as isize + b) as usize,
@@ -205,7 +214,8 @@ impl std::fmt::Debug for Part<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            "Part(\"{}\", \"{}\")",
+            "{}(\"{}\", \"{}\")",
+            if self.matches { "Match" } else { "NonMatch" },
             bstr::BString::new(bstr::concat(&self.parent.words[0][self.slices[0].clone()])),
             bstr::BString::new(bstr::concat(&self.parent.words[1][self.slices[1].clone()])),
         )

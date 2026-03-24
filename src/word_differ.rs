@@ -266,7 +266,7 @@ impl<'a> WordDiffer<'a> {
                 &j[start..end]
             });
 
-            for &j in j.iter() {
+            for &j in *j {
                 // a[i] matches b[j]
                 let k = if j > blo && let j = j2len[j-1-blo] && j.generation == generation {
                     j.len + 1

@@ -230,11 +230,18 @@ impl Block<'_> {
                 // find common prefix
                 let prefix = find_common_prefix_length(first.tokens(0), first.tokens(1));
                 if prefix != 0 {
+                    let has_other_matches = block.parts.iter().skip(1).any(|p| p.matches && p.get(0) != [b"\n"]);
+
                     let lineno = first.first_lineno(0);
                     let (mut first, mut second) = first.partition_from_start(prefix, prefix, false);
                     // first part is matching
                     first.matches = true;
                     block.parts[0] = first;
+
+                    if !has_other_matches {
+                        block.parts.insert(1, second);
+                        continue
+                    }
 
                     // check changed indentation
                     let mut indent = indents.get(&lineno).copied().unwrap_or(0);
@@ -260,6 +267,7 @@ impl Block<'_> {
                             let missing = (expected_indent.abs() - indent.abs()) as usize;
                             if let Some(next_part) = block.parts.get_mut(1)
                                 && next_part.matches
+                                && next_part.tokens(0).len() > missing
                                 && next_part.tokens(0)[..missing].iter().all(|t| t.is_ascii_whitespace())
                             {
                                 next_part.slices = next_part.shift_slice(missing as _, 0);
