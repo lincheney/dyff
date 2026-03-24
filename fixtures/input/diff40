@@ -1,0 +1,14 @@
++++ b/rust/src/gui/mod.rs
+@@ -623,22 +623,23 @@ pub fn set_paint_block_custom(&mut self, custom: bool) {
+ 
+ impl Engine {
+-                {
+-                    return
+-                }
+-            }
++                // {
++                    // return
++                // }
++            // }
+ 
+             if let Some(gui) = self.gui.upgrade().filter(|gui| gui.is_realized()) {

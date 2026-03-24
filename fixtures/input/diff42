@@ -1,0 +1,25 @@
+diff --git a/src/shift.rs b/src/shift.rs
+index 41a2ddf..d624acb 100644
+--- a/src/shift.rs
++++ b/src/shift.rs
+@@ -2,17 +2,29 @@
+ use std::collections::VecDeque;
+ use super::types::*;
+ 
+-const NEWLINE: usize = 0;
+-const GOOD_SUFFIX: usize = 1;
+-// const GOOD_PREFIX: usize = 2;
+-const WHITESPACE_SUFFIX: usize = 3;
+-const WHITESPACE_PREFIX: usize = 4;
+-const OTHER_SUFFIX: usize = 5;
+-const OTHER_PREFIX: usize = 6;
+-const NUM_SCORES: usize = 7;
++const WORD_BREAK: usize = 0;
++const NEWLINE: usize = 1;
++const GOOD_SUFFIX: usize = 2;
++// const GOOD_PREFIX: usize = 3;
++const WHITESPACE_SUFFIX: usize = 4;
++const WHITESPACE_PREFIX: usize = 5;
++const OTHER_SUFFIX: usize = 6;
++const OTHER_PREFIX: usize = 7;
++const NUM_SCORES: usize = 8;
