@@ -405,9 +405,9 @@ fn main_internal() -> Result<ExitCode> {
 
 
         if let Some(captures) =
-            byte_regex!("^(?<header>diff( -r| --recursive)?) (?<filename1>[^\"\\s-][^\"\\s]+|\"(\\\\.|.)*\") (?<filename2>[^\"\\s]+|\"(\\\\.|.)*\")(?<trailer>.*)".captures(&stripped))
+            byte_regex!("^(?<header>diff( --git| --cc)) (?<filename1>a/.*) (?<filename2>b/.*)(?<trailer>.*)".captures(&stripped))
             .or_else(||
-                byte_regex!("^(?<header>diff( --git| --cc)) (?<filename1>a/.*) (?<filename2>b/.*)(?<trailer>.*)".captures(&stripped))
+                byte_regex!("^(?<header>diff( -\\S+| '-(\\\\.|.)*')*) (?<filename1>[^\"\\s-][^\"\\s]+|\"(\\\\.|.)*\") (?<filename2>[^\"\\s]+|\"(\\\\.|.)*\")(?<trailer>.*)".captures(&stripped))
             )
         {
             if let Some(mut hunk) = hunk {
