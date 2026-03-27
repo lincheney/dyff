@@ -430,7 +430,7 @@ fn main_internal() -> Result<ExitCode> {
             continue
         }
 
-        if hunk.is_none() {
+        if hunk.as_ref().is_none_or(|h| h.is_empty()) {
             if let Some(captures) = byte_regex!(r"^(?<sign>---|\+\+\+) ([ab]/)?(?<filename>[^\t]*)(?<trailer>\t.*)?".captures(&stripped)) {
                 if &captures["sign"] == b"---" {
                     filename = Some(captures["filename"].to_owned().into());
@@ -447,7 +447,9 @@ fn main_internal() -> Result<ExitCode> {
                 }
                 continue
             }
+        }
 
+        if hunk.is_none() {
             args.style.print_background(&mut stdout)?;
             if byte_regex!(r"^commit [0-9a-f]+".is_match(&stripped)) {
                 stdout.write_all(args.style.commit.as_bytes())?;
