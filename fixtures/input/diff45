@@ -1,0 +1,39 @@
+Only in .spaces/test/docs: hello
+Only in ./docs: lua_api.md
+File ./.git is a directory while file .spaces/test/.git is a regular file
+Only in .: .gitignore
+Only in .: README.md
+diff -ru ./lua/wish.lua .spaces/test/lua/wish.lua
+--- ./lua/wish.lua	2026-03-27 22:12:45.422714868 +1100
++++ .spaces/test/lua/wish.lua	2026-03-28 02:15:16.935325856 +1100
+@@ -2,7 +2,6 @@
+ wish.iter = require('wish/iter')
+ wish.table = require('wish/table')
+ wish.style = require('wish/style')
+-wish.utf8 = require('wish/utf8')
+ require('wish/keybind')
+ require('wish/syntax-highlight')
+ require('wish/live-preview')
+Only in .: .spaces
+Only in ./src: async_runtime.rs
+diff --show-c-function '--exclude=a'\'' sd' -r --unified -r ./src/canceller.rs .spaces/test/src/canceller.rs
+--- ./src/canceller.rs	2026-01-09 03:44:41.613107733 +1100
++++ .spaces/test/src/canceller.rs	2026-03-28 02:12:14.811297849 +1100
+@@ -5,12 +5,6 @@
+ pub struct Cancellable(oneshot::Receiver<()>);
+ 
+ impl Cancellable {
+-    pub async fn run<T, F: Future<Output=T>>(&mut self, f: F) -> Option<T> {
+-        tokio::select!(
+-            result = f => Some(result),
+-            _ = &mut self.0 => None,
+-        )
+-    }
+ }
+ 
+ pub fn new() -> (Canceller, Cancellable) {
+Only in ./src: event_stream.rs
+Only in ./src: fork_lock.rs
+File ./src/utils/const_hash_map.rs is a regular file while file .spaces/test/src/utils/const_hash_map.rs is a character special file
+Only in ./src/utils: strong_weak_wrapper.rs
+Only in ./src: utils.rs
