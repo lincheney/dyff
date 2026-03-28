@@ -17,7 +17,7 @@ fn find_common_suffix_length(a: &[Bytes], b: &[Bytes]) -> usize {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Block<'a> {
     pub parts: Vec<Part<'a>>,
 }
@@ -187,6 +187,70 @@ impl Block<'_> {
 
     }
 
+    fn partition_blocks_on_score(blocks: Vec<Block>, cutoff: f64) -> Vec<Block> {
+        // if score is too low, make the whole thing non matching
+
+        let mut new = vec![];
+
+        for mut block in blocks {
+            // if this block only additions or only removals, then don't worry about the score
+            let mut nonmatches = block.parts.iter().filter(|p| !p.matches);
+            if nonmatches.clone().any(|p| !p.is_empty(0))
+                && nonmatches.any(|p| !p.is_empty(1))
+                && let score = block.score()
+                && 0. < score && score < cutoff
+            {
+                eprintln!("DEBUG(purism)\t{}\t= {:?}", stringify!(score), score);
+                // low score
+
+                // try to make new blocks with the best matching parts
+                while let Some(best) = block.parts.iter().max_by_key(|p| (p.matches && !p.is_ascii_whitespace(0), p.word_len(0))) {
+                    let parent = best.parent;
+
+                    let starts = [0, 1].map(|i| best.parent.get_wordno(i, best.first_lineno(i)).max(block.parts[0].slices[i].start) );
+                    let ends = [0, 1].map(|i| best.parent.get_wordno(i, best.last_lineno(i) + 1).min(block.parts.last().unwrap().slices[i].end) );
+
+                    let mut newblock = Block::default();
+                    block.parts = block.parts.into_iter()
+                        .flat_map(|part| {
+                            let (left, rest) = part.partition(starts[0], starts[1], false);
+                            let (mut newpart, right) = rest.partition(ends[0], ends[1], false);
+
+                            if !newpart.is_empty(0) || !newpart.is_empty(1) {
+                                newpart.matches = newpart.tokens(0) == newpart.tokens(1);
+                                newblock.parts.push(newpart);
+                            }
+
+                            [left, right]
+                        })
+                        .filter(|part| !part.is_empty(0) || !part.is_empty(1))
+                        .collect();
+
+                    newblock.parts.sort_by_key(|part| (part.slices[0].start, part.slices[1].start));
+
+                    let score = newblock.score();
+                    if 0. < score && score < cutoff {
+                        // bad block, add the whole thing
+                        let part = parent.make_part(false, starts[0]..ends[0], starts[1]..ends[1]);
+                        newblock.parts.clear();
+                        newblock.parts.push(part);
+                        new.push(newblock);
+                    } else {
+                        newblock.merge_adjacent_parts();
+                        new.push(newblock);
+                    }
+                }
+
+            } else {
+                new.push(block);
+            }
+
+        }
+
+        new.sort_by_key(|block| (block.parts[0].slices[0].start, block.parts[0].slices[1].start));
+        new
+    }
+
     fn last_non_empty(&self, i: usize) -> Option<&Part<'_>> {
         self.parts.iter().rev().find(|p| !p.is_empty(i))
     }
@@ -195,7 +259,7 @@ impl Block<'_> {
         self.squeeze_parts();
         super::shift::shift_parts(&mut self.parts);
 
-        let mut blocks = vec![Block{parts: vec![]}];
+        let mut blocks = vec![Block::default()];
 
         // group parts based on line numbers
         for part in self.parts {
@@ -210,7 +274,7 @@ impl Block<'_> {
                 && block.last_non_empty(1).map(|last| last.last_lineno(1)) != Some(part.first_lineno(1))
             {
                 // different line
-                blocks.push(Block{parts: vec![]});
+                blocks.push(Block::default());
             }
             blocks.last_mut().unwrap().parts.push(part);
         }
@@ -313,37 +377,18 @@ impl Block<'_> {
         }
 
         // if score is too low, make the whole thing non matching
-        for block in &mut blocks {
-            // if this block only additions or only removals, then don't worry about the score
-            let mut nonmatches = block.parts.iter().filter(|p| !p.matches);
-            if nonmatches.all(|p| p.is_empty(0)) || nonmatches.all(|p| p.is_empty(1)) {
-                continue
-            }
-
-            let score = block.score();
-            if 0. < score && score < Block::CUTOFF {
-                let first = &block.parts[0];
-                let part = Part{
-                    parent: first.parent,
-                    matches: false,
-                    slices: [
-                        first.slices[0].start .. block.parts.last().unwrap().slices[0].end,
-                        first.slices[1].start .. block.parts.last().unwrap().slices[1].end,
-                    ],
-                };
-
-                block.parts.clear();
-                block.parts.push(part);
-            }
-        }
+        let blocks = Block::partition_blocks_on_score(blocks, Block::CUTOFF);
 
         // merge again
         let mut blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
+        for block in &mut blocks {
+            block.merge_adjacent_parts();
+        }
 
         for block in &mut blocks {
             // try to do a very simple diff for low scoring blocks
 
-            if block.parts.len() == 1 && block.score() == 0. {
+            if block.parts.len() == 1 && block.score() == 0. && block.parts[0].single_line(0) {
                 let part = &block.parts[0];
 
                 // find common prefix
@@ -511,7 +556,7 @@ impl Block<'_> {
 
                 let inner_loop: &[usize] = if !inline || part.matches {
                     &[i]
-                } else if !part.get(0).is_empty() && !part.get(1).is_empty() && !part.is_ascii_whitespace(0) && part.is_ascii_whitespace(1) {
+                } else if !part.get(0).is_empty() && !part.get(1).is_empty() && !part.is_ascii_whitespace(0) && part.is_ascii_whitespace(1) && part.get(1) != [b"\n"] {
                     &[1, 0]
                 } else {
                     &[0, 1]
