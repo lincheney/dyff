@@ -376,6 +376,30 @@ impl Block<'_> {
         blocks
     }
 
+    fn print_insert_marker<T: Write>(
+        stdout: &mut BufWriter<T>,
+        side: usize,
+        word: Bytes,
+        style_opts: &super::StyleOpts,
+    ) -> Result<()> {
+
+        // add an insertion marker
+        let newline = word == b"\n";
+
+        if newline {
+            stdout.write_all(style::RESET)?;
+        }
+        stdout.write_all([&style_opts.diff_insert_left, &style_opts.diff_insert_right][side].as_bytes())?;
+        if newline {
+            // need at least a space to draw the insert marker
+            stdout.write_all(b" ")?;
+            stdout.write_all(style::RESET)?;
+        }
+        // write only one char
+        stdout.write_all(&word[0..1])?;
+        Ok(())
+    }
+
     pub fn print<
         T: Write,
         S: AsRef<str>,
@@ -540,19 +564,16 @@ impl Block<'_> {
 
                         if insert {
                             // add an insertion marker
-                            // write only one char
-                            stdout.write_all(if i == 0 { &style_opts.diff_insert_left } else { &style_opts.diff_matching_right }.as_bytes())?;
                             if trailing_ws {
                                 stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                             }
-                            if *word == b"\n" {
-                                stdout.write_all(style::RESET)?;
-                            }
-                            stdout.write_all(&word[0..1])?;
+                            Self::print_insert_marker(stdout, i, word, style_opts)?;
+                            stdout.write_all(style::RESET)?;
                             if trailing_ws {
                                 stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                             }
                             stdout.write_all(highlight[i])?;
+                            // write the rest of the word
                             stdout.write_all(&word[1..])?;
                             insert = false;
                         } else {
@@ -573,7 +594,11 @@ impl Block<'_> {
             }
 
             if !newline {
-                stdout.write_all(b"\n")?;
+                if insert {
+                    Self::print_insert_marker(stdout, i, b"\n".into(), style_opts)?;
+                } else {
+                    stdout.write_all(b"\n")?;
+                }
             }
 
         }
