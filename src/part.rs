@@ -50,12 +50,17 @@ impl Part<'_> {
     }
 
     pub fn starts_line(&self, i: usize) -> bool {
-        self.slices[i].start == self.parent.get_wordno(i, self.first_lineno(i))
+        let start_of_line = self.parent.get_wordno(i, self.first_lineno(i));
+        self.slices[i].start == start_of_line
+        || self.slices[i].start + 1 == start_of_line
     }
 
     pub fn ends_line(&self, i: usize) -> bool {
         self.slices[i].end == self.parent.words[i].len()
-        || self.slices[i].end == self.parent.get_wordno(i, self.last_lineno(i) + 1)
+        || {
+            let start_of_line = self.parent.get_wordno(i, self.last_lineno(i) + 1);
+            self.slices[i].end == start_of_line || self.slices[i].end + 1 == start_of_line
+        }
     }
 
     pub fn whole_line(&self) -> bool {
