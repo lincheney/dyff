@@ -23,6 +23,13 @@ pub struct BlockMaker<'a> {
     pub line_to_word: [Vec<usize>; 2],
 }
 
+fn split_long_word(word: Bytes) -> impl Iterator<Item=Bytes> {
+    word.split_str(b"_")
+        .flat_map(|w| std::iter::once(b"_" as _).chain(w.chunks(MAX_WORD_LEN)))
+        .skip(1) // skip extra _ at start
+        .map(Bytes::from)
+}
+
 impl<'a> BlockMaker<'a> {
     pub fn new(hunk: &'a Hunk, line_numbers: [usize; 2], tokeniser: &'a mut Tokeniser) -> Self {
         // make a mapping from word number to line number
@@ -55,13 +62,7 @@ impl<'a> BlockMaker<'a> {
                         for m in r.find_iter(line) {
                             let word = Bytes::from(m.as_bytes());
                             if word.len() > MAX_WORD_LEN && word[0].is_ascii_alphabetic() {
-                                w.extend(
-                                    word.split_str(b"_")
-                                        .flat_map(|w| w.chunks(MAX_WORD_LEN).chain(std::iter::once(b"_" as _)))
-                                        .map(Bytes::from)
-                                );
-                                // remove the extra _ at the end
-                                w.pop();
+                                w.extend(split_long_word(word));
                             } else {
                                 w.push(word);
                             }

@@ -64,10 +64,16 @@ fn score_words_prefix(
     }
 
     // check if this is at start of line
-    if words[0] == b"\n" {
-        scores[NEWLINE] += 1;
-        // prefix_scores[0] += 1;
-    } else {
+    let start = (first_part.slices[side].start as isize + shift) as usize;
+    let newline_prefix = (parent.words[side][0] != b"\n").then_some(&b"\n".into()).into_iter()
+        .chain(&parent.words[side][..start])
+        .chain(words.front().filter(|&&x| x == b"\n"))
+        .rev()
+        .take_while(|&&x| x == b"\n") // treat start of string as a newline
+        .count();
+    scores[NEWLINE] += newline_prefix;
+
+    if newline_prefix == 0 && start > 0 {
         static EXT_PREFIXES: [(usize, &[u8]); 4] = [
             // (NEWLINE, b"\n"),
             (WHITESPACE_PREFIX, b" "),
@@ -75,22 +81,11 @@ fn score_words_prefix(
             (OTHER_PREFIX, b"{"),
             (OTHER_PREFIX, b"["),
         ];
-        let start = (first_part.slices[side].start as isize + shift) as usize;
-        if start == 0 {
-            scores[NEWLINE] += 1;
-            // prefix_scores[0] += 1;
-        } else {
-            let ext = parent.words[side][start-1];
-            if ext == b"\n" {
-                scores[NEWLINE] += 1;
-                // prefix_scores[0] += 1;
-            } else {
-                for &(ix, p) in &EXT_PREFIXES {
-                    if p == ext {
-                        scores[ix] += 1;
-                        break;
-                    }
-                }
+        let ext = parent.words[side][start-1];
+        for &(ix, p) in &EXT_PREFIXES {
+            if p == ext {
+                scores[ix] += 1;
+                break;
             }
         }
     }
@@ -117,6 +112,9 @@ fn score_words_suffix(
         (GOOD_SUFFIX, make_const_array(&[b",", b";"])),
         (OTHER_SUFFIX, make_const_array(&[b"}", b"]", b")"])),
     ];
+    const WORD_SUFFIXES: [&[u8]; 1] = [
+        b"break",
+    ];
 
     let parent = last_part.parent;
     let mut skip = 0;
@@ -131,31 +129,56 @@ fn score_words_suffix(
             scores[ix] += count * 2;
             total += count;
         }
+
+        if skip < words.len() {
+            for suffix in &WORD_SUFFIXES {
+                let mut chars = words.iter()
+                    .rev() // iter from the end
+                    .skip(skip) // skip the last words
+                    .enumerate()
+                    .flat_map(|(i, x)| x.iter().rev().map(move |c| (i, c))); // get chars in reverse
+
+                let this_suffix = chars.by_ref().take(suffix.len()).map(|(_, c)| c);
+
+                // compare with the suffix in reverse
+                // and make sure there is a word break
+                if this_suffix.eq(suffix.iter().rev()) {
+                    let (count, next_char) = chars.next().unzip();
+                    if !matches!(next_char, Some(b'a'..=b'z' | b'_' | b'A'..=b'Z' | b'0'..=b'9')) {
+                        skip += count.unwrap_or(words.len() - skip);
+                        scores[GOOD_SUFFIX] += 1;
+                        break;
+                    }
+                }
+            }
+        }
+
         done = done || total == 0;
     }
 
     // check if this is at end of line
-    if *words.back().unwrap() == b"\n" {
-        scores[NEWLINE] += 1;
-    } else {
-        static EXT_SUFFIXES: [(usize, &[u8]); 6] = [
-            (NEWLINE, b"\n"),
+    let end = (last_part.slices[side].end as isize + shift) as usize;
+    let newline_suffix = words.back().filter(|&&x| x == b"\n").into_iter()
+        .chain(&parent.words[side][end..])
+        .chain((parent.words[side].last().unwrap() != &b"\n").then_some(&b"\n".into())) // treat end of string as a newline
+        .take_while(|&&x| x == b"\n")
+        .count();
+    scores[NEWLINE] += newline_suffix;
+
+    // check for other suffixes
+    if newline_suffix == 0 && let Some(&ext) = parent.words[side].get(end) {
+        static EXT_SUFFIXES: [(usize, &[u8]); 5] = [
+            // (NEWLINE, b"\n"),
             (WHITESPACE_SUFFIX, b" "),
             (GOOD_SUFFIX, b":"),
             (OTHER_SUFFIX, b")"),
             (OTHER_SUFFIX, b"}"),
             (OTHER_SUFFIX, b"]"),
         ];
-        let end = (last_part.slices[side].end as isize + shift) as usize;
-        if end == parent.words[side].len() {
-            scores[NEWLINE] += 1;
-        } else {
-            let ext = parent.words[side][end];
-            for &(ix, s) in &EXT_SUFFIXES {
-                if s == ext {
-                    scores[ix] += 1;
-                    break;
-                }
+        for &(ix, s) in &EXT_SUFFIXES {
+            if s == ext {
+                scores[ix] += 1;
+                break;
             }
         }
     }
