@@ -1,3 +1,4 @@
+use super::tokeniser::Token;
 use std::collections::HashMap;
 use std::io::{BufWriter, Write};
 use std::cmp::{min};
@@ -212,8 +213,8 @@ impl Block<'_> {
             if !block.is_empty(0) && !block.is_empty(1) {
                 for part in &block.parts {
                     if !part.matches && part.starts_line(0) && part.starts_line(1) {
-                        let left_ws = part.tokens(0).iter().take_while(|t| t.is_ascii_whitespace()).count();
-                        let right_ws = part.tokens(1).iter().take_while(|t| t.is_ascii_whitespace()).count();
+                        let left_ws = part.tokens(0).iter().take_while(|&&t| t == Token::SPACE).count();
+                        let right_ws = part.tokens(1).iter().take_while(|&&t| t == Token::SPACE).count();
                         if left_ws != right_ws {
                             indents.insert(part.first_lineno(0), right_ws as isize - left_ws as isize);
                         }
@@ -255,19 +256,21 @@ impl Block<'_> {
 
                     if let Some(expected_indent) = expected_indent.copied() && indent * expected_indent > 0 {
                         // indent is wrong but is in the right direction at least
+                        let indent_side = if indent > 0 { 1 } else { 0 };
+                        let missing = expected_indent.abs() - indent.abs();
 
-                        if indent.abs() > expected_indent.abs() {
+                        if missing < 0 {
                             // too much indentation! give some back
                             indent = expected_indent;
                             indents.insert(lineno, indent);
 
-                        } else if indent.abs() < expected_indent.abs() {
+                        } else if missing > 0 && second.is_space(indent_side) {
                             // not enough indentation! can we take some from the next part?
-                            let missing = (expected_indent.abs() - indent.abs()) as usize;
+                            let missing = missing as usize;
                             if let Some(next_part) = block.parts.get_mut(1)
                                 && next_part.matches
                                 && next_part.tokens(0).len() > missing
-                                && next_part.tokens(0)[..missing].iter().all(|t| t.is_ascii_whitespace())
+                                && next_part.tokens(0)[..missing].iter().all(|&t| t == Token::SPACE)
                             {
                                 next_part.slices = next_part.shift_slice(missing as _, 0);
                                 second.slices = second.shift_slice(0, missing as _);

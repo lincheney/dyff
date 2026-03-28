@@ -1,3 +1,4 @@
+use super::tokeniser::{Token};
 use std::cmp::{max};
 use super::whitespace::CheckAllWhitespace;
 use super::types::Bytes;
@@ -26,6 +27,10 @@ impl Part<'_> {
 
     pub fn is_ascii_whitespace(&self, i: usize) -> bool {
         self.get(i).iter().all(|p| p.is_ascii_whitespace())
+    }
+
+    pub fn is_space(&self, i: usize) -> bool {
+        self.tokens(i).iter().all(|&t| t == Token::SPACE)
     }
 
     fn get_non_whitespace(&self, i: usize) -> impl Iterator<Item=Bytes<'_>> {
