@@ -1,0 +1,19 @@
+commit 8f5e5e7acd5a82ace1d5274153ea5de2a20d6c09
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sat Mar 28 03:03:42 2026 +1100
+
+    fix?
+
+diff --git a/.local/share/zsh/site-functions/_space b/.local/share/zsh/site-functions/_space
+index 2f5f9c7f..a75fa3c5 100644
+--- a/.local/share/zsh/site-functions/_space
++++ b/.local/share/zsh/site-functions/_space
+@@ -5,5 +5,7 @@ if (( ${#words[@]} == 2 )); then
+ elif [[ "${#words[@]}" == 3 && ( "${words[2]}" == remove || "${words[2]}" == enter || "${words[2]}" == diff ) ]]; then
+     local matches
+     matches=( "${(@f)$(space list)}" )
+-    compadd -a matches
++    if [[ -n "${matches[*]}" ]]; then
++        compadd -a matches
++    fi
+ fi
