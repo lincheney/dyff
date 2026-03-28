@@ -1,7 +1,7 @@
-diff --git a/projects/telstra/dfir/main.py b/projects/telstra/dfir/main.py
+diff --git a/projects/test/main.py b/projects/test/main.py
 index 1840cd4..cd4f7b7 100644
---- a/projects/telstra/dfir/main.py
-+++ b/projects/telstra/dfir/main.py
+--- a/projects/test/main.py
++++ b/projects/test/main.py
 @@ -10,7 +10,12 @@
  from libsagna.config.aws import AWSFilter
  

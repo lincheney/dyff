@@ -1,0 +1,28 @@
+[1;48;5;24mcommit 928964f4a1da4b3cbb81cce8a947fb1eacd900ec
+[0mAuthor: 林千里 <lincheney@gmail.com>
+Date:   Sat Aug 30 01:25:43 2025 +1000
+
+    make it kinda work on chrome
+
+[1mdiff --git [0m[0;31m[1m[48;5;238ma/ffcli-server [0;32m[1m[48;5;238mb/ffcli-server[0m
+index f882838..82d6824 100755
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mffcli-server[2;7m[0m
+[0;36m@@ -117,6 +117,7 @@ [0;1;33;48;5;236masync def main():[0m
+[0;38;5;242m117 [0;38;5;242m▏[0;38;5;242m117 [0;38;5;242m▏ [0;38;5;242m    loop = asyncio.get_event_loop()[0m
+[0;38;5;242m118 [0;38;5;242m▏[0;38;5;242m118 [0;38;5;242m▏ [0;38;5;242m[0m
+[0;38;5;242m119 [0;38;5;242m▏[0;38;5;242m119 [0;38;5;242m▏ [0;38;5;242m    # find firefox profile dir[2;7m[0m
+[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m120 [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m    import json[2;7m[0m
+[0;38;5;242m120 [0;38;5;242m▏[0;38;5;242m121 [0;38;5;242m▏ [0;38;5;242m    if crash_dir := os.environ.get('MOZ_CRASHREPORTER_EVENTS_DIRECTORY'):[0m
+[0;38;5;242m121 [0;38;5;242m▏[0;38;5;242m122 [0;38;5;242m▏ [0;38;5;242m        profile_dir = os.path.dirname(os.path.dirname(crash_dir))[0m
+[0;38;5;242m122 [0;38;5;242m▏[0;38;5;242m123 [0;38;5;242m▏ [0;38;5;242m    else:[2;7m[0m
+[0;36m@@ -127,6 +128,10 @@ [0;1;33;48;5;236masync def main():[0m
+[0;38;5;242m127 [0;38;5;242m▏[0;38;5;242m128 [0;38;5;242m▏ [0;38;5;242m            if dest.endswith('/places.sqlite'):[0m
+[0;38;5;242m128 [0;38;5;242m▏[0;38;5;242m129 [0;38;5;242m▏ [0;38;5;242m                profile_dir = os.path.dirname(dest)[0m
+[0;38;5;242m129 [0;38;5;242m▏[0;38;5;242m130 [0;38;5;242m▏ [0;38;5;242m                break[2;7m[0m
+[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m131 [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m            if dest.endswith('/System Profile/SharedStorage'):[0m
+[0;31m    [0;38;5;242m▏[0;32m132 [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m                # chrome[0m
+[0;31m    [0;38;5;242m▏[0;32m133 [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m                profile_dir = os.path.dirname(os.path.dirname(dest))[0m
+[0;31m    [0;38;5;242m▏[0;32m134 [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m                break[2;7m[0m
+[0;38;5;242m130 [0;38;5;242m▏[0;38;5;242m135 [0;38;5;242m▏ [0;38;5;242m[0m
+[0;38;5;242m131 [0;38;5;242m▏[0;38;5;242m136 [0;38;5;242m▏ [0;38;5;242m    transport, protocol = await loop.connect_write_pipe(asyncio.streams.FlowControlMixin, sys.stdout.buffer)[0m
+[0;38;5;242m132 [0;38;5;242m▏[0;38;5;242m137 [0;38;5;242m▏ [0;38;5;242m    stdout = asyncio.streams.StreamWriter(transport, protocol, None, loop)[2;7m[0m
