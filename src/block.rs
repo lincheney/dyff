@@ -489,6 +489,11 @@ impl Block<'_> {
                         continue
                     }
 
+                    // draw the other line number if we are inline
+                    // AND the other side has non empty parts on same line
+                    let other = 1 - i;
+                    let other_is_empty = !self.parts.iter().any(|p| !p.is_empty(other) && p.first_lineno(other) <= line_numbers[other] && line_numbers[other] <= p.last_lineno(other));
+
                     stdout.write_all(highlight[i])?;
                     let last = words.len() - 1;
                     for (j, word) in words.iter().enumerate() {
@@ -499,9 +504,8 @@ impl Block<'_> {
 
                                 // draw the other line number if we are inline
                                 // OR the other side has non empty parts on same line
-                                let other = 1 - i;
-                                if !inline || !self.parts.iter().any(|p| !p.is_empty(other) && p.first_lineno(other) <= line_numbers[other] && line_numbers[other] <= p.last_lineno(other)) {
-                                    lineno_args[1-i] = 0;
+                                if !inline || other_is_empty {
+                                    lineno_args[other] = 0;
                                 }
 
                                 let bar_style = merge_markers.and_then(|m| m.get(&(i, line_numbers[i])).map(|x| x.as_ref())).or(Some(&*style_opts.lineno_bar));
@@ -523,7 +527,7 @@ impl Block<'_> {
                         if *word == b"\n" {
                             line_numbers[i] += 1;
                             if inline && part.matches {
-                                line_numbers[1-i] += 1;
+                                line_numbers[other] += 1;
                             }
                             newline = true;
                         }
@@ -552,6 +556,10 @@ impl Block<'_> {
                                 stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                             }
                             if *word == b"\n" {
+                                if !part.matches && inline && !other_is_empty {
+                                    stdout.write_all(style::RESET)?;
+                                    stdout.write_all([&style_opts.diff_newline_left, &style_opts.diff_newline_right][i].as_bytes())?;
+                                }
                                 stdout.write_all(style::RESET)?;
                             }
                             stdout.write_all(word)?;

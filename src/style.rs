@@ -70,6 +70,7 @@ macro_rules! concat_str {
 pub const RESET: &[u8]      = b"\x1b[0m";
 pub const PAINT_RIGHT: &str = "\x1b[K";
 pub const BOLD: &str        = "\x1b[1m";
+// pub const DIM: &str         = "\x1b[2m";
 pub const HEADER: &str      = "\x1b[0;36m";
 pub const COMMIT: &str      = "\x1b[1;48;5;24m";
 pub const BACKGROUND: &str  = "";
@@ -123,6 +124,12 @@ pub const DIFF_INSERT: [&str; 2] = [
 pub const DIFF_MATCHING_INLINE: &str = "\x1b[0;38;5;252m";
 pub const DIFF_CONTEXT: &str = LINENO;
 pub const DIFF_TRAILING_WS: &str = "\x1b[2;7m";
+const DIFF_NEWLINE_CHAR: &str = "⤦"; // ⤦↲
+pub const DIFF_NEWLINE: [&str; 2] = [
+    concat_str!("\x1b[38;2;80;30;30m", DIFF_NEWLINE_CHAR),
+    concat_str!("\x1b[38;2;25;80;25m", DIFF_NEWLINE_CHAR),
+];
+
 
 pub fn format_lineno(
     [num1, num2]: [usize; 2],

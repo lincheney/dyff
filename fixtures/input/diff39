@@ -1,0 +1,18 @@
+diff --git a/shadow/.config/nvim/lua/treesitter/init.lua b/shadow/.config/nvim/lua/treesitter/init.lua
+index 43f21e7f..b1ab0364 100644
+--- a/shadow/.config/nvim/lua/treesitter/init.lua
++++ b/shadow/.config/nvim/lua/treesitter/init.lua
+@@ -95,8 +95,11 @@
+         metadata[capture_id] = vim.tbl_deep_extend('keep', metadata[capture_id], {range = {node:range()}  })
+         local text = vim.treesitter.get_node_text(node, bufnr)
+         local range = metadata[capture_id].range
+-        range[2] = range[2] + text:find('[\'"]')
+-        range[4] = range[4] - text:reverse():find('[\'"]')
++        local quote = text:match('[\'"]')
++        local s, e = text:find(quote..quote..'?'..quote..'?')
++        range[2] = range[2] + e
++        s, e = text:reverse():find(quote..quote..'?'..quote..'?')
++        range[4] = range[4] - e
+     end)
+
+     vim.treesitter.query.add_directive('debug!', function(match, pattern, bufnr, pred, metadata)

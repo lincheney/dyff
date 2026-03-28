@@ -150,6 +150,10 @@ pub struct StyleOpts {
     diff_context: Cow<'static, str>,
     #[arg(long, default_value_t = style::DIFF_TRAILING_WS.into())]
     diff_trailing_ws: Cow<'static, str>,
+    #[arg(long, default_value_t = style::DIFF_NEWLINE[0].into())]
+    diff_newline_left: Cow<'static, str>,
+    #[arg(long, default_value_t = style::DIFF_NEWLINE[1].into())]
+    diff_newline_right: Cow<'static, str>,
 }
 
 impl StyleOpts {
@@ -201,6 +205,8 @@ impl StyleOpts {
             replace!(self.diff_matching_inline);
             replace!(self.diff_context);
             replace!(self.diff_trailing_ws);
+            replace!(self.diff_newline_left);
+            replace!(self.diff_newline_right);
 
         }
     }
@@ -485,10 +491,10 @@ fn main_internal() -> Result<ExitCode> {
             args.style.print_background(&mut stdout)?;
             if style.line_numbers {
                 stdout.write_all(style::format_lineno(
-                        line_numbers,
-                        None,
-                        Some(&args.style.lineno), Some(&args.style.lineno),
-                        None,
+                    line_numbers,
+                    None,
+                    Some(&args.style.lineno), Some(&args.style.lineno),
+                    None,
                 ).as_ref())?;
             }
             if style.signs {
