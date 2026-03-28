@@ -52,7 +52,7 @@ impl Block<'_> {
         let mut parts = Vec::<Part>::new();
         let mut join = false;
 
-        for part in &self.parts {
+        for (i, part) in self.parts.iter().enumerate() {
             if part.matches {
 
                 let total_length = part.slices[0].len();
@@ -73,7 +73,15 @@ impl Block<'_> {
                 // elif i+2 < len(self.parts) and any(self.parts[i+1].is_empty(i) and not self.parts[i+2].is_empty(i) for i in SIDES):
                     // // this is actually next to another part
                     // pass
-                } else if part.starts_line(0) || part.starts_line(1) || part.ends_line(0) || part.ends_line(1) {
+                } else if
+                    (part.starts_line(0) && part.starts_line(1))
+                    || (part.ends_line(0) && part.ends_line(1))
+                    // don't sqeeze if we start/end a line but the prev/next is empty
+                    || (part.starts_line(0) && i > 0 && self.parts.get(i-1).is_none_or(|p| p.is_empty(1)))
+                    || (part.starts_line(1) && i > 0 && self.parts.get(i-1).is_none_or(|p| p.is_empty(0)))
+                    || (part.ends_line(0) && self.parts.get(i+1).is_none_or(|p| p.is_empty(1)))
+                    || (part.ends_line(1) && self.parts.get(i+1).is_none_or(|p| p.is_empty(0)))
+                {
                     join = false;
                     // join = length < min_size_eol
                 } else {
