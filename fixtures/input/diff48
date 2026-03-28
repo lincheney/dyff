@@ -1,0 +1,28 @@
+commit daa3ee0bf088e599ea7880cc89c8b40bb738fddf
+Author: 林千里 <lincheney@gmail.com>
+Date:   Mon Mar 16 14:05:33 2026 +1100
+
+    add space to prompt
+
+diff --git a/shadow/.config/shell/01_prompt.zsh b/shadow/.config/shell/01_prompt.zsh
+index 8e43e6b7..a28d4e44 100644
+--- a/shadow/.config/shell/01_prompt.zsh
++++ b/shadow/.config/shell/01_prompt.zsh
+@@ -14,11 +14,12 @@ _live_text=$'%F{10}%B%{\x1b[3m%} (live)%f%b%{\x1b[0m%}'
+ () {
+     # _initial_prompt=$'%{\r%}'
+     local col
+-    if [[ "$TERM" = linux ]]; then
+-        col=$'\x1b[0;7;33m'
+-    else
+-        col=$'\x1b[0;1;7;38;5;214m'
+-    fi
++    case "$TERM${_SPACE+.x}" in
++        linux.x) col=$'\x1b[0;7;95m' ;;
++        linux)   col=$'\x1b[0;7;33m' ;;
++        *.x)     col=$'\x1b[0;1;7;38;5;177m' ;;
++        *)       col=$'\x1b[0;1;7;38;5;214m' ;;
++    esac
+     printf -v _status_bar "$_status_bar_format" ' '
+     _initial_prompt="%{$col%}/%32<..<%1~%<<%{$col%}/%(?..%F{1})%%%k%f"$'%{\x1b[0m%}${live_preview_vars[active]:+$_live_text}%{\x1b]8;;\x1b\\%} '
+ }
