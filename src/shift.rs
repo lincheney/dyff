@@ -18,15 +18,24 @@ fn is_word(x: u8) -> bool {
     x == b'_' || (!x.is_ascii_control() && !x.is_ascii_punctuation() && !x.is_ascii_whitespace())
 }
 
-fn score_words(
-    parts: &[Part],
-    prev: Option<Bytes>,
+fn add_scores<const N: usize>(mut a: [usize; N], b: [usize; N]) -> [usize; N] {
+    for (x, y) in a.iter_mut().zip(&b) {
+        *x += y;
+    }
+    a
+}
+
+fn words_from_parts<'a>(parts: &'a [Part], side: usize) -> impl DoubleEndedIterator<Item=Bytes<'a>> {
+    parts.iter().flat_map(move |p| p.get(side)).copied()
+}
+
+fn score_words_prefix(
+    first_part: &Part,
     words: &VecDeque<Bytes>,
-    next: Option<Bytes>,
-    i: usize,
+    prev_word: Option<Bytes>,
+    side: usize,
     shift: isize,
 ) -> [usize; NUM_SCORES] {
-
     static PREFIXES: [(usize, &[u8]); 1] = [
         // (NEWLINE, b"\n"),
         // (WHITESPACE_PREFIX, b" \t"),
@@ -34,33 +43,14 @@ fn score_words(
         // (GOOD_PREFIX, b",;"),
         (OTHER_PREFIX, b"{[("),
     ];
-    static SUFFIXES: [(usize, &[u8]); 4] = [
-        (NEWLINE, b"\n"),
-        (WHITESPACE_SUFFIX, b" \t"),
-        (GOOD_SUFFIX, b",;"),
-        (OTHER_SUFFIX, b"}])"),
-    ];
 
-    let parent = parts[0].parent;
+    let parent = first_part.parent;
     let mut skip = 0;
     let mut scores = [0; NUM_SCORES];
     for &(ix, p) in &PREFIXES {
         let count = words.iter().skip(skip).take_while(|w| p.contains(&w[0])).count();
         skip += count;
         scores[ix] += count * 2;
-    }
-
-    let mut skip = 0;
-    let mut done = false;
-    while !done {
-        let mut total = 0;
-        for &(ix, p) in &SUFFIXES {
-            let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
-            skip += count;
-            scores[ix] += count * 2;
-            total += count;
-        }
-        done = done || total == 0;
     }
 
     // check if this is at start of line
@@ -75,12 +65,12 @@ fn score_words(
             (OTHER_PREFIX, b"{"),
             (OTHER_PREFIX, b"["),
         ];
-        let start = (parts[0].slices[i].start as isize + shift) as usize;
+        let start = (first_part.slices[side].start as isize + shift) as usize;
         if start == 0 {
             scores[NEWLINE] += 1;
             // prefix_scores[0] += 1;
         } else {
-            let ext = parent.words[i][start-1];
+            let ext = parent.words[side][start-1];
             if ext == b"\n" {
                 scores[NEWLINE] += 1;
                 // prefix_scores[0] += 1;
@@ -95,6 +85,45 @@ fn score_words(
         }
     }
 
+    // boost scores where they do not break a word
+    if !(is_word(words[0][0]) && prev_word.is_some_and(|p| is_word(*p.last().unwrap()))) {
+        scores[WORD_BREAK] += 1;
+    }
+
+    scores
+}
+
+fn score_words_suffix(
+    last_part: &Part,
+    words: &VecDeque<Bytes>,
+    next_word: Option<Bytes>,
+    side: usize,
+    shift: isize,
+) -> [usize; NUM_SCORES] {
+
+    static SUFFIXES: [(usize, &[u8]); 4] = [
+        (NEWLINE, b"\n"),
+        (WHITESPACE_SUFFIX, b" \t"),
+        (GOOD_SUFFIX, b",;"),
+        (OTHER_SUFFIX, b"}])"),
+    ];
+
+    let parent = last_part.parent;
+    let mut skip = 0;
+    let mut scores = [0; NUM_SCORES];
+
+    let mut done = false;
+    while !done {
+        let mut total = 0;
+        for &(ix, p) in &SUFFIXES {
+            let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
+            skip += count;
+            scores[ix] += count * 2;
+            total += count;
+        }
+        done = done || total == 0;
+    }
+
     // check if this is at end of line
     if *words.back().unwrap() == b"\n" {
         scores[NEWLINE] += 1;
@@ -107,11 +136,11 @@ fn score_words(
             (OTHER_SUFFIX, b"}"),
             (OTHER_SUFFIX, b"]"),
         ];
-        let end = (parts.last().unwrap().slices[i].end as isize + shift) as usize;
-        if end == parent.words[i].len() {
-            scores[0] += 1;
+        let end = (last_part.slices[side].end as isize + shift) as usize;
+        if end == parent.words[side].len() {
+            scores[NEWLINE] += 1;
         } else {
-            let ext = parent.words[i][end];
+            let ext = parent.words[side][end];
             for &(ix, s) in &EXT_SUFFIXES {
                 if s == ext {
                     scores[ix] += 1;
@@ -121,31 +150,40 @@ fn score_words(
         }
     }
 
-    // boost scores where they do not break a word
-    if !(is_word(words[0][0]) && prev.is_some_and(|p| is_word(*p.last().unwrap()))) {
-        scores[WORD_BREAK] += 1;
-    }
-    if !(is_word(*words.back().unwrap().last().unwrap()) && next.is_some_and(|n| is_word(n[0]))) {
+    if !(is_word(*words.back().unwrap().last().unwrap()) && next_word.is_some_and(|n| is_word(n[0]))) {
         scores[WORD_BREAK] += 1;
     }
 
     scores
 }
 
-fn score_part_shift(parts: &Parts, range: Range<usize>, i: usize) -> Vec<([usize; NUM_SCORES], isize)> {
+fn score_words(
+    parts: &[Part],
+    words: &VecDeque<Bytes>,
+    prev_word: Option<Bytes>,
+    next_word: Option<Bytes>,
+    side: usize,
+    shift: isize,
+) -> [usize; NUM_SCORES] {
+    let prefix_scores = score_words_prefix(&parts[0], words, prev_word, side, shift);
+    let suffix_scores = score_words_suffix(parts.last().unwrap(), words, next_word, side, shift);
+    add_scores(prefix_scores, suffix_scores)
+}
+
+fn score_part_shift(parts: &Parts, range: Range<usize>, side: usize) -> Vec<([usize; NUM_SCORES], isize)> {
     let shiftable = &parts[range.clone()];
     let mut scores = vec![];
 
-    let mut words: VecDeque<_> = shiftable.iter().flat_map(|p| p.get(i)).copied().collect();
+    let mut words: VecDeque<_> = words_from_parts(shiftable, side).collect();
     let prev = if range.start > 0 { Some(&parts[range.start-1]) } else { None };
-    let prev_words = prev.map(|p| p.get(i)).into_iter().flatten().rev();
+    let prev_words = prev.map(|p| p.get(side)).into_iter().flatten().rev();
     let next = parts.get(range.end);
-    let next_words = next.map(|n| n.get(i)).into_iter().flatten();
+    let next_words = next.map(|n| n.get(side)).into_iter().flatten();
 
     // no shift; more score if it is start or end of line
     let p = prev_words.clone().next().copied();
     let n = next_words.clone().next().copied();
-    scores.push((score_words(shiftable, p, &words, n, i, 0), 0));
+    scores.push((score_words(shiftable, &words, p, n, side, 0), 0));
 
     // try shift left ie move stuff at back to front
     if let Some(prev) = prev && prev.matches {
@@ -157,14 +195,36 @@ fn score_part_shift(parts: &Parts, range: Range<usize>, i: usize) -> Vec<([usize
             let p = prev_words.clone().nth(shift+1).copied();
             let n = prev_words.clone().nth(shift).copied();
             let shift = -(1 + shift as isize);
-            scores.push((score_words(shiftable, p, &words, n, i, shift), shift));
+
+            let score = if p.is_none() && range.start > 1 && !parts[range.start-2].matches {
+                // this joins onto another part on the left
+                let suffix_scores = score_words_suffix(shiftable.last().unwrap(), &words, n, side, shift);
+
+                let leftmost = parts[..range.start-1].iter().rev().take_while(|p| !p.matches).count();
+                let leftmost = range.start - 1 - leftmost;
+                for word in words_from_parts(&parts[leftmost .. range.start - 1], side).rev() {
+                    words.push_front(word);
+                }
+                let p = if leftmost > 1 {
+                    parts[leftmost-1].get(side).last().copied()
+                } else {
+                    None
+                };
+                let mut prefix_scores = score_words_prefix(&parts[leftmost], &words, p, side, 0);
+                prefix_scores[OTHER_PREFIX] += 1;
+                add_scores(prefix_scores, suffix_scores)
+            } else {
+                score_words(shiftable, &words, p, n, side, shift)
+            };
+
+            scores.push((score, shift));
         }
     }
 
-    let mut words: VecDeque<_> = shiftable.iter().flat_map(|p| p.get(i)).copied().collect();
+    let mut words: VecDeque<_> = words_from_parts(shiftable, side).collect();
     // try shift right ie move stuff at front to back
     if let Some(next) = next && next.matches {
-        // let next_words = next_words.get(i);
+        // let next_words = next_words.get(side);
         for (shift, &word) in next_words.clone().enumerate() {
             if word != words[0] {
                 break
@@ -173,7 +233,29 @@ fn score_part_shift(parts: &Parts, range: Range<usize>, i: usize) -> Vec<([usize
             let p = next_words.clone().nth(shift).copied();
             let n = next_words.clone().nth(shift+1).copied();
             let shift = 1 + shift as isize;
-            scores.push((score_words(shiftable, p, &words, n, i, shift), shift));
+
+            let score = if n.is_none() && range.end < parts.len()-1 && !parts[range.end+1].matches {
+                // this joins onto another part on the right
+                let prefix_scores = score_words_prefix(&shiftable[0], &words, p, side, shift);
+
+                let rightmost = parts[range.end+1..].iter().take_while(|p| !p.matches).count();
+                let rightmost = range.end + rightmost;
+                for word in words_from_parts(&parts[range.end + 1 .. rightmost + 1], side) {
+                    words.push_back(word);
+                }
+                let n = if rightmost + 1 < parts.len() {
+                    parts[rightmost + 1].get(side).last().copied()
+                } else {
+                    None
+                };
+                let mut suffix_scores = score_words_suffix(&parts[rightmost], &words, n, side, 0);
+                suffix_scores[OTHER_SUFFIX] += 1;
+                add_scores(prefix_scores, suffix_scores)
+            } else {
+                score_words(shiftable, &words, p, n, side, shift)
+            };
+
+            scores.push((score, shift));
         }
     }
 
@@ -192,7 +274,7 @@ pub fn shift_parts(parts: &mut Vec<Part>) {
 
         if let Some(side) = parts[i].shiftable_side() {
 
-            for mut len in 1..parts.len()-i {
+            for mut len in 1..=parts.len()-i {
                 if parts[i+len-1].shiftable_side() != Some(side) {
                     // not shiftable or wrong side
                     break
