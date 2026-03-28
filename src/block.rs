@@ -254,30 +254,31 @@ impl Block<'_> {
                     // check next next line
                     let expected_indent = expected_indent.or_else(|| indents.get(&(lineno+2)) );
 
-                    if let Some(expected_indent) = expected_indent.copied() && indent * expected_indent > 0 {
+                    let indent_side = if indent > 0 { 1 } else { 0 };
+                    let missing = expected_indent.unwrap_or(&0).abs() - indent.abs();
+
+                    if let Some(expected_indent) = expected_indent.copied()
                         // indent is wrong but is in the right direction at least
-                        let indent_side = if indent > 0 { 1 } else { 0 };
-                        let missing = expected_indent.abs() - indent.abs();
+                        && indent * expected_indent > 0
+                        // not enough indentation! can we take some from the next part?
+                        && missing > 0
+                        // but only if we are full of spaces
+                        && second.is_space(indent_side)
+                        // and the next part starts with spaces
+                        && let Some(next_part) = block.parts.get_mut(1)
+                        && next_part.matches
+                        && next_part.tokens(0).len() > missing as usize
+                        && next_part.tokens(0)[..missing as usize].iter().all(|&t| t == Token::SPACE)
+                    {
+                        let missing = missing as usize;
+                        next_part.slices = next_part.shift_slice(missing as _, 0);
+                        second.slices = second.shift_slice(0, missing as _);
+                        indent = expected_indent;
+                        indents.insert(lineno, indent);
 
-                        if missing < 0 {
-                            // too much indentation! give some back
-                            indent = expected_indent;
-                            indents.insert(lineno, indent);
-
-                        } else if missing > 0 && second.is_space(indent_side) {
-                            // not enough indentation! can we take some from the next part?
-                            let missing = missing as usize;
-                            if let Some(next_part) = block.parts.get_mut(1)
-                                && next_part.matches
-                                && next_part.tokens(0).len() > missing
-                                && next_part.tokens(0)[..missing].iter().all(|&t| t == Token::SPACE)
-                            {
-                                next_part.slices = next_part.shift_slice(missing as _, 0);
-                                second.slices = second.shift_slice(0, missing as _);
-                                indent = expected_indent;
-                                indents.insert(lineno, indent);
-                            }
-                        }
+                    } else {
+                        // it didn't work out, don't treat it as indentation
+                        indent = 0;
                     }
 
                     // check for indentation and split it out
