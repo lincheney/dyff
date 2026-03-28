@@ -1,0 +1,25 @@
+commit 1d1a7d477fcb794076e07ee9f8553c1e2f962c16
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sat Mar 28 14:58:35 2026 +1100
+
+    allow access to ffcli-server
+
+diff --git a/sbin/chromium b/sbin/chromium
+index 0aa8c7eb..656a147a 100755
+--- a/sbin/chromium
++++ b/sbin/chromium
+@@ -6,7 +6,13 @@ app="$(
+ 
+ flatpak=io.github.ungoogled_software.ungoogled_chromium
+ if [ -z "$app" ] && flatpak info "$flatpak" &>/dev/null; then
+-    app=( flatpak run --filesystem=/tmp "$flatpak" )
++    app=(
++        flatpak
++        run
++        --filesystem=/tmp
++        --filesystem=/home/qianli/.mozilla/firefox/addon/firefox_cli/ffcli-server
++        "$flatpak"
++    )
+ fi
+ 
+ if [ -z "${app[*]}" ]; then
