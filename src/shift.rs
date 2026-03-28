@@ -29,6 +29,16 @@ fn words_from_parts<'a>(parts: &'a [Part], side: usize) -> impl DoubleEndedItera
     parts.iter().flat_map(move |p| p.get(side)).copied()
 }
 
+const fn make_const_array<const N: usize>(values: &[&'static [u8]]) -> [&'static [u8]; N] {
+    let mut result = [b"" as _; N];
+    let mut i = 0;
+    while i < values.len() {
+        result[i] = values[i];
+        i += 1;
+    }
+    result
+}
+
 fn score_words_prefix(
     first_part: &Part,
     words: &VecDeque<Bytes>,
@@ -36,19 +46,19 @@ fn score_words_prefix(
     side: usize,
     shift: isize,
 ) -> [usize; NUM_SCORES] {
-    static PREFIXES: [(usize, &[u8]); 1] = [
+    const PREFIXES: [(usize, [&[u8]; 3]); 1] = [
         // (NEWLINE, b"\n"),
         // (WHITESPACE_PREFIX, b" \t"),
         // (OTHER_PREFIX, b"{"),
         // (GOOD_PREFIX, b",;"),
-        (OTHER_PREFIX, b"{[("),
+        (OTHER_PREFIX, make_const_array(&[b"{", b"[", b"("])),
     ];
 
     let parent = first_part.parent;
     let mut skip = 0;
     let mut scores = [0; NUM_SCORES];
     for &(ix, p) in &PREFIXES {
-        let count = words.iter().skip(skip).take_while(|w| p.contains(&w[0])).count();
+        let count = words.iter().skip(skip).take_while(|w| p.contains(&w.as_ref())).count();
         skip += count;
         scores[ix] += count * 2;
     }
@@ -101,11 +111,11 @@ fn score_words_suffix(
     shift: isize,
 ) -> [usize; NUM_SCORES] {
 
-    static SUFFIXES: [(usize, &[u8]); 4] = [
-        (NEWLINE, b"\n"),
-        (WHITESPACE_SUFFIX, b" \t"),
-        (GOOD_SUFFIX, b",;"),
-        (OTHER_SUFFIX, b"}])"),
+    const SUFFIXES: [(usize, [&[u8]; 4]); 4] = [
+        (NEWLINE, make_const_array(&[b"\n"])),
+        (WHITESPACE_SUFFIX, make_const_array(&[b" ", b"\t"])),
+        (GOOD_SUFFIX, make_const_array(&[b",", b";"])),
+        (OTHER_SUFFIX, make_const_array(&[b"}", b"]", b")"])),
     ];
 
     let parent = last_part.parent;
@@ -116,7 +126,7 @@ fn score_words_suffix(
     while !done {
         let mut total = 0;
         for &(ix, p) in &SUFFIXES {
-            let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w[0])).count();
+            let count = words.iter().rev().skip(skip).take_while(|w| p.contains(&w.as_ref())).count();
             skip += count;
             scores[ix] += count * 2;
             total += count;
