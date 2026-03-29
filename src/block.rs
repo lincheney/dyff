@@ -16,7 +16,7 @@ fn find_common_suffix_length(a: &[Bytes], b: &[Bytes]) -> usize {
 }
 
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Block<'a> {
     pub parts: Vec<Part<'a>>,
 }
@@ -398,8 +398,20 @@ impl Block<'_> {
         for block in &mut blocks {
             // try to do a very simple diff for low scoring blocks
 
-            if block.parts.len() == 1 && block.score() == 0. && block.parts[0].single_line(0) {
-                let part = &block.parts[0];
+            if
+                // one of these is only 1 line
+                (
+                    block.parts[0].first_lineno(0) == block.parts.last().unwrap().last_lineno(0)
+                    || block.parts[0].first_lineno(1) == block.parts.last().unwrap().last_lineno(1)
+                ) && let Some(parti) = block.parts.iter().position(|p| !p.matches && (!p.is_empty(0) || !p.is_empty(1)))
+            {
+
+                let part = &mut block.parts[parti];
+
+                if part.is_empty(0) || part.is_empty(1) {
+                    // no possible common prefix/suffix
+                    continue
+                }
 
                 // find common prefix
                 let prefix = find_common_prefix_length(part.get(0), part.get(1));
@@ -417,13 +429,13 @@ impl Block<'_> {
                 // matching common prefix/suffix looks weird when score is low and inlined
                 if second.is_empty(0) || second.is_empty(1) || !second.inlineable() {
                     // try it out
-                    let old_parts = std::mem::replace(&mut block.parts, vec![first, second, third]);
-                    block.squeeze_parts();
-                    block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+                    let mut newblock = block.clone();
+                    newblock.parts.splice(parti..=parti, [first, second, third]);
+                    newblock.squeeze_parts();
+                    newblock.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
 
-                    // nothing matches, go back to the way it was before
-                    if block.parts.iter().all(|p| !p.matches) {
-                        block.parts = old_parts;
+                    if newblock.parts.iter().filter(|p| p.matches).count() > block.parts.iter().filter(|p| p.matches).count() {
+                        *block = newblock;
                     }
                 }
 
