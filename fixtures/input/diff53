@@ -1,0 +1,48 @@
+commit 0eaa76aa3c3718bcef013444a6327f78e7ce1873
+Author: 林千里 <lincheney@gmail.com>
+Date:   Fri Mar 6 23:54:50 2026 +1100
+
+    custom retry logic
+
+diff --git a/bin/download-m3u8 b/bin/download-m3u8
+index d432b90a..71c818aa 100755
+--- a/bin/download-m3u8
++++ b/bin/download-m3u8
+@@ -15,29 +16,26 @@ import faulthandler
+ import requests
+ 
+ SESSION = requests.Session()
+-def response_hook(response, *args, **kwargs):
+-    try:
+-        response.raise_for_status()
+-    except Exception:
+-        logging.error('Failed %s request to %s', response.request.method, response.request.url)
+-        logging.error('%s', response.text)
+-        raise
+-SESSION.hooks = {'response': response_hook}
+-retries = requests.adapters.Retry(
+-    total=5,
+-    read=5,
+-    connect=5,
+-    other=5,
+-    backoff_factor=0.1,
+-    status_forcelist=[500, 502, 503, 504]
+-)
+-SESSION.mount('https://', requests.adapters.HTTPAdapter(max_retries=retries))
++
++def fetch(*args, **kwargs):
++    max_retries = 5
++    for attempt in range(5):
++        try:
++            response = SESSION.get(*args, timeout=10, **kwargs)
++            response.raise_for_status()
++            return response
++        except Exception:
++            logging.error('Failed %s request to %s', response.request.method, response.request.url)
++            logging.error('%s', response.text)
++            if attempt == max_retries - 1:
++                raise
++            time.sleep(0.1)
+ 
+ # Function to download a segment
+ def download_segment(url):
