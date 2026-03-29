@@ -578,7 +578,14 @@ impl Block<'_> {
 
                 let inner_loop: &[usize] = if !inline || part.matches {
                     &[i]
-                } else if !part.get(0).is_empty() && !part.get(1).is_empty() && !part.is_ascii_whitespace(0) && part.is_ascii_whitespace(1) && part.get(1) != [b"\n"] {
+                // swap the order if it looks better that way
+                } else if
+                    !part.get(0).is_empty()
+                    && !part.get(1).is_empty()
+                    && !part.get(0)[0].is_ascii_whitespace()
+                    && part.get(1)[0].is_ascii_whitespace()
+                    && part.get(1) != [b"\n"]
+                {
                     &[1, 0]
                 } else {
                     &[0, 1]
