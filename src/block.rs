@@ -1,5 +1,4 @@
 use super::tokeniser::Token;
-use std::collections::HashMap;
 use std::io::{BufWriter, Write};
 use std::cmp::{min};
 use anyhow::{Result};
@@ -200,7 +199,6 @@ impl Block<'_> {
                 && let score = block.score()
                 && 0. < score && score < cutoff
             {
-                eprintln!("DEBUG(purism)\t{}\t= {:?}", stringify!(score), score);
                 // low score
 
                 // try to make new blocks with the best matching parts
@@ -218,6 +216,14 @@ impl Block<'_> {
 
                             if !newpart.is_empty(0) || !newpart.is_empty(1) {
                                 newpart.matches = newpart.tokens(0) == newpart.tokens(1);
+                                // if empty, make sure they are put in the right position
+                                if newpart.is_empty(0) {
+                                    let start = newblock.parts.last().map_or(starts[0], |p| p.slices[0].end);
+                                    newpart.slices[0] = start .. start;
+                                } else if newpart.is_empty(1) {
+                                    let start = newblock.parts.last().map_or(starts[1], |p| p.slices[1].end);
+                                    newpart.slices[1] = start .. start;
+                                }
                                 newblock.parts.push(newpart);
                             }
 
@@ -225,8 +231,6 @@ impl Block<'_> {
                         })
                         .filter(|part| !part.is_empty(0) || !part.is_empty(1))
                         .collect();
-
-                    newblock.parts.sort_by_key(|part| (part.slices[0].start, part.slices[1].start));
 
                     let score = newblock.score();
                     if 0. < score && score < cutoff {
@@ -237,7 +241,32 @@ impl Block<'_> {
                         new.push(newblock);
                     } else {
                         newblock.merge_adjacent_parts();
-                        new.push(newblock);
+
+                        // split out newlines so they are not merged together with other bits
+                        let mut i = 0;
+                        while i < newblock.parts.len() {
+                            let part = &mut newblock.parts[i];
+                            if !part.matches {
+                                if part.get(0).first() == Some(&b"\n".into()) && part.get(1).first() == Some(&b"\n".into()) {
+                                    let (mut nl, rest) = part.partition_from_start(1, 1, false);
+                                    nl.matches = true;
+                                    newblock.parts[i] = nl;
+                                    newblock.parts.insert(i+1, rest);
+                                } else if part.get(0).last() == Some(&b"\n".into()) && part.get(1).last() == Some(&b"\n".into()) {
+                                    let (rest, mut nl) = part.partition_from_end(1, 1, false);
+                                    nl.matches = true;
+                                    newblock.parts[i] = rest;
+                                    newblock.parts.insert(i+1, nl);
+                                }
+                            }
+                            i += 1;
+                        }
+
+                        if newblock.parts[0].matches && newblock.parts[0].is_space(0) {
+                            newblock.parts[0].matches = false;
+                        }
+
+                        new.append(&mut newblock.split_block());
                     }
                 }
 
@@ -279,22 +308,6 @@ impl Block<'_> {
             blocks.last_mut().unwrap().parts.push(part);
         }
 
-        // calculate indents
-        let mut indents = HashMap::new();
-        for block in &blocks {
-            if !block.is_empty(0) && !block.is_empty(1) {
-                for part in &block.parts {
-                    if !part.matches && part.starts_line(0) && part.starts_line(1) {
-                        let left_ws = part.tokens(0).iter().take_while(|&&t| t == Token::SPACE).count();
-                        let right_ws = part.tokens(1).iter().take_while(|&&t| t == Token::SPACE).count();
-                        if left_ws != right_ws {
-                            indents.insert(part.first_lineno(0), right_ws as isize - left_ws as isize);
-                        }
-                    }
-                }
-            }
-        }
-
         // match leading whitespace in each block
         // since it got treated as junk during the diff
         for block in &mut blocks {
@@ -303,67 +316,58 @@ impl Block<'_> {
                 // find common prefix
                 let prefix = find_common_prefix_length(first.tokens(0), first.tokens(1));
                 if prefix != 0 {
+
                     let score = block.score();
-                    let lineno = first.first_lineno(0);
+                    // calculate the amount of indentation
+                    let spaces = [0, 1].map(|x| {
+                        block.parts.iter().flat_map(|p| p.tokens(x)).take_while(|&&t| t == Token::SPACE).count()
+                    });
+                    let actual_indent = spaces[1] as isize - spaces[0] as isize;
+
                     let (mut first, mut second) = first.partition_from_start(prefix, prefix, false);
                     // first part is matching
                     first.matches = true;
                     block.parts[0] = first;
 
-                    if score < Block::CUTOFF {
-                        block.parts.insert(1, second);
-                        continue
+                    // if the score is too low dont bother trying to match indentation, it will look too messy
+                    if score >= Block::CUTOFF {
+
+                        // check changed indentation
+                        let indented_side = if actual_indent > 0 { 1 } else { 0 };
+                        // this is how much indentation the diff shows
+                        let diff_indent = second.tokens(indented_side).iter().take_while(|&&t| t == Token::SPACE).count();
+                        let mut diff_indent = diff_indent as isize * actual_indent.signum();
+                        // how much is missing
+                        let missing = actual_indent.abs() - diff_indent.abs();
+
+                        if
+                            // not enough indentation! can we take some from the next part?
+                            missing > 0
+                            // the next part starts with enough spaces
+                            && let Some(next_part) = block.parts.get_mut(1)
+                            && next_part.matches
+                            && next_part.tokens(0).len() > missing as usize
+                            && next_part.tokens(0)[..missing as usize].iter().all(|&t| t == Token::SPACE)
+                        {
+                            // let missing = missing as usize;
+                            next_part.slices = next_part.shift_slice(missing as _, 0);
+                            second.slices = second.shift_slice(0, missing as _);
+                            diff_indent = actual_indent;
+                        }
+
+                        // check for indentation and split it out
+                        // so it can be shifted to the start
+                        // do indentation splitting only if there is more than one
+                        if diff_indent.abs() > 0 {
+                            let (ws, non_ws) = second.partition_from_start(0.max(-diff_indent) as usize, 0.max(diff_indent) as usize, false);
+                            let (ws, mut empty) = ws.partition_from_end(0, 0, false);
+                            empty.matches = true;
+                            block.parts.splice(1..1, [ws, empty, non_ws]);
+                            continue
+                        }
                     }
 
-                    // check changed indentation
-                    let mut indent = indents.get(&lineno).copied().unwrap_or(0);
-                    // check prev line
-                    let expected_indent = if lineno > 0 { indents.get(&(lineno-1)) } else { None };
-                    // check next line
-                    let expected_indent = expected_indent.or_else(|| indents.get(&(lineno+1)) );
-                    // check prev prev line
-                    let expected_indent = expected_indent.or_else(|| if lineno > 1 { indents.get(&(lineno-2)) } else { None } );
-                    // check next next line
-                    let expected_indent = expected_indent.or_else(|| indents.get(&(lineno+2)) );
-
-                    let indent_side = if indent > 0 { 1 } else { 0 };
-                    let missing = expected_indent.unwrap_or(&0).abs() - indent.abs();
-
-                    if let Some(expected_indent) = expected_indent.copied()
-                        // indent is wrong but is in the right direction at least
-                        && indent * expected_indent > 0
-                        // not enough indentation! can we take some from the next part?
-                        && missing > 0
-                        // but only if we are full of spaces
-                        && second.is_space(indent_side)
-                        // and the next part starts with spaces
-                        && let Some(next_part) = block.parts.get_mut(1)
-                        && next_part.matches
-                        && next_part.tokens(0).len() > missing as usize
-                        && next_part.tokens(0)[..missing as usize].iter().all(|&t| t == Token::SPACE)
-                    {
-                        let missing = missing as usize;
-                        next_part.slices = next_part.shift_slice(missing as _, 0);
-                        second.slices = second.shift_slice(0, missing as _);
-                        indent = expected_indent;
-                        indents.insert(lineno, indent);
-
-                    } else {
-                        // it didn't work out, don't treat it as indentation
-                        indent = 0;
-                    }
-
-                    // check for indentation and split it out
-                    // so it can be shifted to the start
-                    // do indentation splitting only if there is more than one
-                    if indent.abs() > 1 {
-                        let (ws, non_ws) = second.partition_from_start(0.max(-indent) as usize, 0.max(indent) as usize, false);
-                        let (ws, mut empty) = ws.partition_from_end(0, 0, false);
-                        empty.matches = true;
-                        block.parts.splice(1..1, [ws, empty, non_ws]);
-                    } else {
-                        block.parts.insert(1, second);
-                    }
+                    block.parts.insert(1, second);
 
                 }
             }
