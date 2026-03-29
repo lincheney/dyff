@@ -290,6 +290,66 @@ impl Block<'_> {
         new
     }
 
+    fn rearrange_blocks(blocks: &mut [Self], forward: bool) {
+        // rearrange blocks so that additions are with other additions
+
+        let move_side = if forward { 0 } else { 1 };
+        let block_len = blocks.len();
+
+        let mut loop_fn = |i: usize, adji: usize| {
+            let block = &blocks[i];
+
+            if let Some(part) = &block.parts.last()
+                && !part.matches
+                && !part.is_empty(0)
+                && !part.is_empty(1)
+                // only one part, ignoring matching leading whitespace
+                && (block.parts.len() == 1 || (block.parts.len() == 2 && block.parts[0].matches && block.parts[0].is_space(0)))
+            {
+                let adj_block = &blocks[adji];
+                let changes: [usize; 2] = [0, 1].map(|side|
+                    adj_block.parts.iter().filter(|p| !p.matches).map(|p| p.slices[side].len()).sum()
+                );
+                if changes[move_side] > changes[1 - move_side].pow(2) {
+
+                    let prev = if forward {
+                        &adj_block.parts[0]
+                    } else {
+                        adj_block.parts.last().unwrap()
+                    };
+
+                    // need to do this instead of part.slices in case there was a leading whitespace part
+                    let slices = [0, 1].map(|side| {
+                        block.parts[0].slices[side].start .. part.slices[side].end
+                    });
+
+                    // split into del and add part
+                    let parts = [
+                        part.parent.make_part(false, slices[0].clone(), prev.slices[1].end .. prev.slices[1].end),
+                        part.parent.make_part(false, prev.slices[0].end .. prev.slices[0].end, slices[1].clone()),
+                    ];
+
+                    // keep this side
+                    blocks[i].parts.splice(.., [parts[1 - move_side].clone()]);
+                    // move this side into the adjacent block
+                    if forward {
+                        blocks[adji].parts.insert(0, parts[move_side].clone());
+                    } else {
+                        blocks[adji].parts.push(parts[move_side].clone());
+                    }
+
+                }
+            }
+        };
+
+        if forward {
+            (1 .. block_len).rev().for_each(|i| loop_fn(i-1, i));
+        } else {
+            (1 .. block_len).for_each(|i| loop_fn(i, i-1));
+        }
+
+    }
+
     fn last_non_empty(&self, i: usize) -> Option<&Part<'_>> {
         self.parts.iter().rev().find(|p| !p.is_empty(i))
     }
@@ -396,6 +456,7 @@ impl Block<'_> {
         // merge again
         let mut blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
         for block in &mut blocks {
+            block.parts.retain(|p| !p.is_both_empty());
             block.merge_adjacent_parts();
         }
 
@@ -446,9 +507,12 @@ impl Block<'_> {
             }
         }
 
+        Block::rearrange_blocks(&mut blocks, false);
+        Block::rearrange_blocks(&mut blocks, true);
+
         // remove empty ones
         for block in &mut blocks {
-             block.parts.retain(|p| !p.is_both_empty());
+            block.parts.retain(|p| !p.is_both_empty());
             block.merge_adjacent_parts();
         }
 
