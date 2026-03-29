@@ -1,0 +1,23 @@
+commit f7743cea1accab804aa35c87bdf9b21c1479781f
+Author: 林千里 <lincheney@gmail.com>
+Date:   Mon Mar 16 02:59:42 2026 +1100
+
+    a bit better oc
+
+diff --git a/bin/oc b/bin/oc
+index 5a2cb09c..43176365 100755
+--- a/bin/oc
++++ b/bin/oc
+@@ -180,15 +207,79 @@ def event_loop(port, session, outfile, auth):
+             event = json.loads(line.removeprefix(b'data: '))
+             if event['type'] == 'server.heartbeat':
+                 continue
+ 
+ def main():
+-    msg = sys.argv[1:]
+-    if not msg:
++
++    args, extras = parser.parse_known_args()
++    if extras:
++        argv = sys.argv[1:]
++        argv.insert(argv.index(extras[0]), '--')
