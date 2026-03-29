@@ -1,0 +1,18 @@
+diff --git a/src/block.rs b/src/block.rs
+index 64f709a..b2e9cca 100644
+--- a/src/block.rs
++++ b/src/block.rs
+@@ -120,8 +120,12 @@ pub fn is_empty(&self, i: usize) -> bool {
+         self.parts.iter().all(|p| p.is_empty(i))
+     }
+ 
++    pub fn is_either_empty(&self) -> bool {
++        self.is_empty(0) || self.is_empty(1)
++    }
++
+     fn splits_to_multiline(&self) -> bool {
+-        if self.is_empty(0) || self.is_empty(1) {
++        if self.is_either_empty() {
+             // one side is empty
+             return false;
+         }
