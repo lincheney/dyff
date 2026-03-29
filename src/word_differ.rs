@@ -15,44 +15,14 @@ fn isjunk(tok: Token) -> bool {
     tok.is_ascii_whitespace()
 }
 
-fn starts_line(parent: &BlockMaker, i: usize, wordno: usize) -> bool {
-    // look for a newline but skip over junk
-    if parent.tokens[i][wordno] == Token::NEWLINE {
-        return true
-    }
-
-    for &t in parent.tokens[i][..wordno].iter().rev() {
-        if t == Token::NEWLINE {
-            return true
-        } else if !isjunk(t) {
-            return false
-        }
-    }
-    return true
-}
-
-fn ends_line(parent: &BlockMaker, i: usize, wordno: usize) -> bool {
-    // look for a newline but skip over junk
-    if wordno == parent.tokens[i].len() || parent.tokens[i][wordno] == Token::NEWLINE {
-        return true
-    }
-
-    for &t in &parent.tokens[i][wordno+1..] {
-        if t == Token::NEWLINE {
-            return true
-        } else if !isjunk(t) {
-            return false
-        }
-    }
-    return true
-}
-
 pub struct WordDiffer<'a> {
     parent: &'a BlockMaker<'a>,
 
     b2j: Vec<Vec<usize>>,
 
     matched_lines: HashMap<(usize, usize), usize>,
+    starts_line: [Vec<bool>; 2],
+    ends_line: [Vec<bool>; 2],
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -87,10 +57,40 @@ impl<'a> WordDiffer<'a> {
             }
         }
 
+        let mut starts_line = [vec![false; parent.tokens[0].len()], vec![false; parent.tokens[1].len()]];
+        let mut ends_line = starts_line.clone();
+        for side in [0, 1] {
+            let mut newline = true;
+            for (i, &t) in parent.tokens[side].iter().enumerate() {
+                if newline || t == Token::NEWLINE {
+                    starts_line[side][i] = true;
+                }
+                if t == Token::NEWLINE {
+                    newline = true;
+                } else if !isjunk(t) {
+                    newline = false;
+                }
+            }
+
+            newline = true;
+            for (i, &t) in parent.tokens[side].iter().enumerate().rev() {
+                if newline || t == Token::NEWLINE {
+                    ends_line[side][i] = true;
+                }
+                if t == Token::NEWLINE {
+                    newline = true;
+                } else if !isjunk(t) {
+                    newline = false;
+                }
+            }
+        }
+
         Self{
             parent,
             b2j,
             matched_lines,
+            starts_line,
+            ends_line,
         }
     }
 
@@ -328,7 +328,7 @@ impl<'a> WordDiffer<'a> {
 
                 // score boost if this matches a whole line
                 let whole_line = [(0, i), (1, j)].map(|(side, start)| {
-                    if k > 1 && starts_line(self.parent, side, start) && ends_line(self.parent, side, start+k-1) {
+                    if k > 1 && self.starts_line[side][start] && self.ends_line[side][start+k-1] {
                         WHOLE_LINE_BOOST
                     } else {
                         0
