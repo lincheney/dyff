@@ -1,0 +1,15 @@
+[1mdiff --git [0m[0;31m[1m[48;5;238ma/shadow/.config/nvim/lua/treesitter/init.lua [0;32m[1m[48;5;238mb/shadow/.config/nvim/lua/treesitter/init.lua[0m
+index 43f21e7f..b1ab0364 100644
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mshadow/.config/nvim/lua/treesitter/init.lua[2;7m[0m
+[0;36m@@ -95,8 +95,11 @@[0m
+[0;38;5;242m95  [0;38;5;242m▏[0;38;5;242m95  [0;38;5;242m▏ [0;38;5;242m        metadata[capture_id] = vim.tbl_deep_extend('keep', metadata[capture_id], {range = {node:range()}  })[0m
+[0;38;5;242m96  [0;38;5;242m▏[0;38;5;242m96  [0;38;5;242m▏ [0;38;5;242m        local text = vim.treesitter.get_node_text(node, bufnr)[0m
+[0;38;5;242m97  [0;38;5;242m▏[0;38;5;242m97  [0;38;5;242m▏ [0;38;5;242m        local range = metadata[capture_id].range[2;7m[0m
+[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m98  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m        local quote = text:match('[\'"]')[0m
+[0;31m    [0;38;5;242m▏[0;32m99  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m        local s, e = text:find(quote..quote..'?'..quote..'?')[2;7m[0m
+[0;38;5;252m[0;31m98  [0;38;5;242m▏[0;32m100 [0;38;5;242m▏ [0;38;5;252m        range[2] = range[2] + [0;31m[1;48;2;80;30;30mtext:find('[\'"]')[0;32m[1;48;2;25;80;25me[0;38;5;252m[2;7m[0m
+[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m101 [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m        s, e = text:reverse():find(quote..quote..'?'..quote..'?')[2;7m[0m
+[0;38;5;252m[0;31m99  [0;38;5;242m▏[0;32m102 [0;38;5;242m▏ [0;38;5;252m        range[4] = range[4] - [0;31m[1;48;2;80;30;30mtext:reverse():find('[\'"]')[0;32m[1;48;2;25;80;25me[0;38;5;252m[2;7m[0m
+[0;38;5;242m100 [0;38;5;242m▏[0;38;5;242m103 [0;38;5;242m▏ [0;38;5;242m    end)[2;7m[0m
+
+     vim.treesitter.query.add_directive('debug!', function(match, pattern, bufnr, pred, metadata)

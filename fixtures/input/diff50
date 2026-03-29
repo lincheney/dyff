@@ -1,14 +1,51 @@
-diff --git a/src/shell/externs.rs b/src/shell/externs.rs
-index 1041773..d5d85cd 100644
---- a/src/shell/externs.rs
-+++ b/src/shell/externs.rs
-@@ -9,7 +9,7 @@
- use std::sync::atomic::{AtomicBool, Ordering};
--hello world crate::fork_lock::ForkLock
-+blarghll cheese crate::fork_lock
- use anyhow::Result;
- use crate::shell::{Shell, ShellMsg, zsh, MetaString, MetaArray};
--hello world crate::fork_lock::ForkLock
-\ No newline at end of file
-+blarghll cheese crate::fork_lock
-\ No newline at end of file
+commit 071996bfa2907a34ea3166118b0c73c1ca38bbdc
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sat Mar 28 02:41:01 2026 +1100
+
+    updates
+
+diff --git a/bin/oc b/bin/oc
+index 839e3a2c..db5627a5 100755
+--- a/bin/oc
++++ b/bin/oc
+@@ -204,21 +210,25 @@ def event_loop(port, session, outfile, auth):
+     init = False
+ 
+     with request(port, '/event', auth) as events:
+-        for line in events:
+-            if not line.startswith(b'data: '):
+-                continue
+-            event = json.loads(line.removeprefix(b'data: '))
+-            if event['type'] == 'server.heartbeat':
+-                continue
+-
+-            if not init and (info := event.get('properties', {}).get('info')) and 'agent' in info and 'model' in info:
+-                agent = info['agent']
+-                model = f'{info['model']['providerID']}/{info['model']['modelID']}'
+-                print(f'{DIM}> Using {agent} agent with {model}', RESET, flush=True)
+-                init = True
+-
+-            with lock:
+-                process_event(port, session, outfile, event, lock, auth)
++        with tempfile.NamedTemporaryFile() as logfile:
++            for line in events:
++                if not line.startswith(b'data: '):
++                    continue
++                line = line.removeprefix(b'data: ')
++                logfile.write(line)
++                logfile.flush()
++                event = json.loads(line)
++                if event['type'] == 'server.heartbeat':
++                    continue
++
++                if not init and (info := event.get('properties', {}).get('info')) and 'agent' in info and 'model' in info:
++                    agent = info['agent']
++                    model = f'{info['model']['providerID']}/{info['model']['modelID']}'
++                    print(f'{DIM}> Using {agent} agent with {model}', RESET, flush=True)
++                    init = True
++
++                with lock:
++                    process_event(port, session, outfile, event, lock, auth)
+ 
+ def main():
+     parser = argparse.ArgumentParser()
