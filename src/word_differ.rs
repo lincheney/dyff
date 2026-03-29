@@ -3,6 +3,8 @@ use super::block_maker::BlockMaker;
 use super::part::Part;
 use super::tokeniser::Token;
 
+const WHOLE_LINE_BOOST: usize = 5;
+
 #[derive(Default, Clone, Copy)]
 struct J2Len {
     len: usize,
@@ -11,6 +13,38 @@ struct J2Len {
 
 fn isjunk(tok: Token) -> bool {
     tok.is_ascii_whitespace()
+}
+
+fn starts_line(parent: &BlockMaker, i: usize, wordno: usize) -> bool {
+    // look for a newline but skip over junk
+    if parent.tokens[i][wordno] == Token::NEWLINE {
+        return true
+    }
+
+    for &t in parent.tokens[i][..wordno].iter().rev() {
+        if t == Token::NEWLINE {
+            return true
+        } else if !isjunk(t) {
+            return false
+        }
+    }
+    return true
+}
+
+fn ends_line(parent: &BlockMaker, i: usize, wordno: usize) -> bool {
+    // look for a newline but skip over junk
+    if wordno == parent.tokens[i].len() || parent.tokens[i][wordno] == Token::NEWLINE {
+        return true
+    }
+
+    for &t in &parent.tokens[i][wordno+1..] {
+        if t == Token::NEWLINE {
+            return true
+        } else if !isjunk(t) {
+            return false
+        }
+    }
+    return true
 }
 
 pub struct WordDiffer<'a> {
@@ -291,9 +325,19 @@ impl<'a> WordDiffer<'a> {
                 } else {
                     right[j..j+k].iter().take_while(|m| isjunk(**m)).count()
                 };
+
+                // score boost if this matches a whole line
+                let whole_line = [(0, i), (1, j)].map(|(side, start)| {
+                    if k > 1 && starts_line(self.parent, side, start) && ends_line(self.parent, side, start+k-1) {
+                        WHOLE_LINE_BOOST
+                    } else {
+                        0
+                    }
+                });
+
                 // trailing_ws is ALWAYS 0, because we continue on junk from above,
                 // therefore the last trailing char is never junk
-                let non_ws_length = k - leading_ws;
+                let non_ws_length = k - leading_ws + whole_line[0] + whole_line[1];
 
                 // prioritise more words, then longer words, then words on the expected line
                 let cmp = non_ws_length.cmp(&best_non_ws);
