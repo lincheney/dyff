@@ -115,6 +115,10 @@ impl Part<'_> {
         self.slices[i].is_empty()
     }
 
+    pub fn is_both_empty(&self) -> bool {
+        self.is_empty(0) && self.is_empty(1)
+    }
+
     pub fn shiftable_side(&self) -> Option<usize> {
         // must be one empty and one non empty
         match (self.is_empty(0), self.is_empty(1)) {

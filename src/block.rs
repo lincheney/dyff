@@ -35,7 +35,7 @@ impl Block<'_> {
         const MAXLEN: usize = 10;
         let total: usize = self.parts.iter().map(|p| min(MAXLEN, p.word_len(0)) + min(MAXLEN, p.word_len(1))).sum();
         if total == 0 {
-            if self.is_empty(0) && self.is_empty(1) {
+            if self.is_both_empty() {
                 return 1f64
             }
             return 0.
@@ -111,13 +111,17 @@ impl Block<'_> {
         }
 
         if parts.len() != self.parts.len() {
-            parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+            parts.retain(|p| !p.is_both_empty());
             self.parts = parts;
         }
     }
 
     pub fn is_empty(&self, i: usize) -> bool {
         self.parts.iter().all(|p| p.is_empty(i))
+    }
+
+    pub fn is_both_empty(&self) -> bool {
+        self.is_empty(0) && self.is_empty(1)
     }
 
     fn splits_to_multiline(&self) -> bool {
@@ -220,7 +224,7 @@ impl Block<'_> {
                             let (left, rest) = part.partition(starts[0], starts[1], false);
                             let (mut newpart, right) = rest.partition(ends[0], ends[1], false);
 
-                            if !newpart.is_empty(0) || !newpart.is_empty(1) {
+                             if !newpart.is_both_empty() {
                                 newpart.matches = newpart.tokens(0) == newpart.tokens(1);
                                 // if empty, make sure they are put in the right position
                                 if newpart.is_empty(0) {
@@ -235,7 +239,7 @@ impl Block<'_> {
 
                             [left, right]
                         })
-                        .filter(|part| !part.is_empty(0) || !part.is_empty(1))
+                         .filter(|part| !part.is_both_empty())
                         .collect();
 
                     let score = newblock.score();
@@ -298,7 +302,7 @@ impl Block<'_> {
 
         // group parts based on line numbers
         for part in self.parts {
-            if part.is_empty(0) && part.is_empty(1) {
+            if part.is_both_empty() {
                 continue
             }
 
@@ -403,7 +407,7 @@ impl Block<'_> {
                 (
                     block.parts[0].first_lineno(0) == block.parts.last().unwrap().last_lineno(0)
                     || block.parts[0].first_lineno(1) == block.parts.last().unwrap().last_lineno(1)
-                ) && let Some(parti) = block.parts.iter().position(|p| !p.matches && (!p.is_empty(0) || !p.is_empty(1)))
+                 ) && let Some(parti) = block.parts.iter().position(|p| !p.matches && !p.is_both_empty())
             {
 
                 let part = &mut block.parts[parti];
@@ -432,7 +436,7 @@ impl Block<'_> {
                     let mut newblock = block.clone();
                     newblock.parts.splice(parti..=parti, [first, second, third]);
                     newblock.squeeze_parts();
-                    newblock.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+                     newblock.parts.retain(|p| !p.is_both_empty());
 
                     if newblock.parts.iter().filter(|p| p.matches).count() > block.parts.iter().filter(|p| p.matches).count() {
                         *block = newblock;
@@ -444,7 +448,7 @@ impl Block<'_> {
 
         // remove empty ones
         for block in &mut blocks {
-            block.parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+             block.parts.retain(|p| !p.is_both_empty());
             block.merge_adjacent_parts();
         }
 
@@ -495,7 +499,7 @@ impl Block<'_> {
         let max_lineno = self.parts.iter().flat_map(|p| [p.last_lineno(0), p.last_lineno(0)]).max().unwrap_or(0);
         let max_lineno_width = max_lineno.checked_ilog10().unwrap_or(0) as usize + 1;
 
-        if !style.show_both && self.parts.iter().all(|p| p.matches || (p.is_empty(0) && p.is_empty(1))) {
+        if !style.show_both && self.parts.iter().all(|p| p.matches || p.is_both_empty()) {
             // this is entirely matching
 
             let mut newline = true;

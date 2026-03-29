@@ -192,7 +192,7 @@ impl<'a> BlockMaker<'a> {
             }
         }
 
-        parts.retain(|p| !p.is_empty(0) || !p.is_empty(1));
+        parts.retain(|p| !p.is_both_empty());
         Block{parts}
     }
 
