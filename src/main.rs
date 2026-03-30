@@ -262,6 +262,7 @@ fn main_internal() -> Result<ExitCode> {
         line_numbers: args.line_numbers,
         signs: args.signs,
         inline: args.inline != AutoChoices::Never && !args.exact,
+        newline_insert_markers: !args.exact,
 
         diff_matching: [(*args.style.diff_matching_left).into(), (*args.style.diff_matching_right).into()],
         diff_matching_inline: (*args.style.diff_matching_inline).into(),

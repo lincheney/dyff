@@ -523,6 +523,7 @@ impl Block<'_> {
         stdout: &mut BufWriter<T>,
         side: usize,
         word: Bytes,
+        style: &style::Style,
         style_opts: &super::StyleOpts,
     ) -> Result<()> {
 
@@ -533,7 +534,7 @@ impl Block<'_> {
             stdout.write_all(style::RESET)?;
         }
         stdout.write_all([&style_opts.diff_insert_left, &style_opts.diff_insert_right][side].as_bytes())?;
-        if newline {
+        if newline && style.newline_insert_markers {
             // need at least a space to draw the insert marker
             stdout.write_all(b" ")?;
             stdout.write_all(style::RESET)?;
@@ -717,7 +718,7 @@ impl Block<'_> {
                             if trailing_ws {
                                 stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
                             }
-                            Self::print_insert_marker(stdout, i, word, style_opts)?;
+                            Self::print_insert_marker(stdout, i, word, &style, style_opts)?;
                             stdout.write_all(style::RESET)?;
                             if trailing_ws {
                                 stdout.write_all(style_opts.diff_trailing_ws.as_bytes())?;
@@ -745,7 +746,7 @@ impl Block<'_> {
 
             if !newline {
                 if insert {
-                    Self::print_insert_marker(stdout, i, b"\n".into(), style_opts)?;
+                    Self::print_insert_marker(stdout, i, b"\n".into(), &style, style_opts)?;
                 } else {
                     stdout.write_all(b"\n")?;
                 }

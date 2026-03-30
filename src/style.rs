@@ -6,6 +6,7 @@ pub struct Style<'a> {
     pub signs: bool,
     pub show_both: bool,
     pub inline: bool,
+    pub newline_insert_markers: bool,
 
     pub diff_matching: [Bytes<'a>; 2],
     pub diff_matching_inline: Bytes<'a>,
@@ -19,6 +20,7 @@ impl std::default::Default for Style<'_> {
             signs: false,
             show_both: false,
             inline: false,
+            newline_insert_markers: true,
             diff_matching: [DIFF_MATCHING[0].into(), DIFF_MATCHING[1].into()],
             diff_matching_inline: DIFF_MATCHING_INLINE.into(),
             diff_non_matching: [DIFF_NON_MATCHING[0].into(), DIFF_NON_MATCHING[1].into()],
