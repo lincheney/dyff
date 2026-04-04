@@ -221,10 +221,19 @@ impl Block<'_> {
                     let mut newblock = Block::default();
                     block.parts = block.parts.into_iter()
                         .flat_map(|part| {
-                            let (left, rest) = part.partition(starts[0], starts[1], false);
-                            let (mut newpart, right) = rest.partition(ends[0], ends[1], false);
+                            let (mut left, rest) = part.partition(starts[0], starts[1], false);
+                            let (mut newpart, mut right) = rest.partition(ends[0], ends[1], false);
 
-                             if !newpart.is_both_empty() {
+                            left.slices[0].start = left.slices[0].start.min(starts[0]);
+                            left.slices[1].start = left.slices[1].start.min(starts[1]);
+                            left.slices[0].end = left.slices[0].end.min(starts[0]);
+                            left.slices[1].end = left.slices[1].end.min(starts[1]);
+                            right.slices[0].start = right.slices[0].start.max(ends[0]);
+                            right.slices[1].start = right.slices[1].start.max(ends[1]);
+                            right.slices[0].end = right.slices[0].end.max(ends[0]);
+                            right.slices[1].end = right.slices[1].end.max(ends[1]);
+
+                            if !newpart.is_both_empty() {
                                 newpart.matches = newpart.tokens(0) == newpart.tokens(1);
                                 // if empty, make sure they are put in the right position
                                 if newpart.is_empty(0) {

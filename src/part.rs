@@ -226,12 +226,12 @@ impl Part<'_> {
 
 impl std::fmt::Debug for Part<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}(\"{}\", \"{}\")",
-            if self.matches { "Match" } else { "NonMatch" },
-            bstr::BString::new(bstr::concat(&self.parent.words[0][self.slices[0].clone()])),
-            bstr::BString::new(bstr::concat(&self.parent.words[1][self.slices[1].clone()])),
-        )
+        let left = bstr::BString::new(bstr::concat(self.get(0)));
+        if self.matches {
+            write!(f, "Match(\"{left}\")")
+        } else {
+            let right = bstr::BString::new(bstr::concat(self.get(1)));
+            write!(f, "NonMatch(\"{left}\", \"{right}\")")
+        }
     }
 }
