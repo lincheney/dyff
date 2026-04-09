@@ -438,11 +438,16 @@ impl Block<'_> {
         self.parts.iter().rev().find(|p| !p.is_empty(i))
     }
 
+    fn last_lineno(&self, i: usize) -> Option<usize> {
+        self.last_non_empty(i).map(|last| last.last_lineno(i))
+    }
+
     pub fn split_block(mut self) -> Vec<Self> {
         self.squeeze_parts();
         super::shift::shift_parts(&mut self.parts);
 
-        let mut blocks = vec![Block::default()];
+        let mut blocks = vec![];
+        let mut block = Block::default();
 
         // group parts based on line numbers
         for mut part in self.parts {
@@ -450,31 +455,29 @@ impl Block<'_> {
                 continue
             }
 
-            // TODO clean this up
-            let block = &mut blocks.last_mut().unwrap();
-
             if !block.parts.is_empty() {
-                if (block.last_non_empty(0).map(|last| last.last_lineno(0)) == Some(part.first_lineno(0)) && part.tokens(0).first() == Some(&Token::NEWLINE))
-                || (block.last_non_empty(1).map(|last| last.last_lineno(1)) == Some(part.first_lineno(1)) && part.tokens(1).first() == Some(&Token::NEWLINE))
-                {
+                let overlap = [0, 1].map(|x| block.last_lineno(x) == Some(part.first_lineno(x)));
+                let newline = [0, 1].map(|x| part.tokens(x).first() == Some(&Token::NEWLINE));
+
+                // either they don't overlap or only on a newline
+                if (0..=1).all(|x| !overlap[x] || newline[x]) && (overlap[0] || overlap[1]) {
                     // move that newline back
-                    let a = if part.tokens(0).first() == Some(&Token::NEWLINE) { 1 } else { 0 };
-                    let b = if part.tokens(1).first() == Some(&Token::NEWLINE) { 1 } else { 0 };
-                    let (left, right) = part.partition_from_start(a, b, a == b);
+                    let partition = [0, 1].map(|x| if newline[x] { 1 } else { 0 });
+                    let (left, right) = part.partition_from_start(partition[0], partition[1], partition[0] == partition[1]);
                     block.parts.push(left);
                     part = right;
                 }
 
-                if block.last_non_empty(0).map(|last| last.last_lineno(0)) != Some(part.first_lineno(0))
-                && block.last_non_empty(1).map(|last| last.last_lineno(1)) != Some(part.first_lineno(1))
-                {
-                    // different line
-                    blocks.push(Block::default());
+                // different line
+                if (0..=1).all(|x| block.last_lineno(x) != Some(part.first_lineno(x))) {
+                    blocks.push(block);
+                    block = Block::default();
                 }
             }
 
-            blocks.last_mut().unwrap().parts.push(part);
+            block.parts.push(part);
         }
+        blocks.push(block);
 
         // match leading whitespace in each block
         // since it got treated as junk during the diff
