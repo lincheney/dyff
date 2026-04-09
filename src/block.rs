@@ -11,7 +11,7 @@ fn find_common_prefix_length<T: PartialEq>(a: &[T], b: &[T]) -> usize {
     a.iter().zip(b).take_while(|(a, b)| a == b).count()
 }
 
-fn find_common_suffix_length(a: &[Bytes], b: &[Bytes]) -> usize {
+fn find_common_suffix_length<T: PartialEq>(a: &[T], b: &[T]) -> usize {
     a.iter().rev().zip(b.iter().rev()).take_while(|(a, b)| a == b).count()
 }
 
@@ -23,6 +23,7 @@ pub struct Block<'a> {
 
 impl Block<'_> {
     const CUTOFF: f64 = 0.6;
+    const SIMPLE_CUTOFF: f64 = 0.5;
     const _MIN_SIZE_EOL: usize = 2;
     const MIN_SIZE: usize = 7;
 
@@ -251,6 +252,10 @@ impl Block<'_> {
                         let part = parent.make_part(false, starts[0]..ends[0], starts[1]..ends[1]);
                         newblock.parts.clear();
                         newblock.parts.push(part);
+                        if score > Self::SIMPLE_CUTOFF {
+                            // try to do a very simple diff for low scoring blocks
+                            newblock.simple_match_common(false);
+                        }
                         new.push(newblock);
                     } else {
                         newblock.merge_adjacent_parts();
@@ -291,6 +296,82 @@ impl Block<'_> {
 
         new.sort_by_key(|block| (block.parts[0].slices[0].start, block.parts[0].slices[1].start));
         new
+    }
+
+    fn simple_match_common(&mut self, allow_space_only: bool) {
+        // try to do a very simple diff for low scoring blocks
+
+        if self.parts.is_empty() {
+            return;
+        }
+
+        // keep if one of these only 1 line
+        let one_line = [0, 1].map(|i| self.parts[0].first_lineno(i) == self.parts.last().unwrap().last_lineno(i));
+        if !one_line[0] && !one_line[1] {
+            return;
+        }
+
+        let Some(parti) = self.parts.iter().position(|p| !p.matches && !p.is_both_empty())
+        else {
+            return;
+        };
+
+        let part = &mut self.parts[parti];
+        if part.is_empty(0) || part.is_empty(1) {
+            // no possible common prefix/suffix
+            return;
+        }
+
+        // match indentation first
+        let leading_space = [0, 1].map(|x| part.tokens(x).iter().take_while(|&&t| t == Token::SPACE).count());
+        let (mut indent, rest) = part.partition_from_start(
+            leading_space[0].saturating_sub(leading_space[1]),
+            leading_space[1].saturating_sub(leading_space[0]),
+            false,
+        );
+
+        // find common prefix
+        let prefix = find_common_prefix_length(rest.tokens(0), rest.tokens(1));
+        let (mut first, mut second) = rest.partition_from_start(prefix, prefix, true);
+
+        // we only matched spaces
+        if first.is_space(0) {
+            for i in [0, 1] {
+                let shift = indent.slices[i].len();
+                first.slices[i].start -= shift;
+                first.slices[i].end -= shift;
+                second.slices[i].start -= shift;
+                // indent will get shrunk to nothing
+                indent.slices[i].end -= shift;
+                debug_assert_eq!(indent.slices[i].start, indent.slices[i].end);
+            }
+        }
+
+        // find common suffix
+        let suffix = if second.single_line(0) && second.single_line(1) {
+            find_common_suffix_length(second.get(0), second.get(1))
+        } else {
+            0
+        };
+        let (mut second, third) = second.partition_from_end(suffix, suffix, true);
+        second.matches = false;
+
+        if !allow_space_only && first.is_ascii_whitespace(0) && third.is_ascii_whitespace(0) {
+            return;
+        }
+
+        // matching common prefix/suffix looks weird when score is low and inlined
+        if second.is_empty(0) || second.is_empty(1) || !second.inlineable() {
+            // try it out
+            let mut newblock = self.clone();
+            newblock.parts.splice(parti..=parti, [indent, first, second, third]);
+            newblock.squeeze_parts();
+            newblock.parts.retain(|p| !p.is_both_empty());
+
+            if newblock.parts.iter().filter(|p| p.matches).count() > self.parts.iter().filter(|p| p.matches).count() {
+                *self = newblock;
+            }
+        }
     }
 
     fn rearrange_blocks(blocks: &mut [Self], forward: bool) {
@@ -479,49 +560,7 @@ impl Block<'_> {
 
         for block in &mut blocks {
             // try to do a very simple diff for low scoring blocks
-
-            if
-                // one of these is only 1 line
-                (
-                    block.parts[0].first_lineno(0) == block.parts.last().unwrap().last_lineno(0)
-                    || block.parts[0].first_lineno(1) == block.parts.last().unwrap().last_lineno(1)
-                 ) && let Some(parti) = block.parts.iter().position(|p| !p.matches && !p.is_both_empty())
-            {
-
-                let part = &mut block.parts[parti];
-
-                if part.is_empty(0) || part.is_empty(1) {
-                    // no possible common prefix/suffix
-                    continue
-                }
-
-                // find common prefix
-                let prefix = find_common_prefix_length(part.get(0), part.get(1));
-                let (first, second) = part.partition_from_start(prefix, prefix, true);
-
-                // find common suffix
-                let suffix = if second.single_line(0) && second.single_line(1) {
-                    find_common_suffix_length(second.get(0), second.get(1))
-                } else {
-                    0
-                };
-                let (mut second, third) = second.partition_from_end(suffix, suffix, true);
-                second.matches = false;
-
-                // matching common prefix/suffix looks weird when score is low and inlined
-                if second.is_empty(0) || second.is_empty(1) || !second.inlineable() {
-                    // try it out
-                    let mut newblock = block.clone();
-                    newblock.parts.splice(parti..=parti, [first, second, third]);
-                    newblock.squeeze_parts();
-                     newblock.parts.retain(|p| !p.is_both_empty());
-
-                    if newblock.parts.iter().filter(|p| p.matches).count() > block.parts.iter().filter(|p| p.matches).count() {
-                        *block = newblock;
-                    }
-                }
-
-            }
+            block.simple_match_common(true);
         }
 
         Block::rearrange_blocks(&mut blocks, false);
