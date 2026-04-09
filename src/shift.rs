@@ -167,10 +167,11 @@ fn score_words_suffix(
 
     // check for other suffixes
     if newline_suffix == 0 && let Some(&ext) = parent.words[side].get(end) {
-        static EXT_SUFFIXES: [(usize, &[u8]); 5] = [
+        static EXT_SUFFIXES: [(usize, &[u8]); 6] = [
             // (NEWLINE, b"\n"),
             (WHITESPACE_SUFFIX, b" "),
             (GOOD_SUFFIX, b":"),
+            (GOOD_SUFFIX, b";"),
             (OTHER_SUFFIX, b")"),
             (OTHER_SUFFIX, b"}"),
             (OTHER_SUFFIX, b"]"),
