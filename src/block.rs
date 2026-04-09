@@ -1,18 +1,26 @@
+use super::block_maker::BlockMaker;
 use super::tokeniser::Token;
 use std::io::{BufWriter, Write};
 use std::cmp::{min};
+use std::borrow::Cow;
 use anyhow::{Result};
 use super::part::Part;
 use super::style;
 use super::types::Bytes;
 use super::whitespace::CheckAllWhitespace;
 
-fn find_common_prefix_length<T: PartialEq>(a: &[T], b: &[T]) -> usize {
-    a.iter().zip(b).take_while(|(a, b)| a == b).count()
+fn find_common_prefix_length<A: IntoIterator<Item=T>, B: IntoIterator<Item=T>, T: PartialEq>(a: A, b: B) -> usize {
+    a.into_iter().zip(b).take_while(|(a, b)| a == b).count()
 }
 
-fn find_common_suffix_length<T: PartialEq>(a: &[T], b: &[T]) -> usize {
-    a.iter().rev().zip(b.iter().rev()).take_while(|(a, b)| a == b).count()
+fn find_common_suffix_length<A, B, T>(a: A, b: B) -> usize
+where T: PartialEq,
+    A: IntoIterator<Item=T>,
+    B: IntoIterator<Item=T>,
+    A::IntoIter: DoubleEndedIterator,
+    B::IntoIter: DoubleEndedIterator,
+{
+    a.into_iter().rev().zip(b.into_iter().rev()).take_while(|(a, b)| a == b).count()
 }
 
 
@@ -21,7 +29,7 @@ pub struct Block<'a> {
     pub parts: Vec<Part<'a>>,
 }
 
-impl Block<'_> {
+impl<'a> Block<'a> {
     const CUTOFF: f64 = 0.6;
     const SIMPLE_CUTOFF: f64 = 0.5;
     const _MIN_SIZE_EOL: usize = 2;
@@ -440,6 +448,72 @@ impl Block<'_> {
 
     fn last_lineno(&self, i: usize) -> Option<usize> {
         self.last_non_empty(i).map(|last| last.last_lineno(i))
+    }
+
+    pub fn set_block_maker(&mut self, parent: &'a BlockMaker) {
+        for part in &mut self.parts {
+            part.parent = parent;
+        }
+    }
+
+    pub fn split_in_middle_of_word(
+        &mut self,
+        mut parent: Cow<'a, BlockMaker<'a>>,
+        tokeniser: &mut crate::tokeniser::Tokeniser,
+    ) -> Cow<'a, BlockMaker<'a>> {
+
+        let mut i = 1;
+        let mut shift = 0;
+        while i < self.parts.len() {
+            let part = &mut self.parts[i];
+            part.slices = part.shift_slice(shift, shift);
+
+            if !part.matches {
+                let chars = [0, 1].map(|x| part.get(x).iter().flat_map(|x| x.iter()));
+                let len = [0, 1].map(|x| chars[x].clone().count());
+
+                let prefix = find_common_prefix_length(chars[0].clone(), chars[1].clone());
+                let suffix = find_common_suffix_length(chars[0].clone(), chars[1].clone());
+                let suffix = suffix.min(len[0] - prefix).min(len[1] - prefix);
+
+                if suffix > 0 && ((suffix == part.get(0).last().unwrap().len()) != (suffix == part.get(1).last().unwrap().len())) {
+                    let mut after = part.clone();
+                    after.slices[0].start = after.slices[0].end;
+                    after.slices[1].start = after.slices[1].end;
+                    after.matches = true;
+
+                    for x in [0, 1] {
+                        parent.to_mut().split_word(tokeniser, x, part.slices[x].end - 1, part.get(x).last().unwrap().len() - suffix);
+                        after.slices[x].end += 1;
+                    }
+                    shift += 1;
+                    self.parts.insert(i+1, after);
+                    i += 1;
+                }
+
+                let part = &mut self.parts[i];
+                if prefix > 0 && ((prefix == part.get(0)[0].len()) != (prefix == part.get(1)[0].len())) {
+                    let mut before = part.clone();
+                    before.slices[0].end = before.slices[0].start;
+                    before.slices[1].end = before.slices[1].start;
+                    before.matches = true;
+
+                    for x in [0, 1] {
+                        parent.to_mut().split_word(tokeniser, x, part.slices[x].start, prefix);
+                        part.slices[x].start += 1;
+                        part.slices[x].end += 1;
+                        before.slices[x].end += 1;
+                    }
+                    shift += 1;
+                    self.parts.insert(i, before);
+                    i += 1;
+                }
+            }
+            i += 1;
+        }
+
+        self.parts.retain(|p| !p.is_both_empty());
+        parent
     }
 
     pub fn split_block(mut self) -> Vec<Self> {

@@ -10,9 +10,9 @@ pub struct LineDiffer<'a> {
 }
 
 impl<'a> LineDiffer<'a> {
-    pub fn new(parent: &'a BlockMaker<'a>) -> Self {
+    pub fn new(parent: &'a BlockMaker<'a>, tokeniser: &crate::tokeniser::Tokeniser) -> Self {
         let mut b2j = vec![];
-        b2j.resize_with(parent.tokeniser.max_token().0, Vec::new);
+        b2j.resize_with(tokeniser.max_token().0, Vec::new);
 
         for (lineno, tok) in parent.line_tokens[1].iter().enumerate() {
             b2j[tok.0].push(lineno);

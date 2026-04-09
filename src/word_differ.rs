@@ -43,9 +43,9 @@ impl DiffMatch {
 }
 
 impl<'a> WordDiffer<'a> {
-    pub fn new(parent: &'a BlockMaker<'a>) -> Self {
+    pub fn new(parent: &'a BlockMaker<'a>, tokeniser: &crate::tokeniser::Tokeniser) -> Self {
         let mut b2j = vec![];
-        b2j.resize_with(parent.tokeniser.max_token().0, Vec::new);
+        b2j.resize_with(tokeniser.max_token().0, Vec::new);
         let matched_lines = HashMap::new();
 
         let mut line_start = true;

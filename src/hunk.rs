@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::io::{BufWriter, Write};
 use anyhow::{Result};
@@ -48,7 +49,18 @@ impl Hunk {
         if !self.is_empty() {
 
             let maker = BlockMaker::new(self, line_numbers, tokeniser);
-            let blocks = maker.make_block().split_block();
+            let mut blocks = maker.make_block(tokeniser).split_block();
+
+            // we need to do this here since we are modifying the block maker
+            let mut maker = Cow::Borrowed(&maker);
+            for block in &mut blocks {
+                maker = block.split_in_middle_of_word(maker, tokeniser);
+            }
+            if matches!(maker, Cow::Owned(_)) {
+                for block in &mut blocks {
+                    block.set_block_maker(&maker);
+                }
+            }
 
             for block in &blocks {
                 block.print(stdout, merge_markers, style, style_opts, super::style::format_lineno)?;
@@ -114,7 +126,7 @@ impl Hunk {
             ..style
         };
         let maker = BlockMaker::new(&hunk, [1, 1], tokeniser);
-        let blocks = maker.make_block().split_block();
+        let blocks = maker.make_block(tokeniser).split_block();
         for block in blocks {
             block.print(stdout, None, style, style_opts, |num: [usize; 2], _, _, _, _| -> &'a str {
                 match num {

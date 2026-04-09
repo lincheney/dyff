@@ -10,14 +10,14 @@ use super::tokeniser::{Token, Tokeniser};
 
 const MAX_WORD_LEN: usize = 4;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockMaker<'a> {
     line_numbers: [usize; 2],
 
     pub words: [Vec<Bytes<'a>>; 2],
     pub tokens: [Vec<Token>; 2],
     pub line_tokens: [Vec<Token>; 2],
-    pub tokeniser: &'a Tokeniser,
+    // pub tokeniser: &'a mut Tokeniser,
 
     word_to_line: [Vec<usize>; 2],
     pub line_to_word: [Vec<usize>; 2],
@@ -31,7 +31,7 @@ fn split_long_word(word: Bytes) -> impl Iterator<Item=Bytes> {
 }
 
 impl<'a> BlockMaker<'a> {
-    pub fn new(hunk: &'a Hunk, line_numbers: [usize; 2], tokeniser: &'a mut Tokeniser) -> Self {
+    pub fn new(hunk: &'a Hunk, line_numbers: [usize; 2], tokeniser: &mut Tokeniser) -> Self {
         // make a mapping from word number to line number
         let mut words = [vec![], vec![]];
         let mut tokens = [vec![], vec![]];
@@ -85,7 +85,6 @@ impl<'a> BlockMaker<'a> {
             words,
             tokens,
             line_tokens,
-            tokeniser,
             word_to_line,
             line_to_word,
         }
@@ -103,11 +102,25 @@ impl<'a> BlockMaker<'a> {
         &self.words[i][self.get_wordno(i, lineno) .. self.get_wordno(i, lineno+1)]
     }
 
+    pub fn split_word(&mut self, tokeniser: &mut Tokeniser, i: usize, w: usize, c: usize) {
+        let word = self.words[i][w];
+        let left = &word[..c];
+        let right = &word[c..];
+        let left_token = tokeniser.map(left);
+        let right_token = tokeniser.map(right);
+
+        self.words[i][w] = right;
+        self.words[i].insert(w, left);
+        self.tokens[i][w] = right_token;
+        self.tokens[i].insert(w, left_token);
+        self.word_to_line[i].insert(w, self.word_to_line[i][w]);
+    }
+
     pub fn make_part(&self, matches: bool, left: std::ops::Range<usize>, right: std::ops::Range<usize>) -> Part<'_> {
         Part{parent: self, matches, slices: [left, right]}
     }
 
-    pub fn make_block(&self) -> Block<'_> {
+    pub fn make_block(&self, tokeniser: &Tokeniser) -> Block<'_> {
         // diff by line first
         let mut ranges = vec![];
         let mut previ = 0;
@@ -115,7 +128,7 @@ impl<'a> BlockMaker<'a> {
         let maxi = self.words[0].len();
         let maxj = self.words[1].len();
 
-        for (left, right) in LineDiffer::new(self).get_matching_blocks() {
+        for (left, right) in LineDiffer::new(self, tokeniser).get_matching_blocks() {
 
             if previ < left.start && prevj < right.start && left.end < maxi && right.end < maxj {
                 // these lines are in the middle
@@ -160,7 +173,7 @@ impl<'a> BlockMaker<'a> {
         }
 
         let mut parts = vec![];
-        let mut differ = WordDiffer::new(self);
+        let mut differ = WordDiffer::new(self, tokeniser);
 
         for (matches, left, right) in ranges {
             if matches {
