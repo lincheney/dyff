@@ -364,20 +364,34 @@ impl Block<'_> {
         let mut blocks = vec![Block::default()];
 
         // group parts based on line numbers
-        for part in self.parts {
+        for mut part in self.parts {
             if part.is_both_empty() {
                 continue
             }
 
-            let block = &blocks.last().unwrap();
+            // TODO clean this up
+            let block = &mut blocks.last_mut().unwrap();
 
-            if !block.parts.is_empty()
-                && block.last_non_empty(0).map(|last| last.last_lineno(0)) != Some(part.first_lineno(0))
+            if !block.parts.is_empty() {
+                if (block.last_non_empty(0).map(|last| last.last_lineno(0)) == Some(part.first_lineno(0)) && part.tokens(0).first() == Some(&Token::NEWLINE))
+                || (block.last_non_empty(1).map(|last| last.last_lineno(1)) == Some(part.first_lineno(1)) && part.tokens(1).first() == Some(&Token::NEWLINE))
+                {
+                    // move that newline back
+                    let a = if part.tokens(0).first() == Some(&Token::NEWLINE) { 1 } else { 0 };
+                    let b = if part.tokens(1).first() == Some(&Token::NEWLINE) { 1 } else { 0 };
+                    let (left, right) = part.partition_from_start(a, b, a == b);
+                    block.parts.push(left);
+                    part = right;
+                }
+
+                if block.last_non_empty(0).map(|last| last.last_lineno(0)) != Some(part.first_lineno(0))
                 && block.last_non_empty(1).map(|last| last.last_lineno(1)) != Some(part.first_lineno(1))
-            {
-                // different line
-                blocks.push(Block::default());
+                {
+                    // different line
+                    blocks.push(Block::default());
+                }
             }
+
             blocks.last_mut().unwrap().parts.push(part);
         }
 
