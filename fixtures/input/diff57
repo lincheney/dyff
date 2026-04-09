@@ -1,0 +1,10 @@
+diff --git a/src/block.rs b/src/block.rs
+index 4300d52..9399e3f 100644
+--- a/src/block.rs
++++ b/src/block.rs
+@@ -438,11 +438,16 @@ fn last_non_empty(&self, i: usize) -> Option<&Part<'_>> {
+-                    // different line
+-                    blocks.push(Block::default());
++                // different line
++                    blocks.push(block);
++                    block = Block::default();

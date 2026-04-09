@@ -1,0 +1,12 @@
+diff --git a/src/block.rs b/src/block.rs
+index 4300d52..9399e3f 100644
+--- a/src/block.rs
++++ b/src/block.rs
+@@ -438,11 +438,16 @@ fn last_non_empty(&self, i: usize) -> Option<&Part<'_>> {
+ 
+-            blocks.last_mut().unwrap().parts.push(part);
++            block.parts.push(part);
+         }
+ 
+         // match leading whitespace in each block
+         // since it got treated as junk during the diff
