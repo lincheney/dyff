@@ -1,0 +1,32 @@
+commit eb563c4f1b549c8937d38c4602dd823e648be8e9
+Author: 林千里 <lincheney@gmail.com>
+Date:   Thu Apr 9 13:05:15 2026 +1000
+
+    some refactor
+
+diff --git a/src/shell/zsh/widget/mod.rs b/src/shell/zsh/widget/mod.rs
+index 604a41f..f4c790f 100644
+--- a/src/shell/zsh/widget/mod.rs
++++ b/src/shell/zsh/widget/mod.rs
+@@ -1,22 +1,23 @@
+ 
+ struct Widget(NonNull<bindings::widget>);
+ 
+-static SELF_INSERT: OnceLock<Widget> = OnceLock::new();
+-static IMMORTAL_SELF_INSERT: OnceLock<Widget> = OnceLock::new();
+-static UNDEFINED_KEY: OnceLock<Widget> = OnceLock::new();
+-static IMMORTAL_UNDEFINED_KEY: OnceLock<Widget> = OnceLock::new();
+-static ACCEPT_LINE: OnceLock<Widget> = OnceLock::new();
+-static IMMORTAL_ACCEPT_LINE: OnceLock<Widget> = OnceLock::new();
++thread_local! {
++    static SELF_INSERT: Cell<Option<Widget>> = Cell::new(None);
++    static IMMORTAL_SELF_INSERT: Cell<Option<Widget>> = Cell::new(None);
++    static UNDEFINED_KEY: Cell<Option<Widget>> = Cell::new(None);
++    static IMMORTAL_UNDEFINED_KEY: Cell<Option<Widget>> = Cell::new(None);
++    static ACCEPT_LINE: Cell<Option<Widget>> = Cell::new(None);
++    static IMMORTAL_ACCEPT_LINE: Cell<Option<Widget>> = Cell::new(None);
++}
++
+ 
+ pub struct ZleWidget<'a> {
+     ptr: NonNull<bindings::thingy>,
