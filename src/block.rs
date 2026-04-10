@@ -384,7 +384,6 @@ impl<'a> Block<'a> {
                             let split = [0, 1].map(|i| indent.parent.get_line_range(i, indent.first_lineno(i)).end);
                             block = Some(self.split_at([split[0], split[1]]));
                             self.separate_newlines();
-                            eprintln!("DEBUG(effie) \t{}\t= {:?}", stringify!(self), self);
                         }
 
                     }

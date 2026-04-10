@@ -1,0 +1,87 @@
+diff --git a/src/main.rs b/src/main.rs
+index 9428369..8384c01 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -437,41 +438,56 @@ fn not_flag<S: AsRef<str>>(x: S) -> bool {
+             continue
+         }
+ 
+-        if hunk.as_ref().is_none_or(|h| h.is_empty()) {
+-            if let Some(captures) = byte_regex!(r"^(?<sign>---|\+\+\+) ([ab]/)?(?<filename>[^\t]*)(?<trailer>\t.*)?".captures(&stripped)) {
+-                if &captures["sign"] == b"---" {
+-                    filename = Some(captures["filename"].to_owned().into());
+-                } else {
+-                    Hunk::print_filename(
+-                        &mut stdout,
+-                        &mut tokeniser,
+-                        filename.as_ref().map(|f| f.as_ref()),
+-                        Some(bstr::BStr::new(&captures["filename"])),
+-                        (&args.style.filename_sign_left, &args.style.filename_sign_right, &args.style.filename_sign),
+-                        style,
+-                        &args.style,
+-                    )?;
+-                }
+-                continue
++        if !markdown && byte_regex!(r"^```diff\s*$".is_match(&stripped)) {
++            if let Some(mut hunk) = hunk {
++                hunk.print(&mut stdout, &mut tokeniser, line_numbers, merge_markers.as_ref(), style, &args.style)?;
+             }
++            markdown = true;
++            unified = true;
++            args.style.print_background(&mut stdout)?;
++            stdout.write_all(&stripped)?;
++            hunk = Some(Hunk::new());
++            // i might not have actual line numbers
++            line_numbers = [1, 1];
++            continue
+         }
+ 
+-        if hunk.is_none() {
+-            args.style.print_background(&mut stdout)?;
+-            if byte_regex!(r"^commit [0-9a-f]+".is_match(&stripped)) {
+-                stdout.write_all(args.style.commit.as_bytes())?;
+-                stdout.write_all(&strip_style(buf.as_ref(), format!("$0{}", args.style.commit).as_bytes()))?;
+-                stdout.write_all(style::RESET)?;
++        if hunk.as_ref().is_none_or(|h| h.is_empty())
++            && let Some(captures) = byte_regex!(r"^(?<sign>---|\+\+\+) ([ab]/)?(?<filename>[^\t]*)(?<trailer>\t.*)?".captures(&stripped))
++        {
++            if &captures["sign"] == b"---" {
++                filename = Some(captures["filename"].to_owned().into());
+             } else {
+-                stdout.write_all(&buf)?;
++                Hunk::print_filename(
++                    &mut stdout,
++                    &mut tokeniser,
++                    filename.as_ref().map(|f| f.as_ref()),
++                    Some(bstr::BStr::new(&captures["filename"])),
++                    (&args.style.filename_sign_left, &args.style.filename_sign_right, &args.style.filename_sign),
++                    style,
++                    &args.style,
++                )?;
+             }
+             continue
+         }
+ 
+-        let h = hunk.as_mut().unwrap();
++        let Some(h) = hunk.as_mut()
++            else {
++                args.style.print_background(&mut stdout)?;
++                if byte_regex!(r"^commit [0-9a-f]+".is_match(&stripped)) {
++                    stdout.write_all(args.style.commit.as_bytes())?;
++                    stdout.write_all(&strip_style(buf.as_ref(), format!("$0{}", args.style.commit).as_bytes()))?;
++                    stdout.write_all(style::RESET)?;
++                } else {
++                    stdout.write_all(&buf)?;
++                }
++                continue
++            };
+ 
+-        if unified && let Some(merge_markers) = &mut merge_markers
+-        && let Some(captures) = byte_regex!(r"^(?<sign>[-+] | [-+]|[-+]{2})(?<line>.*\n)".captures(&stripped)) {
++        if unified
++            && let Some(merge_markers) = &mut merge_markers
++            && let Some(captures) = byte_regex!(r"^(?<sign>[-+] | [-+]|[-+]{2})(?<line>.*\n)".captures(&stripped))
++        {
+             let sign = &captures["sign"];
+             side = if sign.contains(&b'+') { 1 } else { 0 };
+             let lineno = line_numbers[side] + h.get(side).len();
