@@ -280,7 +280,13 @@ impl<'a> Block<'a> {
                     let parent = best.parent;
 
                     let starts = [0, 1].map(|i| best.parent.get_wordno(i, best.first_lineno(i)).max(block.parts[0].slices[i].start) );
-                    let ends = [0, 1].map(|i| best.parent.get_wordno(i, best.last_lineno(i) + 1).min(block.parts.last().unwrap().slices[i].end) );
+                    let ends = [0, 1].map(|i| {
+                        if best.slices[i].end == best.parent.words[i].len() {
+                            usize::MAX
+                        } else {
+                            best.parent.get_wordno(i, best.last_lineno(i) + 1)
+                        }.min(block.parts.last().unwrap().slices[i].end)
+                    });
 
                     let mut newblock = block.split_at(starts);
                     let mut rest = newblock.split_at(ends);
