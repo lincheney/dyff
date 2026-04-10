@@ -164,6 +164,13 @@ impl<'a> BlockMaker<'a> {
                         continue
                     }
                 }
+
+                // check for weak matches
+                let nonspace = (start_line .. end_line).flat_map(|i| self.get_line(0, i)).filter(|x| !x.is_ascii_whitespace()).count();
+                if nonspace < 5 {
+                    continue
+                }
+
             }
 
             if previ < left.start || prevj < right.start {
