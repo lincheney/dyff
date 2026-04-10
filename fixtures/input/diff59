@@ -1,0 +1,19 @@
+commit 3eb4ba2d51e0bfd3db5a7e5abfc8ab9ba5b0de2f
+Author: 林千里 <lincheney@gmail.com>
+Date:   Mon Jul 22 16:27:57 2024 +1000
+
+    merge then find common prefixes
+
+diff --git a/src/block.rs b/src/block.rs
+index d4222a7..7ec1d08 100644
+--- a/src/block.rs
++++ b/src/block.rs
+@@ -375,11 +375,22 @@ pub fn split_block(mut self) -> Vec<Self> {
+                 // find common prefix
+                 let prefix = find_common_prefix_length(part.get(0), part.get(1));
+-                let (mut first, second) = part.partition_from_start(prefix, prefix, false);
+-                first.matches = true;
++                let (first, second) = part.partition_from_start(prefix, prefix, true);
+ 
+                 // find common suffix
+                 let suffix = if second.single_line(0) && second.single_line(1) {

@@ -1,0 +1,17 @@
+[1;48;5;24mcommit 3eb4ba2d51e0bfd3db5a7e5abfc8ab9ba5b0de2f
+[0mAuthor: 林千里 <lincheney@gmail.com>
+Date:   Mon Jul 22 16:27:57 2024 +1000
+
+    merge then find common prefixes
+
+[1mdiff --git [0m[0;31m[1m[48;5;238ma/src/block.rs [0;32m[1m[48;5;238mb/src/block.rs[0m
+index d4222a7..7ec1d08 100644
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238msrc/block.rs[2;7m[0m
+[0;36m@@ -375,11 +375,22 @@ [0;1;33;48;5;236mpub fn split_block(mut self) -> Vec<Self> {[0m
+[0;38;5;242m375 [0;38;5;242m▏[0;38;5;242m375 [0;38;5;242m▏ [0;38;5;242m                // find common prefix[0m
+[0;38;5;242m376 [0;38;5;242m▏[0;38;5;242m376 [0;38;5;242m▏ [0;38;5;242m                let prefix = find_common_prefix_length(part.get(0), part.get(1));[2;7m[0m
+[0;38;5;252m[0;31m377 [0;38;5;242m▏[0;32m377 [0;38;5;242m▏ [0;38;5;252m                let ([0;31m[1;48;2;80;30;30mmut [0m[0;38;5;252mfirst, second) = part.partition_from_start(prefix, prefix, [0;31m[1;48;2;80;30;30mfalse[0;32m[1;48;2;25;80;25mtrue[0;38;5;252m);[2;7m[0m
+[0;31m[1;48;2;80;30;30m[0;31m378 [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m                first.matches = true;[2;7m[0m
+[0;38;5;242m379 [0;38;5;242m▏[0;38;5;242m378 [0;38;5;242m▏ [0;38;5;242m[0m
+[0;38;5;242m380 [0;38;5;242m▏[0;38;5;242m379 [0;38;5;242m▏ [0;38;5;242m                // find common suffix[0m
+[0;38;5;242m381 [0;38;5;242m▏[0;38;5;242m380 [0;38;5;242m▏ [0;38;5;242m                let suffix = if second.single_line(0) && second.single_line(1) {[2;7m[0m
