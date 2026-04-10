@@ -649,6 +649,8 @@ impl<'a> Block<'a> {
             block.merge_adjacent_parts();
         }
 
+        blocks.retain(|b| !b.parts.is_empty());
+
         blocks
     }
 
