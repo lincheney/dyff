@@ -503,10 +503,10 @@ impl<'a> Block<'a> {
         &mut self,
         mut parent: Cow<'a, BlockMaker<'a>>,
         tokeniser: &mut crate::tokeniser::Tokeniser,
-    ) -> Cow<'a, BlockMaker<'a>> {
+        mut shift: isize,
+    ) -> (Cow<'a, BlockMaker<'a>>, isize) {
 
-        let mut i = 1;
-        let mut shift = 0;
+        let mut i = 0;
         while i < self.parts.len() {
             let part = &mut self.parts[i];
             part.slices = part.shift_slice(shift, shift);
@@ -556,7 +556,7 @@ impl<'a> Block<'a> {
         }
 
         self.parts.retain(|p| !p.is_both_empty());
-        parent
+        (parent, shift)
     }
 
     pub fn split_block(mut self) -> Vec<Self> {

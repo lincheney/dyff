@@ -53,8 +53,9 @@ impl Hunk {
 
             // we need to do this here since we are modifying the block maker
             let mut maker = Cow::Borrowed(&maker);
+            let mut shift = 0;
             for block in &mut blocks {
-                maker = block.split_in_middle_of_word(maker, tokeniser);
+                (maker, shift) = block.split_in_middle_of_word(maker, tokeniser, shift);
             }
             if matches!(maker, Cow::Owned(_)) {
                 for block in &mut blocks {
