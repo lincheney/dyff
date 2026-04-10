@@ -511,7 +511,7 @@ impl<'a> Block<'a> {
             let part = &mut self.parts[i];
             part.slices = part.shift_slice(shift, shift);
 
-            if !part.matches {
+            if !part.matches && !part.is_empty(0) && !part.is_empty(1) {
                 let chars = [0, 1].map(|x| part.get(x).iter().flat_map(|x| x.iter()));
                 let len = [0, 1].map(|x| chars[x].clone().count());
 
@@ -519,7 +519,12 @@ impl<'a> Block<'a> {
                 let suffix = find_common_suffix_length(chars[0].clone(), chars[1].clone());
                 let suffix = suffix.min(len[0] - prefix).min(len[1] - prefix);
 
-                if suffix > 0 && ((suffix == part.get(0).last().unwrap().len()) != (suffix == part.get(1).last().unwrap().len())) {
+                let matches_word = [0, 1].map(|x| suffix == part.get(x).last().unwrap().len());
+                let match_side = if matches_word[0] { 0 } else { 1 };
+                if suffix > 0
+                    && (matches_word[0] != matches_word[1])
+                    && part.get(match_side).len() == 1
+                {
                     let mut after = part.clone();
                     after.slices[0].start = after.slices[0].end;
                     after.slices[1].start = after.slices[1].end;
@@ -535,7 +540,12 @@ impl<'a> Block<'a> {
                 }
 
                 let part = &mut self.parts[i];
-                if prefix > 0 && ((prefix == part.get(0)[0].len()) != (prefix == part.get(1)[0].len())) {
+                let matches_word = [0, 1].map(|x| prefix == part.get(x)[0].len());
+                let match_side = if matches_word[0] { 0 } else { 1 };
+                if prefix > 0
+                    && (matches_word[0] != matches_word[1])
+                    && part.get(match_side).len() == 1
+                {
                     let mut before = part.clone();
                     before.slices[0].end = before.slices[0].start;
                     before.slices[1].end = before.slices[1].start;
