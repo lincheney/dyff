@@ -1,3 +1,4 @@
+use std::ops::Range;
 use bstr::ByteSlice;
 use super::hunk::{Hunk};
 use super::word_differ::WordDiffer;
@@ -98,8 +99,12 @@ impl<'a> BlockMaker<'a> {
         self.line_to_word[i][lineno - self.line_numbers[i]]
     }
 
+    pub fn get_line_range(&self, i: usize, lineno: usize) -> Range<usize> {
+        self.get_wordno(i, lineno) .. self.get_wordno(i, lineno+1)
+    }
+
     fn get_line(&self, i: usize, lineno: usize) -> &[Bytes<'_>] {
-        &self.words[i][self.get_wordno(i, lineno) .. self.get_wordno(i, lineno+1)]
+        &self.words[i][self.get_line_range(i, lineno)]
     }
 
     pub fn split_word(&mut self, tokeniser: &mut Tokeniser, i: usize, w: usize, c: usize) {
@@ -135,7 +140,7 @@ impl<'a> BlockMaker<'a> {
                 // check if all the lines are merely indented
                 let get_line = |i: usize, lineno: usize| {
                     let line = self.get_line(i, lineno);
-                    let start = line.iter().position(|w| !w.is_ascii_whitespace()).unwrap_or(0);
+                    let start = line.iter().position(|w| !w.is_ascii_whitespace()).unwrap_or(line.len());
                     &line[start..]
                 };
 

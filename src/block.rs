@@ -142,6 +142,67 @@ impl<'a> Block<'a> {
         splits(0) != splits(1)
     }
 
+    fn split_at(&mut self, index: [usize; 2]) -> Block<'a> {
+        let mut rhs = Block::default();
+        self.parts.retain_mut(|part| {
+            let (mut left, mut right) = part.partition(index[0], index[1], false);
+
+            left.slices = [0, 1].map(|i| left.slices[i].start.min(index[i]) .. left.slices[i].end.min(index[i]));
+            right.slices = [0, 1].map(|i| right.slices[i].start.max(index[i]) .. right.slices[i].end.max(index[i]));
+
+            if !right.is_both_empty() {
+                right.matches = right.tokens(0) == right.tokens(1);
+                // if empty, make sure they are put in the right position
+                if right.is_empty(0) {
+                    let start = rhs.parts.last().map_or(index[0], |p| p.slices[0].end);
+                    right.slices[0] = start .. start;
+                } else if right.is_empty(1) {
+                    let start = rhs.parts.last().map_or(index[1], |p| p.slices[1].end);
+                    right.slices[1] = start .. start;
+                }
+                rhs.parts.push(right);
+            }
+
+            if !left.is_both_empty() {
+                left.matches = left.tokens(0) == left.tokens(1);
+                *part = left;
+                true
+            } else {
+                false
+            }
+        });
+        rhs
+    }
+
+    fn separate_newlines(&mut self) {
+        // split out newlines so they are not merged together with other bits
+        let mut i = 0;
+        while i < self.parts.len() {
+            let part = &mut self.parts[i];
+            if !part.matches {
+                // i don't have to check both at the same time
+                // if the leading newline is split first,
+                // we'll come back next look to check the rest
+                match (part.tokens(0), part.tokens(1)) {
+                    ([Token::NEWLINE, ..], [Token::NEWLINE, ..]) => {
+                        let (mut nl, rest) = part.partition_from_start(1, 1, false);
+                        nl.matches = true;
+                        self.parts[i] = nl;
+                        self.parts.insert(i+1, rest);
+                    },
+                    ([.., Token::NEWLINE], [.., Token::NEWLINE]) => {
+                        let (rest, mut nl) = part.partition_from_end(1, 1, false);
+                        nl.matches = true;
+                        self.parts[i] = rest;
+                        self.parts.insert(i+1, nl);
+                    },
+                    _ => (),
+                }
+            }
+            i += 1;
+        }
+    }
+
     fn merge_blocks_on_score(mut blocks: Vec<Block>, cutoff: f64) -> Vec<Block> {
         // merge adjacent blocks if they are both good matches or both bad matches
         let mut drain  = blocks.drain(..);
@@ -219,40 +280,11 @@ impl<'a> Block<'a> {
                     let parent = best.parent;
 
                     let starts = [0, 1].map(|i| best.parent.get_wordno(i, best.first_lineno(i)).max(block.parts[0].slices[i].start) );
-                    let ends = [0, 1].map(|i| {
-                        if best.slices[i].end == best.parent.words[i].len() {
-                            usize::MAX
-                        } else {
-                            best.parent.get_wordno(i, best.last_lineno(i) + 1)
-                        }.min(block.parts.last().unwrap().slices[i].end)
-                    });
+                    let ends = [0, 1].map(|i| best.parent.get_wordno(i, best.last_lineno(i) + 1).min(block.parts.last().unwrap().slices[i].end) );
 
-                    let mut newblock = Block::default();
-                    block.parts = block.parts.into_iter()
-                        .flat_map(|part| {
-                            let (mut left, rest) = part.partition(starts[0], starts[1], false);
-                            let (mut newpart, mut right) = rest.partition(ends[0], ends[1], false);
-
-                            left.slices = [0, 1].map(|i| left.slices[i].start.min(starts[i]) .. left.slices[i].end.min(starts[i]));
-                            right.slices = [0, 1].map(|i| right.slices[i].start.max(ends[i]) .. right.slices[i].end.max(ends[i]));
-
-                            if !newpart.is_both_empty() {
-                                newpart.matches = newpart.tokens(0) == newpart.tokens(1);
-                                // if empty, make sure they are put in the right position
-                                if newpart.is_empty(0) {
-                                    let start = newblock.parts.last().map_or(starts[0], |p| p.slices[0].end);
-                                    newpart.slices[0] = start .. start;
-                                } else if newpart.is_empty(1) {
-                                    let start = newblock.parts.last().map_or(starts[1], |p| p.slices[1].end);
-                                    newpart.slices[1] = start .. start;
-                                }
-                                newblock.parts.push(newpart);
-                            }
-
-                            [left, right]
-                        })
-                         .filter(|part| !part.is_both_empty())
-                        .collect();
+                    let mut newblock = block.split_at(starts);
+                    let mut rest = newblock.split_at(ends);
+                    block.parts.append(&mut rest.parts);
 
                     let score = newblock.score();
                     if 0. < score && score < cutoff {
@@ -262,32 +294,15 @@ impl<'a> Block<'a> {
                         newblock.parts.push(part);
                         if score > Self::SIMPLE_CUTOFF {
                             // try to do a very simple diff for low scoring blocks
-                            newblock.simple_match_common(false);
+                            let rest = newblock.simple_match_common(false);
+                            new.push(newblock);
+                            new.extend(rest);
+                        } else {
+                            new.push(newblock);
                         }
-                        new.push(newblock);
                     } else {
                         newblock.merge_adjacent_parts();
-
-                        // split out newlines so they are not merged together with other bits
-                        let mut i = 0;
-                        while i < newblock.parts.len() {
-                            let part = &mut newblock.parts[i];
-                            if !part.matches {
-                                if part.get(0).first() == Some(&b"\n".into()) && part.get(1).first() == Some(&b"\n".into()) {
-                                    let (mut nl, rest) = part.partition_from_start(1, 1, false);
-                                    nl.matches = true;
-                                    newblock.parts[i] = nl;
-                                    newblock.parts.insert(i+1, rest);
-                                } else if part.get(0).last() == Some(&b"\n".into()) && part.get(1).last() == Some(&b"\n".into()) {
-                                    let (rest, mut nl) = part.partition_from_end(1, 1, false);
-                                    nl.matches = true;
-                                    newblock.parts[i] = rest;
-                                    newblock.parts.insert(i+1, nl);
-                                }
-                            }
-                            i += 1;
-                        }
-
+                        newblock.separate_newlines();
                         if newblock.parts[0].matches && newblock.parts[0].is_space(0) {
                             newblock.parts[0].matches = false;
                         }
@@ -306,80 +321,109 @@ impl<'a> Block<'a> {
         new
     }
 
-    fn simple_match_common(&mut self, allow_space_only: bool) {
+    fn simple_match_common(&mut self, allow_space_only: bool) -> Option<Block<'a>> {
         // try to do a very simple diff for low scoring blocks
 
         if self.parts.is_empty() {
-            return;
+            return None;
         }
 
         // keep if one of these only 1 line
         let one_line = [0, 1].map(|i| self.parts[0].first_lineno(i) == self.parts.last().unwrap().last_lineno(i));
         if !one_line[0] && !one_line[1] {
-            return;
+            return None;
         }
 
-        let Some(parti) = self.parts.iter().position(|p| !p.matches && !p.is_both_empty())
-        else {
-            return;
-        };
+        let mut block = None;
 
-        let part = &mut self.parts[parti];
-        if part.is_empty(0) || part.is_empty(1) {
-            // no possible common prefix/suffix
-            return;
-        }
+        // prefix
+        if let Some(parti) = self.parts.iter().position(|p| !p.matches && !p.is_both_empty()) {
+            let part = &self.parts[parti];
 
-        // match indentation first
-        let leading_space = [0, 1].map(|x| part.tokens(x).iter().take_while(|&&t| t == Token::SPACE).count());
-        let (mut indent, rest) = part.partition_from_start(
-            leading_space[0].saturating_sub(leading_space[1]),
-            leading_space[1].saturating_sub(leading_space[0]),
-            false,
-        );
+            // match indentation first
+            let leading_space = [0, 1].map(|x| part.tokens(x).iter().take_while(|&&t| t == Token::SPACE).count());
+            let (mut indent, rest) = part.partition_from_start(
+                leading_space[0].saturating_sub(leading_space[1]),
+                leading_space[1].saturating_sub(leading_space[0]),
+                false,
+            );
 
-        // find common prefix
-        let prefix = find_common_prefix_length(rest.tokens(0), rest.tokens(1));
-        let (mut first, mut second) = rest.partition_from_start(prefix, prefix, true);
+            // find common prefix
+            let prefix = find_common_prefix_length(rest.tokens(0), rest.tokens(1));
+            let (mut first, mut second) = rest.partition_from_start(prefix, prefix, false);
+            first.matches = true;
 
-        // we only matched spaces
-        if first.is_space(0) {
-            for i in [0, 1] {
-                let shift = indent.slices[i].len();
-                first.slices[i].start -= shift;
-                first.slices[i].end -= shift;
-                second.slices[i].start -= shift;
-                // indent will get shrunk to nothing
-                indent.slices[i].end -= shift;
-                debug_assert_eq!(indent.slices[i].start, indent.slices[i].end);
+            if allow_space_only || !first.is_ascii_whitespace(0) {
+                // we only matched spaces
+                if first.is_space(0) {
+                    for i in [0, 1] {
+                        let shift = indent.slices[i].len();
+                        first.slices[i].start -= shift;
+                        first.slices[i].end -= shift;
+                        second.slices[i].start -= shift;
+                        // indent will get shrunk to nothing
+                        indent.slices[i].end -= shift;
+                        debug_assert_eq!(indent.slices[i].start, indent.slices[i].end);
+                    }
+                }
+
+                if !second.inlineable() {
+                    // try it out
+                    let mut newblock = self.clone();
+                    newblock.parts.splice(parti..=parti, [indent.clone(), first, second]);
+                    newblock.squeeze_parts();
+                    newblock.parts.retain(|p| !p.is_both_empty());
+
+                    if newblock.parts.iter().filter(|p| p.matches).count() > self.parts.iter().filter(|p| p.matches).count() {
+                        *self = newblock;
+
+                        if parti == 0 && !one_line[0] && one_line[1] {
+                            // we've matched a prefix but the lhs is multiline
+                            // this is going to look weird
+                            // so split the first line out
+                            let split = [0, 1].map(|i| indent.parent.get_line_range(i, indent.first_lineno(i)).end);
+                            block = Some(self.split_at([split[0], split[1]]));
+                            self.separate_newlines();
+                            eprintln!("DEBUG(effie) \t{}\t= {:?}", stringify!(self), self);
+                        }
+
+                    }
+                }
             }
         }
 
-        // find common suffix
-        let suffix = if second.single_line(0) && second.single_line(1) {
-            find_common_suffix_length(second.get(0), second.get(1))
-        } else {
-            0
-        };
-        let (mut second, third) = second.partition_from_end(suffix, suffix, true);
-        second.matches = false;
+        {
+            let block = block.as_mut().unwrap_or(self);
 
-        if !allow_space_only && first.is_ascii_whitespace(0) && third.is_ascii_whitespace(0) {
-            return;
-        }
+            // suffix
+            if let Some(parti) = block.parts.iter().rposition(|p| !p.matches && !p.is_both_empty()) {
+                let part = &block.parts[parti];
 
-        // matching common prefix/suffix looks weird when score is low and inlined
-        if second.is_empty(0) || second.is_empty(1) || !second.inlineable() {
-            // try it out
-            let mut newblock = self.clone();
-            newblock.parts.splice(parti..=parti, [indent, first, second, third]);
-            newblock.squeeze_parts();
-            newblock.parts.retain(|p| !p.is_both_empty());
+                if part.single_line(0) && part.single_line(1) {
 
-            if newblock.parts.iter().filter(|p| p.matches).count() > self.parts.iter().filter(|p| p.matches).count() {
-                *self = newblock;
+                    // find common suffix
+                    let suffix = find_common_suffix_length(part.tokens(0), part.tokens(1));
+                    let (first, mut second) = part.partition_from_end(suffix, suffix, false);
+                    second.matches = true;
+
+                    if !second.is_ascii_whitespace(0) {
+                        if !first.inlineable() {
+                            // try it out
+                            let mut newblock = block.clone();
+                            newblock.parts.splice(parti..=parti, [first, second]);
+                            newblock.squeeze_parts();
+                            newblock.parts.retain(|p| !p.is_both_empty());
+
+                            if newblock.parts.iter().filter(|p| p.matches).count() > block.parts.iter().filter(|p| p.matches).count() {
+                                *block = newblock;
+                            }
+                        }
+                    }
+                }
             }
         }
+
+        block
     }
 
     fn rearrange_blocks(blocks: &mut [Self], forward: bool) {
@@ -635,10 +679,11 @@ impl<'a> Block<'a> {
             block.merge_adjacent_parts();
         }
 
-        for block in &mut blocks {
+        let mut blocks: Vec<_> = blocks.into_iter().flat_map(|mut block| {
             // try to do a very simple diff for low scoring blocks
-            block.simple_match_common(true);
-        }
+            let newblock = block.simple_match_common(true);
+            [Some(block), newblock]
+        }).flatten().collect();
 
         Block::rearrange_blocks(&mut blocks, false);
         Block::rearrange_blocks(&mut blocks, true);
