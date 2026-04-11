@@ -605,6 +605,7 @@ fn main_internal() -> Result<ExitCode> {
             continue
         }
 
+        filename_requires_ab = false;
         hunk = Some(Hunk::new());
         stdout.write_all(&stripped)?;
     }
