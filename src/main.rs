@@ -321,6 +321,7 @@ fn main_internal() -> Result<ExitCode> {
     let mut line_numbers = [0, 0];
     let mut unified = false;
     let mut markdown = false;
+    let mut filename_requires_ab = false;
     let mut merge_markers: Option<hunk::MergeMarkers> = None;
     let mut filename: Option<bstr::BString> = None;
     let mut stdout = BufWriter::new(stdout);
@@ -453,8 +454,10 @@ fn main_internal() -> Result<ExitCode> {
         }
 
         if hunk.as_ref().is_none_or(|h| h.is_empty())
-            && let Some(captures) = byte_regex!(r"^(?<sign>---|\+\+\+) ([ab]/)?(?<filename>[^\t]*)(?<trailer>\t.*)?".captures(&stripped))
+            && let Some(captures) = byte_regex!(r"^(?<sign>---|\+\+\+) (?<ab>[ab]/)?(?<filename>[^\t]*)(?<trailer>\t.*)?".captures(&stripped))
+            && (!filename_requires_ab || filename.is_some() || captures.name("ab").is_some())
         {
+            filename_requires_ab = captures.name("ab").is_some();
             if &captures["sign"] == b"---" {
                 filename = Some(captures["filename"].to_owned().into());
             } else {
@@ -467,6 +470,7 @@ fn main_internal() -> Result<ExitCode> {
                     style,
                     &args.style,
                 )?;
+                filename = None;
             }
             continue
         }
