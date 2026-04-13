@@ -514,8 +514,12 @@ impl<'a> Block<'a> {
 
         let mut i = 0;
         while i < self.parts.len() {
-            let part = &mut self.parts[i];
-            part.slices = part.shift_slice(shift, shift);
+            // realpart is the real one with the shifted slices
+            let realpart = &mut self.parts[i];
+            // but part is what we use for actually getting words
+            // since it is still using the old slices and old parent
+            let part = realpart.clone();
+            realpart.slices = realpart.shift_slice(shift, shift);
 
             if !part.matches && !part.is_empty(0) && !part.is_empty(1) {
                 let chars = [0, 1].map(|x| part.get(x).iter().flat_map(|x| x.iter()));
@@ -531,13 +535,13 @@ impl<'a> Block<'a> {
                     && (matches_word[0] != matches_word[1])
                     && part.get(match_side).len() == 1
                 {
-                    let mut after = part.clone();
+                    let mut after = realpart.clone();
                     after.slices[0].start = after.slices[0].end;
                     after.slices[1].start = after.slices[1].end;
                     after.matches = true;
 
                     for x in [0, 1] {
-                        parent.to_mut().split_word(tokeniser, x, part.slices[x].end - 1, part.get(x).last().unwrap().len() - suffix);
+                        parent.to_mut().split_word(tokeniser, x, realpart.slices[x].end - 1, part.get(x).last().unwrap().len() - suffix);
                         after.slices[x].end += 1;
                     }
                     shift += 1;
@@ -545,22 +549,22 @@ impl<'a> Block<'a> {
                     i += 1;
                 }
 
-                let part = &mut self.parts[i];
+                let realpart = &mut self.parts[i];
                 let matches_word = [0, 1].map(|x| prefix == part.get(x)[0].len());
                 let match_side = if matches_word[0] { 0 } else { 1 };
                 if prefix > 0
                     && (matches_word[0] != matches_word[1])
                     && part.get(match_side).len() == 1
                 {
-                    let mut before = part.clone();
+                    let mut before = realpart.clone();
                     before.slices[0].end = before.slices[0].start;
                     before.slices[1].end = before.slices[1].start;
                     before.matches = true;
 
                     for x in [0, 1] {
-                        parent.to_mut().split_word(tokeniser, x, part.slices[x].start, prefix);
-                        part.slices[x].start += 1;
-                        part.slices[x].end += 1;
+                        parent.to_mut().split_word(tokeniser, x, realpart.slices[x].start, prefix);
+                        realpart.slices[x].start += 1;
+                        realpart.slices[x].end += 1;
                         before.slices[x].end += 1;
                     }
                     shift += 1;
