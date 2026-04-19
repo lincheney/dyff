@@ -257,7 +257,40 @@ impl<'a> Block<'a> {
                 i += 1;
             }
         }
+    }
 
+    fn merge_adjacent_blocks(blocks: Vec<Block>) -> Vec<Block> {
+
+        // dirty way to check if the parts are all matching or all non matching
+        // matches get 2, nonmatches get 1
+        // when the bitwise OR them together,
+        // if they all match the value is 2
+        // if they all don't match the value is 1
+        // if some match and some don't the value 3
+        let match_value = |block: &Block| {
+            block.parts.iter()
+                .filter(|p| !(p.matches && p.tokens(0) == [Token::NEWLINE]))
+                .map(|p| if p.matches { 2 } else { 1 })
+                .reduce(|total, x| total | x)
+        };
+
+        let mut newblocks: Vec<Block> = vec![];
+        for block in blocks {
+            if !block.is_both_empty() {
+
+                if let Some(prev) = newblocks.last_mut()
+                    && let Some(value) = match_value(&block)
+                    && let Some(prev_value) = match_value(&prev)
+                    && value == prev_value
+                    && value < 3
+                {
+                    prev.parts.extend(block.parts);
+                } else {
+                    newblocks.push(block);
+                }
+            }
+        }
+        newblocks
     }
 
     fn partition_blocks_on_score(blocks: Vec<Block>, cutoff: f64) -> Vec<Block> {
@@ -697,6 +730,8 @@ impl<'a> Block<'a> {
             block.parts.retain(|p| !p.is_both_empty());
             block.merge_adjacent_parts();
         }
+
+        let blocks = Block::merge_adjacent_blocks(blocks);
 
         let mut blocks: Vec<_> = blocks.into_iter().flat_map(|mut block| {
             // try to do a very simple diff for low scoring blocks
