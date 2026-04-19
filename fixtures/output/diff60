@@ -1,0 +1,24 @@
+[1;48;5;24mcommit ff8442433d3d8bc7f9bfe072a83acf07efd1ecac
+[0mAuthor: 林千里 <lincheney@gmail.com>
+Date:   Fri Apr 17 02:28:49 2026 +1000
+
+    load specs from file
+
+[1mdiff --git [0m[0;31m[1m[48;5;238ma/mitm.py [0;32m[1m[48;5;238mb/mitm.py[0m
+index fe85a8a..bc48963 100644
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mmitm.py[2;7m[0m
+[0;36m@@ -247,16 +247,24 @@ [0;1;33;48;5;236mdef running(self):[0m
+[0;38;5;242m247 [0;38;5;242m▏[0;38;5;242m247 [0;38;5;242m▏ [0;38;5;242m    def configure(self, updated: set[str]):[0m
+[0;38;5;242m248 [0;38;5;242m▏[0;38;5;242m248 [0;38;5;242m▏ [0;38;5;242m        '''Called when configuration changes. The updated argument is a set-like object containing the keys of all changed options. This event is called during startup with all options in the updated set.'''[0m
+[0;38;5;242m249 [0;38;5;242m▏[0;38;5;242m249 [0;38;5;242m▏ [0;38;5;242m[0m
+[0;38;5;242m250 [0;38;5;242m▏[0;38;5;242m250 [0;38;5;242m▏ [0;38;5;242m        if "nsb_spec" in updated:[0m
+[0;38;5;242m251 [0;38;5;242m▏[0;38;5;242m251 [0;38;5;242m▏ [0;38;5;242m            self.specs.clear()[0m
+[0;38;5;242m252 [0;38;5;242m▏[0;38;5;242m252 [0;38;5;242m▏ [0;38;5;242m            for spec in mitmproxy.ctx.options.nsb_spec:[2;7m[0m
+[0;31m[1;48;2;80;30;30m[0;31m253 [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m                action, _, spec = spec.partition(':')[0m
+[0;31m254 [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m                action = getattr(Actions, action)[0m
+[0;31m255 [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m                spec = Parser(spec).parse()[0;38;2;220;190;210;48;2;35;20;20m[2;7m[0m
+[0;31m[1;48;2;80;30;30m[0;31m256 [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m                self.specs.append((action, spec))[2;7m[0m
+[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m253 [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m                self.add_spec(spec)[0;38;2;190;220;210;48;2;20;35;20m[2;7m[0m
+[0;38;5;242m257 [0;38;5;242m▏[0;38;5;242m254 [0;38;5;242m▏ [0;38;5;242m[0m
+[0;38;5;242m258 [0;38;5;242m▏[0;38;5;242m255 [0;38;5;242m▏ [0;38;5;242m    def done(self):[0m
+[0;38;5;242m259 [0;38;5;242m▏[0;38;5;242m256 [0;38;5;242m▏ [0;38;5;242m        '''Called when the addon shuts down, either by being removed from the mitmproxy instance, or when mitmproxy itself shuts down. On shutdown, this event is called after the event loop is terminated, guaranteeing that it will be the final event an addon sees. Note that log handlers are shut down at this point, so calls to log functions will produce no output.'''[2;7m[0m
