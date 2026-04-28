@@ -1,0 +1,34 @@
+commit 0760e6d5f885c264a136e542b3b7e9068c17ed4b
+Author: 林千里 <lincheney@gmail.com>
+Date:   Wed Apr 29 03:27:52 2026 +1000
+
+    only run on certain days
+
+diff --git a/stuff/Makefile b/stuff/Makefile
+index febe0b5c..022b0ae2 100644
+--- a/stuff/Makefile
++++ b/stuff/Makefile
+@@ -2,27 +2,46 @@
+ 
+ all:
+ 	(
+-	  cd dir
+-	  bash download.sh
+-	  bash download2.sh
+-	  today="$$(find data | grep .csv.zst$$ | grep '[0-9]+-[0-9]+-[0-9]+' -Eo | sort | tail -n1)"
+-	  yesterday="$$(date -d @"$$(( $$(date -d "$$today" +%s) - 3600*24 ))" +%Y-%m-%d)"
+-	  python3 script2.py "$$today" > new.tsv
+-	  python3 script2.py "$$yesterday" > old.tsv
+-	  python3 script3.py
++		# only weekdays
++		if (( ${DAY} <= 5 )); then
++			cd dir
++			bash download.sh
++			bash download2.sh
++			read -r yesterday today < <(find data | grep .csv.zst$$ | grep -F -v misc | grep '[0-9]+-[0-9]+-[0-9]+' -Eo | sort | tail -n1)
++			python3 script2.py "$$today" > new.tsv
++			python3 script2.py "$$yesterday" > old.tsv
++			python3 script3.py
++		fi
+ 	) 2> >(tee dir/stderr >&2) || true
+ 
