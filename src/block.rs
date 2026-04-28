@@ -68,8 +68,8 @@ impl<'a> Block<'a> {
                 // strip newlines
                 let length: usize = part.get(0)
                     .iter()
-                    .skip_while(|&w| *w == b"\n")
-                    .take_while(|&w| *w != b"\n")
+                    .skip_while(|&&w| w == b"\n")
+                    .take_while(|&&w| w != b"\n")
                     .map(|w| w.len())
                     .sum();
 
@@ -89,6 +89,7 @@ impl<'a> Block<'a> {
                     || (part.starts_line(1) && i > 0 && self.parts.get(i-1).is_none_or(|p| p.is_empty(0)))
                     || (part.ends_line(0) && self.parts.get(i+1).is_none_or(|p| p.is_empty(1)))
                     || (part.ends_line(1) && self.parts.get(i+1).is_none_or(|p| p.is_empty(0)))
+                    || length == 0
                 {
                     join = false;
                     // join = length < min_size_eol
@@ -670,6 +671,18 @@ impl<'a> Block<'a> {
                     first.matches = true;
                     block.parts[0] = first;
 
+                    let whitespace = [0, 1].map(|x| second.get(x).iter().take_while(|c| c.is_ascii_whitespace()).count());
+                    if spaces[1] == 0 && whitespace[1] > 0 {
+                        // probably tabs?
+                        // split the whitespace out separately
+                        let (ws, non_ws) = second.partition_from_start(whitespace[0], whitespace[1], false);
+                        // insert an empty match to stop them getting merged back together
+                        let (ws, mut empty) = ws.partition_from_end(0, 0, false);
+                        empty.matches = true;
+                        block.parts.splice(1..1, [ws, empty, non_ws]);
+                        continue;
+                    }
+
                     // if the score is too low dont bother trying to match indentation, it will look too messy
                     if score >= Block::CUTOFF {
 
@@ -702,6 +715,7 @@ impl<'a> Block<'a> {
                         if diff_indent.abs() > 0 {
                             let (ws, non_ws) = second.partition_from_start(0.max(-diff_indent) as usize, 0.max(diff_indent) as usize, false);
                             let (ws, mut empty) = ws.partition_from_end(0, 0, false);
+                            // insert an empty match to stop them getting merged back together
                             empty.matches = true;
                             block.parts.splice(1..1, [ws, empty, non_ws]);
                             continue
@@ -727,7 +741,7 @@ impl<'a> Block<'a> {
         // merge again
         let mut blocks = Block::merge_blocks_on_score(blocks, Block::CUTOFF);
         for block in &mut blocks {
-            block.parts.retain(|p| !p.is_both_empty());
+            // block.parts.retain(|p| !p.is_both_empty());
             block.merge_adjacent_parts();
         }
 
@@ -744,7 +758,7 @@ impl<'a> Block<'a> {
 
         // remove empty ones
         for block in &mut blocks {
-            block.parts.retain(|p| !p.is_both_empty());
+            // block.parts.retain(|p| !p.is_both_empty());
             block.merge_adjacent_parts();
         }
 
