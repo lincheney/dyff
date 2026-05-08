@@ -910,7 +910,7 @@ impl<'a> Block<'a> {
                     && !part.get(1).is_empty()
                     && !part.get(0)[0].is_ascii_whitespace()
                     && part.get(1)[0].is_ascii_whitespace()
-                    && part.get(1) != [b"\n"]
+                    && !part.tokens(1).contains(&Token::NEWLINE)
                 {
                     &[1, 0]
                 } else {
