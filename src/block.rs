@@ -302,9 +302,9 @@ impl<'a> Block<'a> {
         for mut block in blocks {
             // if this block only additions or only removals, then don't worry about the score
             let mut nonmatches = block.parts.iter().filter(|p| !p.matches);
+            let score = block.score();
             if nonmatches.clone().any(|p| !p.is_empty(0))
                 && nonmatches.any(|p| !p.is_empty(1))
-                && let score = block.score()
                 && 0. < score && score < cutoff
             {
                 // low score
@@ -352,6 +352,15 @@ impl<'a> Block<'a> {
                 }
 
             } else {
+                if score == 0. && block.parts.len() > 1 {
+                    // make it all non matching
+                    // since there may be some matching whitespace we skipped over
+                    for p in &mut block.parts {
+                        if p.matches && !p.is_both_empty() && p.tokens(0) != &[Token::NEWLINE] {
+                            p.matches = false;
+                        }
+                    }
+                }
                 new.push(block);
             }
 
@@ -407,7 +416,7 @@ impl<'a> Block<'a> {
                     }
                 }
 
-                if !second.inlineable() {
+                // if !second.inlineable() {
                     // try it out
                     let mut newblock = self.clone();
                     newblock.parts.splice(parti..=parti, [indent.clone(), first, second]);
@@ -427,7 +436,7 @@ impl<'a> Block<'a> {
                         }
 
                     }
-                }
+                // }
             }
         }
 
