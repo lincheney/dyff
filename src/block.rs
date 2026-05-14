@@ -584,8 +584,17 @@ impl<'a> Block<'a> {
                     after.matches = true;
 
                     for x in [0, 1] {
-                        parent.to_mut().split_word(tokeniser, x, realpart.slices[x].end - 1, part.get(x).last().unwrap().len() - suffix);
-                        after.slices[x].end += 1;
+                        let mut suffix = suffix;
+                        for (i, word) in part.get(x).iter().rev().enumerate() {
+                            if word.len() >= suffix {
+                                realpart.slices[x].end -= i;
+                                parent.to_mut().split_word(tokeniser, x, realpart.slices[x].end - 1, word.len() - suffix);
+                                after.slices[x].start -= i;
+                                after.slices[x].end += 1;
+                                break
+                            }
+                            suffix -= word.len();
+                        }
                     }
                     shift += 1;
                     self.parts.insert(i+1, after);
@@ -605,10 +614,17 @@ impl<'a> Block<'a> {
                     before.matches = true;
 
                     for x in [0, 1] {
-                        parent.to_mut().split_word(tokeniser, x, realpart.slices[x].start, prefix);
-                        realpart.slices[x].start += 1;
-                        realpart.slices[x].end += 1;
-                        before.slices[x].end += 1;
+                        let mut prefix = prefix;
+                        for (i, word) in part.get(x).iter().enumerate() {
+                            if word.len() >= prefix {
+                                parent.to_mut().split_word(tokeniser, x, realpart.slices[x].start, prefix);
+                                realpart.slices[x].start += i + 1;
+                                realpart.slices[x].end += i + 1;
+                                before.slices[x].end += 1;
+                                break
+                            }
+                            prefix -= word.len();
+                        }
                     }
                     shift += 1;
                     self.parts.insert(i, before);
