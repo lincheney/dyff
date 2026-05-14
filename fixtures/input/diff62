@@ -1,0 +1,19 @@
+commit d662edd7337da06db2a2d3289afdd04387c92137
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sat Oct 12 05:29:03 2024 +1100
+
+    use lstat
+
+diff --git a/file.lua b/file.lua
+index 8296fee3..430768b4 100644
+--- a/file.lua
++++ b/file.lua
+@@ -26,7 +26,7 @@ File.__index = File
+ function File.new(path)
+     local self = setmetatable({}, File)
+     self.path = path
+-    self.stat = vim.loop.fs_stat(path)
++    self.stat = vim.loop.fs_lstat(path)
+     self.name = self.path:match('[^/]*/?$')
+     self.id = get_id_for_path(self.path)
+     ID_TO_FILES[self.id] = self
