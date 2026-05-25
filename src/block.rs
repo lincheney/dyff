@@ -455,7 +455,7 @@ impl<'a> Block<'a> {
                     second.matches = true;
 
                     if !second.is_ascii_whitespace(0) {
-                        if !first.inlineable() {
+                        if !first.inlineable() || !block.parts[..parti].iter().all(|p| p.is_ascii_whitespace(0) && p.is_ascii_whitespace(1)) {
                             // try it out
                             let mut newblock = block.clone();
                             newblock.parts.splice(parti..=parti, [first, second]);
