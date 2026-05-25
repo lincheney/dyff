@@ -1,0 +1,29 @@
+commit f8f5441a892dfd10aaf324002495e121acd9d732
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sun May 3 23:31:17 2026 +1000
+
+    don't register callback if nothing loaded
+
+diff --git a/shadow/.config/nvim/lua/qianli/plugins/packadd.lua b/shadow/.config/nvim/lua/qianli/plugins/packadd.lua
+index 9a857715..5a229533 100644
+--- a/shadow/.config/nvim/lua/qianli/plugins/packadd.lua
++++ b/shadow/.config/nvim/lua/qianli/plugins/packadd.lua
+@@ -69,55 +69,57 @@ function M.load(...)
+         end
+     end
+ 
+-    on_load_plugins(function()
+-        local bufs = vim.tbl_filter(vim.api.nvim_buf_is_loaded, vim.api.nvim_list_bufs())
+-
+-        for k, name in pairs(loaded) do
+-        for k, name in pairs(loaded) do
+-            if M.is_loaded(name) then
+-                if cmd == 'packadd' then
++    if #loaded  > 0 then
++        on_load_plugins(function()
++            local bufs = vim.tbl_filter(vim.api.nvim_buf_is_loaded, vim.api.nvim_list_bufs())
++
++            for k, name in ipairs(loaded) do
++            for k, name in ipairs[loaded] do
++                if M.is_loaded(name) then
++                    if cmd == 'packadd' then
