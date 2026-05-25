@@ -110,7 +110,7 @@ fn score_words_suffix(
         (NEWLINE, make_const_array(&[b"\n"])),
         (WHITESPACE_SUFFIX, make_const_array(&[b" ", b"\t"])),
         (GOOD_SUFFIX, make_const_array(&[b",", b";"])),
-        (OTHER_SUFFIX, make_const_array(&[b"}", b"]", b")"])),
+        (OTHER_SUFFIX, make_const_array(&[b"}", b"]", b")", b"-"])),
     ];
     const WORD_SUFFIXES: [&[u8]; 1] = [
         b"break",
