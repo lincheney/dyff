@@ -416,7 +416,7 @@ impl<'a> Block<'a> {
                     }
                 }
 
-                // if !second.inlineable() {
+                if !second.inlineable() || first.is_ascii_whitespace(0) {
                     // try it out
                     let mut newblock = self.clone();
                     newblock.parts.splice(parti..=parti, [indent.clone(), first, second]);
@@ -436,7 +436,7 @@ impl<'a> Block<'a> {
                         }
 
                     }
-                // }
+                }
             }
         }
 
@@ -455,7 +455,7 @@ impl<'a> Block<'a> {
                     second.matches = true;
 
                     if !second.is_ascii_whitespace(0) {
-                        // if !first.inlineable() {
+                        if !first.inlineable() {
                             // try it out
                             let mut newblock = block.clone();
                             newblock.parts.splice(parti..=parti, [first, second]);
@@ -465,7 +465,7 @@ impl<'a> Block<'a> {
                             if newblock.parts.iter().filter(|p| p.matches).count() > block.parts.iter().filter(|p| p.matches).count() {
                                 *block = newblock;
                             }
-                        // }
+                        }
                     }
                 }
             }
