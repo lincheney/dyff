@@ -572,12 +572,8 @@ impl<'a> Block<'a> {
                 let suffix = find_common_suffix_length(chars[0].clone(), chars[1].clone());
                 let suffix = suffix.min(len[0] - prefix).min(len[1] - prefix);
 
-                let matches_word = [0, 1].map(|x| suffix == part.get(x).last().unwrap().len());
-                let match_side = if matches_word[0] { 0 } else { 1 };
-                if suffix > 0
-                    && (matches_word[0] != matches_word[1])
-                    && part.get(match_side).len() == 1
-                {
+                let matches_word = len.map(|l| suffix == l);
+                if suffix > 0 && matches_word[0] != matches_word[1] {
                     let mut after = realpart.clone();
                     after.slices[0].start = after.slices[0].end;
                     after.slices[1].start = after.slices[1].end;
@@ -602,12 +598,8 @@ impl<'a> Block<'a> {
                 }
 
                 let realpart = &mut self.parts[i];
-                let matches_word = [0, 1].map(|x| prefix == part.get(x)[0].len());
-                let match_side = if matches_word[0] { 0 } else { 1 };
-                if prefix > 0
-                    && (matches_word[0] != matches_word[1])
-                    && part.get(match_side).len() == 1
-                {
+                let matches_word = len.map(|l| prefix == l);
+                if prefix > 0 && matches_word[0] != matches_word[1] {
                     let mut before = realpart.clone();
                     before.slices[0].end = before.slices[0].start;
                     before.slices[1].end = before.slices[1].start;
