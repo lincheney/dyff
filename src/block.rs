@@ -424,17 +424,24 @@ impl<'a> Block<'a> {
                     newblock.parts.retain(|p| !p.is_both_empty());
 
                     if newblock.parts.iter().filter(|p| p.matches).count() > self.parts.iter().filter(|p| p.matches).count() {
-                        *self = newblock;
 
                         if parti == 0 && !one_line[0] && one_line[1] {
                             // we've matched a prefix but the lhs is multiline
                             // this is going to look weird
                             // so split the first line out
                             let split = [0, 1].map(|i| indent.parent.get_line_range(i, indent.first_lineno(i)).end);
-                            block = Some(self.split_at([split[0], split[1]]));
-                            self.separate_newlines();
-                        }
+                            block = Some(newblock.split_at([split[0], split[1]]));
+                            newblock.separate_newlines();
+                            // only allow if lhs has no non matching
+                            // otherwise you get non-matching, matching, non-matching
+                            // which looks messy
+                            if newblock.parts.iter().all(|p| p.matches || p.is_empty(0)) {
+                                *self = newblock;
+                            }
 
+                        } else {
+                            *self = newblock;
+                        }
                     }
                 }
             }
