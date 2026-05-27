@@ -1,0 +1,9 @@
+diff --git a/bin/file b/bin/file
+index cac9e9e2..9ae1b15f 100755
+--- a/bin/file
++++ b/bin/file
+@@ -63,15 +65,16 @@ def unquote(string):
+ def encode(string: str):
+-    print(string, file=tokeniser().stdin, flush=True)
+-    tokens = tokeniser().stdout.readline().split()
++    tokens = tiktokeniser().encode(string)

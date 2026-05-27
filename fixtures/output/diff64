@@ -1,0 +1,8 @@
+[1mdiff --git [0m[0;31m[1m[48;5;238ma/bin/file [0;32m[1m[48;5;238mb/bin/file[0m
+index cac9e9e2..9ae1b15f 100755
+[0m[48;5;238m[0m[48;5;238m[7m###[27m [0m[48;5;238mbin/file[2;7m[0m
+[0;36m@@ -63,15 +65,16 @@ [0;1;33;48;5;236mdef unquote(string):[0m
+[0;38;5;242m63  [0;38;5;242m▏[0;38;5;242m65  [0;38;5;242m▏ [0;38;5;242mdef encode(string: str):[2;7m[0m
+[0;32m[1;48;2;25;80;25m[0;31m    [0;38;5;242m▏[0;32m66  [0;38;5;242m▏ [0;32m[1;48;2;25;80;25m    tokens = tiktokeniser().encode(string)[2;7m[0m
+[0;31m[1;48;2;80;30;30m[0;31m64  [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m    print(string, file=tokeniser().stdin, flush=True)[0m
+[0;31m65  [0;38;5;242m▏[0;32m    [0;38;5;242m▏ [0;31m[1;48;2;80;30;30m    tokens = tokeniser().stdout.readline().split()[2;7m[0m
