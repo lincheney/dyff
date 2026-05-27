@@ -430,12 +430,13 @@ impl<'a> Block<'a> {
                             // this is going to look weird
                             // so split the first line out
                             let split = [0, 1].map(|i| indent.parent.get_line_range(i, indent.first_lineno(i)).end);
-                            block = Some(newblock.split_at([split[0], split[1]]));
+                            let split_block = Some(newblock.split_at([split[0], split[1]]));
                             newblock.separate_newlines();
                             // only allow if lhs has no non matching
                             // otherwise you get non-matching, matching, non-matching
                             // which looks messy
                             if newblock.parts.iter().all(|p| p.matches || p.is_empty(0)) {
+                                block = split_block;
                                 *self = newblock;
                             }
 
