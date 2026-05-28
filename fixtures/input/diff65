@@ -1,0 +1,8 @@
+diff --git a/docs/file.md b/docs/file.md
+index b6d5bd4..5565f4b 100644
+--- a/doc.md
++++ b/doc.md
+@@ -174,35 +123,44 @@ ###
+-### apply patches
++### Apply patches
++
