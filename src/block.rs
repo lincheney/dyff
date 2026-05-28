@@ -581,7 +581,17 @@ impl<'a> Block<'a> {
                 let suffix = suffix.min(len[0] - prefix).min(len[1] - prefix);
 
                 let matches_word = len.map(|l| suffix == l);
-                if suffix > 0 && matches_word[0] != matches_word[1] {
+                if suffix > 0
+                    && (
+                        matches_word[0] != matches_word[1]
+                        || (
+                            // the remainder is a word and the suffix is more than half the word len
+                            suffix * 2 > chars[0].clone().count()
+                            && suffix * 2 > chars[1].clone().count()
+                            && chars[0].clone().rev().skip(suffix).chain(chars[1].clone().rev().skip(suffix)).all(|c| matches!(c, b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_') )
+                        )
+                    )
+                {
                     let mut after = realpart.clone();
                     after.slices[0].start = after.slices[0].end;
                     after.slices[1].start = after.slices[1].end;
@@ -607,7 +617,17 @@ impl<'a> Block<'a> {
 
                 let realpart = &mut self.parts[i];
                 let matches_word = len.map(|l| prefix == l);
-                if prefix > 0 && matches_word[0] != matches_word[1] {
+                if prefix > 0
+                    && (
+                        matches_word[0] != matches_word[1]
+                        || (
+                            // the remainder is a word and the prefix is more than half the word len
+                            prefix * 2 > chars[0].clone().count()
+                            && prefix * 2 > chars[1].clone().count()
+                            && chars[0].clone().skip(prefix).chain(chars[1].clone().skip(prefix)).all(|c| matches!(c, b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_') )
+                        )
+                    )
+                {
                     let mut before = realpart.clone();
                     before.slices[0].end = before.slices[0].start;
                     before.slices[1].end = before.slices[1].start;
