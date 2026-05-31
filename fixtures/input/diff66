@@ -1,0 +1,28 @@
+commit 401193c5b25aa64ecc6d8d6a8712d93789c9db2d
+Author: 林千里 <lincheney@gmail.com>
+Date:   Sun May 31 17:06:13 2026 +1000
+
+    use queue_signals/unqueue_signals as a lock
+
+diff --git a/src/shell/zsh/process.rs b/src/shell/zsh/process.rs
+index 5d53cdc..cebb718 100644
+--- a/src/shell/zsh/process.rs
++++ b/src/shell/zsh/process.rs
+ pub(super) fn init(ui: &crate::ui::Ui) -> Result<()> {
+@@ -161,12 +151,10 @@ pub(super) fn init(ui: &crate::ui::Ui) -> Result<()> {
+         let mut pid_map = ui.pid_map.borrow_mut();
+         if !pid_map.is_empty() {
+             // check for pids that are done
+-            pidset::PID_TABLE.with(|p| {
+-                p.extract_finished_pids(|pid, status| {
+-                    if let Some(sender) = pid_map.remove(&pid) {
+-                        let _ = sender.send(status);
+-                    }
+-                });
++            let _ = pidset::PidTable::extract_finished_pids(|pid, status| {
++                if let Some(sender) = pid_map.remove(&pid) {
++                    let _ = sender.send(status);
++                }
+             });
+         }
+         Ok(())
