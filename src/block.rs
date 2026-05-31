@@ -639,8 +639,8 @@ impl<'a> Block<'a> {
                             if word.len() >= prefix {
                                 parent.to_mut().split_word(tokeniser, x, realpart.slices[x].start, prefix);
                                 realpart.slices[x].start += i + 1;
-                                realpart.slices[x].end += i + 1;
-                                before.slices[x].end += 1;
+                                realpart.slices[x].end += 1;
+                                before.slices[x].end += i + 1;
                                 break
                             }
                             prefix -= word.len();
