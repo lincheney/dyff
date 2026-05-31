@@ -325,6 +325,7 @@ impl<'a> Block<'a> {
                     let mut newblock = block.split_at(starts);
                     let mut rest = newblock.split_at(ends);
                     block.parts.append(&mut rest.parts);
+                    newblock.merge_adjacent_parts();
 
                     let score = newblock.score();
                     if 0. < score && score < cutoff {
