@@ -310,21 +310,27 @@ impl<'a> Block<'a> {
                 // low score
 
                 // try to make new blocks with the best matching parts
-                while let Some(best) = block.parts.iter().max_by_key(|p| (p.matches && !p.is_ascii_whitespace(0), p.word_len(0))) {
+                let mut blocks = vec![block];
+                while let Some((index, best)) = blocks.iter()
+                    .enumerate()
+                    .flat_map(|(i, b)| b.parts.iter().map(move |p| (i, p)))
+                    .max_by_key(|(_, p)| (p.matches && !p.is_ascii_whitespace(0), p.word_len(0)))
+                {
+
                     let parent = best.parent;
 
-                    let starts = [0, 1].map(|i| best.parent.get_wordno(i, best.first_lineno(i)).max(block.parts[0].slices[i].start) );
+                    let starts = [0, 1].map(|i| best.parent.get_wordno(i, best.first_lineno(i)).max(blocks[index].parts[0].slices[i].start) );
                     let ends = [0, 1].map(|i| {
                         if best.slices[i].end == best.parent.words[i].len() {
                             usize::MAX
                         } else {
                             best.parent.get_wordno(i, best.last_lineno(i) + 1)
-                        }.min(block.parts.last().unwrap().slices[i].end)
+                        }.min(blocks[index].parts.last().unwrap().slices[i].end)
                     });
 
-                    let mut newblock = block.split_at(starts);
-                    let mut rest = newblock.split_at(ends);
-                    block.parts.append(&mut rest.parts);
+                    let mut newblock = blocks[index].split_at(starts);
+                    let rest = newblock.split_at(ends);
+                    blocks.push(rest);
                     newblock.merge_adjacent_parts();
 
                     let score = newblock.score();
