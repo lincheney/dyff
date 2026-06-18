@@ -570,6 +570,8 @@ impl<'a> Block<'a> {
         mut shift: isize,
     ) -> (Cow<'a, BlockMaker<'a>>, isize) {
 
+        let char_is_word = |c: &&u8| matches!(c, b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_');
+
         let mut i = 0;
         while i < self.parts.len() {
             // realpart is the real one with the shifted slices
@@ -587,15 +589,18 @@ impl<'a> Block<'a> {
                 let suffix = find_common_suffix_length(chars[0].clone(), chars[1].clone());
                 let suffix = suffix.min(len[0] - prefix).min(len[1] - prefix);
 
-                let matches_word = len.map(|l| suffix == l);
+                let suffix_word_len = [0, 1].map(|x| chars[x].clone().rev().take_while(char_is_word).count());
+                let matches_word = suffix_word_len.map(|l| suffix == l);
                 if suffix > 0
                     && (
                         matches_word[0] != matches_word[1]
                         || (
-                            // the remainder is a word and the suffix is more than half the word len
-                            suffix * 2 > chars[0].clone().count()
-                            && suffix * 2 > chars[1].clone().count()
-                            && chars[0].clone().rev().skip(suffix).chain(chars[1].clone().rev().skip(suffix)).all(|c| matches!(c, b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_') )
+                            // the prefix is a word
+                            suffix <= suffix_word_len[0]
+                            && suffix <= suffix_word_len[1]
+                            // and more than half the word len
+                            && suffix * 2 > suffix_word_len[0]
+                            && suffix * 2 > suffix_word_len[1]
                         )
                     )
                 {
@@ -623,15 +628,18 @@ impl<'a> Block<'a> {
                 }
 
                 let realpart = &mut self.parts[i];
-                let matches_word = len.map(|l| prefix == l);
+                let prefix_word_len = [0, 1].map(|x| chars[x].clone().take_while(char_is_word).count());
+                let matches_word = prefix_word_len.map(|l| prefix == l);
                 if prefix > 0
                     && (
                         matches_word[0] != matches_word[1]
                         || (
-                            // the remainder is a word and the prefix is more than half the word len
-                            prefix * 2 > chars[0].clone().count()
-                            && prefix * 2 > chars[1].clone().count()
-                            && chars[0].clone().skip(prefix).chain(chars[1].clone().skip(prefix)).all(|c| matches!(c, b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_') )
+                            // the prefix is a word
+                            prefix <= prefix_word_len[0]
+                            && prefix <= prefix_word_len[1]
+                            // and more than half the word len
+                            && prefix * 2 > prefix_word_len[0]
+                            && prefix * 2 > prefix_word_len[1]
                         )
                     )
                 {
