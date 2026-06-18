@@ -1,0 +1,13 @@
+diff --git a/src/tui/drawer.rs b/src/tui/drawer.rs
+index b996b79..1f96009 100644
+@@ -169,8 +170,8 @@ pub fn allocate_height(&mut self, height: u16) -> Result<()> {
+     }
+ 
+     pub fn clear_cells(&mut self, (x, y): (u16, u16), n: u16) {
+-        for i in 0..n {
+-            self.canvas.get_cell_mut((x + i, y)).reset();
++        for cell in self.canvas.get_cell_range_mut((x, y), (x + n, y)) {
++            cell.reset();
+         }
+     }
+ 

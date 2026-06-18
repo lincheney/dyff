@@ -90,3 +90,5 @@ fixture_test!(diff63);
 fixture_test!(diff64);
 fixture_test!(diff65);
 fixture_test!(diff66);
+fixture_test!(diff67);
+fixture_test!(diff68);

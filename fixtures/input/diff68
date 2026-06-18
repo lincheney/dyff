@@ -1,0 +1,13 @@
+commit b982d6cae01c87fb62a4870035461c54f1691c5d
+Author: 林千里 <lincheney@gmail.com>
+Date:   Fri Jun 19 03:12:18 2026 +1000
+
+    make sure block is contiguous
+
+diff --git a/src/block.rs b/src/block.rs
+index 588e6c4..78e50c8 100644
+--- a/src/block.rs
++++ b/src/block.rs
+@@ -310,21 +310,27 @@ fn partition_blocks_on_score(blocks: Vec<Block>, cutoff: f64) -> Vec<Block> {
+-                    block.parts.append(&mut rest.parts);
++                    blocks.push(rest);
